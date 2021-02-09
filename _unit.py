@@ -15,7 +15,7 @@ class SmartFloat(float):
 	_unit: str = ''
 	_suffix: str = ''
 	_isInt: bool = False
-	_unitFormat: str = '{}{} {}'
+	_unitFormat: str = '{} {}'
 
 	def __new__(cls, value):
 		return float.__new__(cls, value)
@@ -73,7 +73,7 @@ class SmartFloat(float):
 
 	@property
 	def withUnit(self):
-		return self._unitFormat.format(str(self), self.suffix, self.unit)
+		return self._unitFormat.format(str(self), self.unit)
 
 	@property
 	def unit(self) -> str:

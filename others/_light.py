@@ -17,15 +17,15 @@ class Illuminance(Measurement):
 	_suffix = ''
 
 	def __new__(cls, value):
+		if value > 1000:
+			cls._format = '{2:1f}'
+			cls._suffix = 'k'
+			value /= 1000
 		return float.__new__(cls, value)
 
 	def __init__(self, value):
-		if self > 1000:
-			_format = '{2:1f}'
-			_suffix = 'k'
-			value /= 1000
 		float.__init__(value)
 
 
-class Lux(Irradiance):
+class Lux(Illuminance):
 	pass
