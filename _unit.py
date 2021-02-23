@@ -97,6 +97,7 @@ class Measurement(SmartFloat):
 	_decorator = ''
 
 	def __new__(cls, value):
+		print(value)
 		return SmartFloat.__new__(cls, value)
 
 	def __init__(self, value):
