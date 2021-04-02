@@ -1,9 +1,7 @@
-import logging
-
 from units._unit import Measurement
 
 
-class _Rate(Measurement):
+class _Derived(Measurement):
 	_type = 'rate'
 	_numerator: Measurement
 	_denominator: Measurement
@@ -37,6 +35,7 @@ class _Rate(Measurement):
 		else:
 			return '{}/{}'.format(self._numerator.unit, self._denominator.unit)
 
-# @property
-	# def value(self):
-	# 	return self._numerator.raw / self._denominator.raw
+
+from ._wind import Wind
+from ._precipitation import Precipitation
+from ._volume import Volume

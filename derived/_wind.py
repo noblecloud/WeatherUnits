@@ -1,8 +1,8 @@
 from units.length import Length
 from units.time import _Time
-from . import _Rate
+from . import _Derived
 
-class Wind(_Rate):
+class Wind(_Derived):
 	_type = 'wind'
 	_numerator: Length
 	_denominator: _Time

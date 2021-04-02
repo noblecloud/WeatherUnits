@@ -4,6 +4,6 @@ from . import heat
 from . import length
 from . import time
 from . import pressure
-from . import rate
+from . import derived
 from . import others
 from . import defaults

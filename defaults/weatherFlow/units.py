@@ -1,11 +1,11 @@
 from enum import Enum
 
 from config import config
-from units import heat, length, rate, time
+from units import heat, length, derived, time
 from units._unit import Measurement
 
 
-class Wind(rate.Wind):
+class Wind(derived.Wind):
 
 	def __new__(cls, numerator):
 		value = numerator / 1
@@ -26,7 +26,7 @@ class Heat(heat.Celsius):
 	pass
 
 
-class Precipitation(rate.Precipitation):
+class Precipitation(derived.Precipitation):
 	def __new__(cls, numerator):
 		value = numerator / 1
 		return Measurement.__new__(cls, value)
@@ -42,7 +42,7 @@ class Precipitation(rate.Precipitation):
 		return self
 
 
-class PrecipitationDaily(rate.Precipitation):
+class PrecipitationDaily(derived.Precipitation):
 	def __new__(cls, numerator):
 		value = numerator / 1
 		return Measurement.__new__(cls, value)
