@@ -44,10 +44,6 @@ class Volume(Measurement):
 		return self._z
 
 	@property
-	def m3(self):
-		return
-
-	@property
 	def unit(self) -> str:
 		return self._x.unit + "³"
 
