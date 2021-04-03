@@ -36,7 +36,3 @@ class _Heat(Measurement):
 	def cDelta(self):
 		from units.heat import Celsius
 		return Celsius(self._celsius(delta=True))
-
-	@property
-	def str(self):
-		return str(self)

@@ -128,6 +128,10 @@ class Measurement(SmartFloat):
 	def convertible(self):
 		return self._type in self._config['Units']
 
+	@property
+	def str(self):
+		return str(self)
+
 
 class AbnormalScale(Measurement):
 	_value: Union[int, float]
