@@ -25,16 +25,16 @@ class _Imperial(Length, AbnormalScale):
 		return self.changeScale(4)
 
 	def _millimeter(self):
-		return self._metric.mm.raw
+		return self._metric.mm
 
 	def _centimeter(self):
-		return self._metric.cm.raw
+		return self._metric.cm
 
 	def _meter(self):
-		return self._metric.m.raw
+		return self._metric.m
 
 	def _kilometer(self):
-		return self._metric.km.raw
+		return self._metric.km
 
 
 class Line(_Imperial):
