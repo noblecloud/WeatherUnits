@@ -1,3 +1,5 @@
+from typing import Union
+
 from .._unit import Measurement
 from ..length import Meter, Foot
 from ..length._length import _Length
@@ -11,7 +13,7 @@ class Volume(Measurement):
 	_cube: bool
 	_type = 'volume'
 
-	def __init__(self, x: _Length, y: _Length = 0, z: _Length = 0, cube: bool = True):
+	def __init__(self, x: Union[_Length, int, float], y: Union[_Length, int, float] = 0, z: Union[_Length, int, float] = 0, cube: bool = True):
 		if cube and not(z and y):
 			x **= 1. / 3.
 			y = x
@@ -61,7 +63,6 @@ class CubicMeter(Volume):
 	_y: Meter
 	_z: Meter
 	_unitClass = Meter
-	unit
 
 	@property
 	def ft(self):
