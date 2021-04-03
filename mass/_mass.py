@@ -35,7 +35,6 @@ class _Mass(Measurement):
 		from units.mass import Ounce
 		return Ounce(self._ounce())
 
-
 	@property
 	def lbs(self):
 		from units.mass import Pound

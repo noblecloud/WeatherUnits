@@ -1,8 +1,10 @@
+import logging
+
 from units._unit import Measurement
 
 
 class _Derived(Measurement):
-	_type = 'rate'
+	_type = 'derived'
 	_numerator: Measurement
 	_denominator: Measurement
 
@@ -35,7 +37,16 @@ class _Derived(Measurement):
 		else:
 			return '{}/{}'.format(self._numerator.unit, self._denominator.unit)
 
+	@property
+	def numerator(self):
+		return self._numerator
+
+	@property
+	def denominator(self):
+		return self._denominator
+
 
 from ._wind import Wind
 from ._precipitation import Precipitation
-from ._volume import Volume
+from ._volume import Volume, CubicFoot, CubicMeter
+from ._density import Density

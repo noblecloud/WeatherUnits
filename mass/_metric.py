@@ -9,8 +9,8 @@ class _Metric(Mass):
 	_scale: int
 	_imperial: Any
 
-	def _lbs(self):
-		return self._kilogram() * 0.45359237
+	def _pound(self):
+		return self._kilogram() * 2.2046226218
 
 	def _ounces(self):
 		return self._lbs() * 16
@@ -30,18 +30,18 @@ class Milligram(_Metric):
 	_format = '{:3.1f}'
 	_magnitude = -2
 	_scale = 1
-	_unit = 'mm'
+	_unit = 'mg'
 
 
 class Gram(_Metric):
 	_type = 'small'
 	_magnitude = 0
 	_scale = 2
-	_unit = 'cm'
+	_unit = 'g'
 
 
 class Kilogram(_Metric):
 	_type = 'large'
 	_magnitude = 3
 	_scale = 4
-	_unit = 'km'
+	_unit = 'kg'
