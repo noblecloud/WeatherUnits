@@ -1,8 +1,8 @@
 from enum import Enum
 
-from src.WeatherUnits import derived, heat, length, mass, time
-from src.WeatherUnits._unit import Measurement
-from src.WeatherUnits.config import config
+from ... import derived, heat, length, mass, time
+from ..._unit import Measurement
+from ...config import config
 
 
 class Wind(derived.Wind):
