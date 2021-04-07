@@ -1,20 +1,19 @@
 import logging
 from configparser import ConfigParser
-from pathlib import Path
-
+import importlib.resources
 from pytz import timezone
 
 
-class _Config(ConfigParser):
+class Config(ConfigParser):
 
 	def __init__(self, *args, **kwargs):
-		rootPath = Path(__file__).parent
-		self.path = rootPath.joinpath('config.ini')
-		super(_Config, self).__init__(*args, **kwargs)
-		self.read()
+		# TODO: Add SI or US selection to parameters
+		super(Config, self).__init__(*args, **kwargs)
+		self.path = importlib.resources.path(__package__, 'us.ini')
 
 	def read(self, *args, **kwargs):
-		super().read(self.path, *args, **kwargs)
+		with self.path as path:
+			super().read(path)
 
 	def update(self):
 		# TODO: Add change indicator
@@ -41,6 +40,3 @@ class _Config(ConfigParser):
 	@property
 	def lon(self):
 		return float(self['Location']['lon'])
-
-
-config = _Config()
