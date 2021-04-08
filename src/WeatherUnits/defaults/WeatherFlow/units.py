@@ -1,6 +1,6 @@
 from enum import Enum
 
-from ... import derived, heat, length, mass, time
+from ... import derived, temperature, length, mass, time
 from ..._unit import Measurement
 from ... import config
 
@@ -22,7 +22,7 @@ class Wind(derived.Wind):
 		return self
 
 
-class Heat(heat.Celsius):
+class Heat(temperature.Celsius):
 	pass
 
 

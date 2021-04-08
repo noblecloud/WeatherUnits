@@ -3,15 +3,15 @@ from src.WeatherUnits import *
 
 
 class TestHeat(TestCase):
-	cLow = heat.Celsius(0)
-	fLow = heat.Fahrenheit(32)
-	kLow = heat.Kelvin(273.15)
-	cHigh = heat.Celsius(100)
-	fHigh = heat.Fahrenheit(212)
-	kHigh = heat.Kelvin(373.15)
+	cLow = temperature.Celsius(0)
+	fLow = temperature.Fahrenheit(32)
+	kLow = temperature.Kelvin(273.15)
+	cHigh = temperature.Celsius(100)
+	fHigh = temperature.Fahrenheit(212)
+	kHigh = temperature.Kelvin(373.15)
 
 	def test__celsius(self):
-		low: heat.Celsius = self.cLow
+		low: temperature.Celsius = self.cLow
 		self.assertEqual(self.fLow, low.f)
 		self.assertEqual(self.kLow, low.kel)
 		self.assertEqual(self.cLow, low.c)
@@ -21,36 +21,36 @@ class TestHeat(TestCase):
 		self.assertEqual(self.kHigh, high.kel)
 		self.assertEqual(self.cHigh, high.c)
 
-		delta = heat.Celsius(10)
-		self.assertEqual(heat.Fahrenheit(18), delta.fDelta)
+		delta = temperature.Celsius(10)
+		self.assertEqual(temperature.Fahrenheit(18), delta.fDelta)
 
 		self.assertEqual('0ºc', low.withUnit)
 		self.assertEqual('0º', str(low))
 
 	def test__fahrenheit(self):
-		low: heat.Fahrenheit = self.fLow
+		low: temperature.Fahrenheit = self.fLow
 		self.assertEqual(self.cLow, low.c)
 		self.assertEqual(self.kLow, low.kel)
 		self.assertEqual(self.fLow, low.f)
 
-		high: heat.Fahrenheit = self.fHigh
+		high: temperature.Fahrenheit = self.fHigh
 		self.assertEqual(self.cHigh, high.c)
 		self.assertEqual(self.kHigh, high.kel)
 		self.assertEqual(self.fHigh, high.f)
 
-		delta = heat.Fahrenheit(18)
-		self.assertEqual(heat.Celsius(10), delta.cDelta)
+		delta = temperature.Fahrenheit(18)
+		self.assertEqual(temperature.Celsius(10), delta.cDelta)
 
 		self.assertEqual('32ºf', low.withUnit)
 		self.assertEqual('32º', str(low))
 
 	def test__kelvin(self):
-		low: heat.Kelvin = self.kLow
+		low: temperature.Kelvin = self.kLow
 		self.assertEqual(self.fLow, low.f)
 		self.assertEqual(self.cLow, low.c)
 		self.assertEqual(self.kLow, low.kel)
 
-		high: heat.Kelvin = self.kHigh
+		high: temperature.Kelvin = self.kHigh
 		self.assertEqual(self.cHigh, high.c)
 		self.assertEqual(self.kHigh, high.kel)
 		self.assertEqual(self.fHigh, high.f)

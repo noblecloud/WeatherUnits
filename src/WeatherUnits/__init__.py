@@ -1,5 +1,5 @@
 from . import errors
-from . import heat
+from . import temperature
 from . import length
 from . import mass
 from . import time

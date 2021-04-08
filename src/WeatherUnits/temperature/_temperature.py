@@ -3,7 +3,7 @@ from typing import Callable
 from .._unit import Measurement
 
 
-class _Heat(Measurement):
+class _Temperature(Measurement):
 	_type = 'heat'
 	_decorator = 'º'
 	_suffix = ''
@@ -15,25 +15,25 @@ class _Heat(Measurement):
 
 	@property
 	def f(self):
-		from ..heat import Fahrenheit
+		from ..temperature import Fahrenheit
 		return Fahrenheit(self._fahrenheit())
 
 	@property
 	def kel(self):
-		from ..heat import Kelvin
+		from ..temperature import Kelvin
 		return Kelvin(self._kelvin())
 
 	@property
 	def fDelta(self):
-		from ..heat import Fahrenheit
+		from ..temperature import Fahrenheit
 		return Fahrenheit(self._fahrenheit(delta=True))
 
 	@property
 	def c(self):
-		from ..heat import Celsius
+		from ..temperature import Celsius
 		return Celsius(self._celsius())
 
 	@property
 	def cDelta(self):
-		from ..heat import Celsius
+		from ..temperature import Celsius
 		return Celsius(self._celsius(delta=True))
