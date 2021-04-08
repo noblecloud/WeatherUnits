@@ -8,3 +8,6 @@ from . import derived
 from . import others
 from . import defaults
 from ._unit import Measurement, SmartFloat
+from config import Config as __Config
+
+config = __Config()

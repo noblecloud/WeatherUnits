@@ -2,7 +2,7 @@ from enum import Enum
 
 from ... import derived, heat, length, mass, time
 from ..._unit import Measurement
-from ...config import config
+from ... import config
 
 
 class Wind(derived.Wind):
