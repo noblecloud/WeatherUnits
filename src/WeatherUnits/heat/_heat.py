@@ -1,3 +1,5 @@
+from typing import Callable
+
 from .._unit import Measurement
 
 
@@ -5,13 +7,11 @@ class _Heat(Measurement):
 	_type = 'heat'
 	_decorator = 'º'
 	_suffix = ''
-	_unitFormat: str = '{value}{decorator}'
+	_unitFormat: str = '{decorated}{unit}'
 
-	def __repr__(self):
-		return str(self)
-
-	def __str__(self) -> str:
-		return self.formatString.format(self).rstrip('0').rstrip('.')+'º'
+	_celsius: Callable
+	_fahrenheit: Callable
+	_kelvin: Callable
 
 	@property
 	def f(self):
@@ -37,12 +37,3 @@ class _Heat(Measurement):
 	def cDelta(self):
 		from ..heat import Celsius
 		return Celsius(self._celsius(delta=True))
-
-	def _fahrenheit(self, delta=None):
-		pass
-
-	def _kelvin(self):
-		pass
-
-	def _celsius(self, delta=None):
-		pass

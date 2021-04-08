@@ -2,8 +2,10 @@ from . import Heat
 
 
 class Kelvin(Heat):
-	_format = '{:3.2f}'
-	_suffix = ''
+	_format = '{value}{decorator}'
+	_decorator = ''
+	_unit = 'k'
+	_unitFormat: str = '{decorated}{unit}'
 
 	def _kelvin(self):
 		return self

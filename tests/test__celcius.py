@@ -12,48 +12,48 @@ class TestHeat(TestCase):
 
 	def test__celsius(self):
 		low: heat.Celsius = self.cLow
-		self.assertEqual(low.f, self.fLow)
-		self.assertEqual(low.kel, self.kLow)
-		self.assertEqual(low.c, self.cLow)
+		self.assertEqual(self.fLow, low.f)
+		self.assertEqual(self.kLow, low.kel)
+		self.assertEqual(self.cLow, low.c)
 
 		high = self.cHigh
-		self.assertEqual(high.f, self.fHigh)
-		self.assertEqual(high.kel, self.kHigh)
-		self.assertEqual(high.c, self.cHigh)
+		self.assertEqual(self.fHigh, high.f)
+		self.assertEqual(self.kHigh, high.kel)
+		self.assertEqual(self.cHigh, high.c)
 
 		delta = heat.Celsius(10)
-		self.assertEqual(delta.fDelta, heat.Fahrenheit(18))
+		self.assertEqual(heat.Fahrenheit(18), delta.fDelta)
 
-		self.assertEqual(low.withUnit, '0ºc')
-		self.assertEqual(str(low), '0º')
+		self.assertEqual('0ºc', low.withUnit)
+		self.assertEqual('0º', str(low))
 
 	def test__fahrenheit(self):
 		low: heat.Fahrenheit = self.fLow
-		self.assertEqual(low.c, self.cLow)
-		self.assertEqual(low.kel, self.kLow)
-		self.assertEqual(low.f, self.fLow)
+		self.assertEqual(self.cLow, low.c)
+		self.assertEqual(self.kLow, low.kel)
+		self.assertEqual(self.fLow, low.f)
 
 		high: heat.Fahrenheit = self.fHigh
-		self.assertEqual(high.c, self.cHigh)
-		self.assertEqual(high.kel, self.kHigh)
-		self.assertEqual(high.f, self.fHigh)
+		self.assertEqual(self.cHigh, high.c)
+		self.assertEqual(self.kHigh, high.kel)
+		self.assertEqual(self.fHigh, high.f)
 
 		delta = heat.Fahrenheit(18)
-		self.assertEqual(delta.cDelta, heat.Celsius(10))
+		self.assertEqual(heat.Celsius(10), delta.cDelta)
 
-		self.assertEqual(low.withUnit, '32ºf')
-		self.assertEqual(str(low), '32º')
+		self.assertEqual('32ºf', low.withUnit)
+		self.assertEqual('32º', str(low))
 
 	def test__kelvin(self):
 		low: heat.Kelvin = self.kLow
-		self.assertEqual(low.f, self.fLow)
-		self.assertEqual(low.c, self.cLow)
-		self.assertEqual(low.kel, self.kLow)
+		self.assertEqual(self.fLow, low.f)
+		self.assertEqual(self.cLow, low.c)
+		self.assertEqual(self.kLow, low.kel)
 
 		high: heat.Kelvin = self.kHigh
-		self.assertEqual(high.c, self.cHigh)
-		self.assertEqual(high.kel, self.kHigh)
-		self.assertEqual(high.f, self.fHigh)
+		self.assertEqual(self.cHigh, high.c)
+		self.assertEqual(self.kHigh, high.kel)
+		self.assertEqual(self.fHigh, high.f)
 
-		self.assertEqual(low.withUnit, '273.15k')
-		self.assertEqual(str(low), '273.15k')
+		self.assertEqual('273.1k', low.withUnit)
+		self.assertEqual('273.1', str(low))

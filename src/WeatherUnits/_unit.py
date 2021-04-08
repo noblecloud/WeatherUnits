@@ -1,5 +1,5 @@
 from typing import Union
-from .config import config
+from . import config
 from .errors import BadConversion
 
 
@@ -14,7 +14,8 @@ class SmartFloat(float):
 	_suffix: str = ''
 	_decorator: str = ''
 	_isInt: bool = False
-	_unitFormat: str = '{value}{decorator} {unit}'
+	_unitFormat: str = '{decorated}{unit}'
+	_format: str = '{value}{decorator}'
 
 	def __new__(cls, value):
 		return float.__new__(cls, value)
@@ -25,17 +26,17 @@ class SmartFloat(float):
 
 	def __str__(self) -> str:
 		string = self.formatString.format(self).rstrip('0').rstrip('.')
-		return '{}{}'.format(value=str(string), decorator=self.suffix)
+		return '{value}{decorator}'.format(value=string, decorator=self._decorator)
 
 	def strip(self):
 		return self._format.format(str(self)).rstrip('0').rstrip('.')
 
-	def __repr__(self):
-		return str(self)
-		# if self.is_integer() or self._isInt:
-		# 	return int(self)
-		# else:
-		# 	return self
+	# def __repr__(self):
+	# 	return str(self)
+	# 	# if self.is_integer() or self._isInt:
+	# 	# 	return int(self)
+	# 	# else:
+	# 	# 	return self
 
 	'''This is broken'''
 	@property
@@ -72,7 +73,7 @@ class SmartFloat(float):
 
 	@property
 	def withUnit(self):
-		return self._unitFormat.format(value=str(self), decorator=self._decorator, unit=self.unit)
+		return self._unitFormat.format(decorated=str(self), unit=self.unit)
 
 	@property
 	def unit(self) -> str:
@@ -93,7 +94,6 @@ class SmartFloat(float):
 
 class Measurement(SmartFloat):
 	_type = ''
-	_decorator = ''
 
 	def __new__(cls, value):
 		return SmartFloat.__new__(cls, value)
