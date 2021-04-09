@@ -11,8 +11,8 @@ class _Metric(Mass):
 	def _pound(self):
 		return self._kilogram() * 2.2046226218
 
-	def _ounces(self):
-		return self._lbs() * 16
+	def _ounce(self):
+		return self._pound() * 16
 
 	def _milligram(self):
 		return self * pow(10, self._magnitude + 2)
