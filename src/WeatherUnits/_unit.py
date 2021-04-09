@@ -133,7 +133,7 @@ class Measurement(SmartFloat):
 
 class AbnormalScale(Measurement):
 	_value: Union[int, float]
-	_factors = list[int, float]
+	_factors: list[int, float]
 	_scale: int
 
 	def changeScale(self, newScale: Union[int, float]):
