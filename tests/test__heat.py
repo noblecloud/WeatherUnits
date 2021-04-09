@@ -55,5 +55,5 @@ class TestHeat(TestCase):
 		self.assertEqual(self.kHigh, high.kel)
 		self.assertEqual(self.fHigh, high.f)
 
-		self.assertEqual('273.1k', low.withUnit)
-		self.assertEqual('273.1', str(low))
+		self.assertEqual('273k', low.withUnit)
+		self.assertEqual('273', str(low))

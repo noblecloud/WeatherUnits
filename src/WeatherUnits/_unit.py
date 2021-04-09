@@ -6,12 +6,12 @@ from .errors import BadConversion
 class SmartFloat(float):
 	_config = config
 	_precision: int = 1
-	_unitType: str = 'f'
+	_max = 3
 
+	_unitType: str = 'f'
 	_unit: str = ''
 	_suffix: str = ''
 	_decorator: str = ''
-	_isInt: bool = False
 	_unitFormat: str = '{decorated}{unit}'
 	_format: str = '{value}{decorator}'
 
@@ -20,54 +20,23 @@ class SmartFloat(float):
 
 	def __init__(self, value):
 		float.__init__(value)
-		self._isInt = True if self.is_integer() else False
 
 	def __str__(self) -> str:
-		string = self.formatString.format(self).rstrip('0').rstrip('.')
+		string = self.formatString.format(self)
 		return '{value}{decorator}'.format(value=string, decorator=self._decorator)
 
 	def strip(self):
 		return self._format.format(str(self)).rstrip('0').rstrip('.')
 
-	# def __repr__(self):
-	# 	return str(self)
-	# 	# if self.is_integer() or self._isInt:
-	# 	# 	return int(self)
-	# 	# else:
-	# 	# 	return self
-
-	'''This is broken'''
 	@property
 	def formatString(self) -> str:
-		# TODO: fix this SmartFloat formatter
-		p = self._precision
+		# Get number length of number before and after decimal
+		# Could probably use a more efficient algorithm
+		whole, decimal = (len(n) for n in str(float(self)).strip('0').split('.'))
 
-		# value = round(self, self._precision)
-
-		# how long is the number
-		# digit, flts = (len(n) for n in str(value).strip('0').split('.'))
-
-		# if precision is more than 1 always show at least
-		# one decimal even if it's zero unless precision
-		# is zero then set because 1%0 results in division error
-		# forcedPrecision = bool(1 % self._precision if self._precision else 0)
-
-		# only if the precision is more than N display decimals
-		# n = 1
-		# twoOrMore = p if (p//n) else 0
-		#
-		# flts = 1 if forcedPrecision and not flts else flts
-		# flts = self._precision if flts < self._precision
-
-		## remaining = self._maxDigits - (digit + flts) # 1
-
-		# if the precision is less than the
-		# left over space, give the extra space
-		# to the digit
-		## digit += fl - self._precision
-		## fl -= fl - self._precision
-
-		return '{:1.' + str(p) + 'f}'
+		# Prevents negative float precision
+		decimal = max(0, self._max - (1 if not whole else whole)) if round(self % 1, self._precision) else 0
+		return f"{{:{whole}.{decimal}{self._unitType}}}".format(self)
 
 	@property
 	def withUnit(self):
@@ -105,10 +74,6 @@ class Measurement(SmartFloat):
 			return self.__getattribute__(item)
 		except ValueError:
 			raise BadConversion
-
-	# def __str__(self) -> str:
-	# string = self.formatString.format(self.localized).rstrip('0').rstrip('.')
-	# return '{}{} {}'.format(str(string), self.localized.suffix, self.localized.unit)
 
 	@property
 	def localized(self):
