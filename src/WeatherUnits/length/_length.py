@@ -20,40 +20,40 @@ class _Length(Measurement):
 
 	@property
 	def mm(self):
-		from units.length import Millimeter
+		from . import Millimeter
 		return Millimeter(self._millimeter())
 
 	@property
 	def cm(self):
-		from units.length import Centimeter
+		from . import Centimeter
 		return Centimeter(self._centimeter())
 
 	@property
 	def m(self):
-		from units.length import Meter
+		from . import Meter
 		return Meter(self._meter())
 
 	@property
 	def km(self):
-		from units.length import Kilometer
+		from . import Kilometer
 		return Kilometer(self._kilometer())
 
 	@property
 	def inch(self):
-		from units.length import Inch
+		from . import Inch
 		return Inch(self._inches())
 
 	@property
 	def ft(self):
-		from units.length import Foot
+		from . import Foot
 		return Foot(self._feet())
 
 	@property
 	def yd(self):
-		from units.length import Yard
+		from . import Yard
 		return Yard(self._yards())
 
 	@property
 	def mi(self):
-		from units.length import Mile
+		from . import Mile
 		return Mile(self._miles())

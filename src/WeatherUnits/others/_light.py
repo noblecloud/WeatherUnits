@@ -1,20 +1,19 @@
 from .._unit import Measurement
 
 
-class Irradiance(Measurement):
+class Light(Measurement):
+	_type = 'light'
+
+
+class Irradiance(Light):
 	_format = "{:4d}"
 	_unit = 'W/m²'
-	_suffix = ''
 
 
-class RadiantFlux(Irradiance):
-	pass
 
-
-class Illuminance(Measurement):
+class Illuminance(Light):
 	_format = "{:4d}"
 	_unit = 'lux'
-	_suffix = ''
 
 	def __new__(cls, value):
 		if value > 1000:
@@ -27,5 +26,5 @@ class Illuminance(Measurement):
 		float.__init__(value)
 
 
-class Lux(Illuminance):
-	pass
+RadiantFlux = Irradiance
+Lux = Illuminance

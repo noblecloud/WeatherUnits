@@ -14,12 +14,17 @@ class _Temperature(Measurement):
 	_kelvin: Callable
 
 	@property
-	def f(self):
+	def celsius(self):
+		from ..temperature import Celsius
+		return Celsius(self._celsius())
+
+	@property
+	def fahrenheit(self):
 		from ..temperature import Fahrenheit
 		return Fahrenheit(self._fahrenheit())
 
 	@property
-	def kel(self):
+	def kelvin(self):
 		from ..temperature import Kelvin
 		return Kelvin(self._kelvin())
 
@@ -29,11 +34,12 @@ class _Temperature(Measurement):
 		return Fahrenheit(self._fahrenheit(delta=True))
 
 	@property
-	def c(self):
-		from ..temperature import Celsius
-		return Celsius(self._celsius())
-
-	@property
 	def cDelta(self):
 		from ..temperature import Celsius
 		return Celsius(self._celsius(delta=True))
+
+	# abbreviations
+	c = celsius
+	k = kelvin
+	kel = kelvin
+	f = fahrenheit

@@ -2,8 +2,8 @@ from .._unit import AbnormalScale
 
 
 class _Time(AbnormalScale):
+	_type = 'time'
 	_format = '{:2.2f}'
-	# milliseconds, second, minute, hour, day
 	_factors = [1, 1000, 60, 60, 12]
 
 	def _milliseconds(self):
@@ -22,22 +22,22 @@ class _Time(AbnormalScale):
 		return self.changeScale(4)
 
 	@property
-	def ms(self):
+	def millisecond(self):
 		from ..time import Millisecond
 		return Millisecond(self._milliseconds())
 
 	@property
-	def s(self):
+	def second(self):
 		from ..time import Second
 		return Second(self._seconds())
 
 	@property
-	def min(self):
+	def minute(self):
 		from ..time import Minute
 		return Minute(self._minutes())
 
 	@property
-	def hr(self):
+	def hour(self):
 		from ..time import Hour
 		return Hour(self._hours())
 
@@ -45,3 +45,14 @@ class _Time(AbnormalScale):
 	def day(self):
 		from ..time import Day
 		return Day(self._days())
+
+
+	## abbreviations
+	d = day
+	min = minute
+	m = minute
+	hr = hour
+	h = hour
+	s = second
+	sec = second
+	ms = millisecond

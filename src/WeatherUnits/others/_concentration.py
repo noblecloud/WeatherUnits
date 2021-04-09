@@ -5,7 +5,7 @@ class Humidity(Measurement):
 	_type = 'concentration'
 	_format = "{:2d}"
 	_unit = ''
-	_suffix = '%'
+	_decorator = '%'
 
 
 class MultiUnit(Measurement):
@@ -21,7 +21,3 @@ class MultiUnit(Measurement):
 		self._numerator = numerator
 		self._denominator = denominator
 		Measurement.__init__(self, self._numerator / self._denominator)
-
-
-class Density(MultiUnit):
-	pass

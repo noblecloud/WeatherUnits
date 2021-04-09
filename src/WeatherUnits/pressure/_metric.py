@@ -15,7 +15,6 @@ class mmHg(Pressure):
 
 
 class hPa(Pressure):
-	_format = "{:4.1f}"
 	_unit = 'hPa'
 
 	def _hPa(self):

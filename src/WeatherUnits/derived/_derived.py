@@ -1,4 +1,5 @@
 from .._unit import Measurement
+from .. import config
 
 
 class _Derived(Measurement):
@@ -14,6 +15,10 @@ class _Derived(Measurement):
 		self._numerator = numerator
 		self._denominator = denominator
 		Measurement.__init__(self, self._numerator / self._denominator)
+
+	# TODO: Implement into child classes
+	def _getUnit(self) -> tuple[str, str]:
+		return config['Units'][self._type].split('/')
 
 	@property
 	def localized(self):

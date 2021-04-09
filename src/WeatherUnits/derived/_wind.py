@@ -19,10 +19,6 @@ class Wind(Derived):
 		return converted
 
 	@property
-	def mph(self):
-		return self.mih
-
-	@property
 	def inh(self):
 		return Wind(self._numerator.inch, self._denominator.hr)
 

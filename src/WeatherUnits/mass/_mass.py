@@ -15,26 +15,33 @@ class _Mass(Measurement):
 		return self.formatString.format(self).rstrip('0').rstrip('.')
 
 	@property
-	def mg(self):
-		from units.mass import Milligram
+	def milligram(self):
+		from . import Milligram
 		return Milligram(self._milligram())
 
 	@property
-	def g(self):
-		from units.mass import Gram
+	def gram(self):
+		from . import Gram
 		return Gram(self._gram())
 
 	@property
-	def kg(self):
-		from units.mass import Kilogram
+	def kilogram(self):
+		from . import Kilogram
 		return Kilogram(self._kilogram())
 
 	@property
-	def oz(self):
-		from units.mass import Ounce
+	def ounce(self):
+		from . import Ounce
 		return Ounce(self._ounce())
 
 	@property
-	def lbs(self):
-		from units.mass import Pound
+	def pound(self):
+		from . import Pound
 		return Pound(self._pound())
+
+	mg = milligram
+	g = gram
+	kg = kilogram
+	oz = ounce
+	lbs = pound
+

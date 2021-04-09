@@ -4,11 +4,9 @@ from .errors import BadConversion
 
 
 class SmartFloat(float):
-	_config: config
+	_config = config
 	_precision: int = 1
-	_real: int = 2
-	_maxDigits: int = 3
-	_minDigits: int = 0
+	_unitType: str = 'f'
 
 	_unit: str = ''
 	_suffix: str = ''
@@ -69,7 +67,7 @@ class SmartFloat(float):
 		## digit += fl - self._precision
 		## fl -= fl - self._precision
 
-		return '{:1.' + str(self._precision) + 'f}'
+		return '{:1.' + str(p) + 'f}'
 
 	@property
 	def withUnit(self):
