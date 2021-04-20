@@ -2,22 +2,22 @@ from .._unit import Measurement
 
 
 class Volts(Measurement):
-	_format = "{:1.2f}"
+	_max = 3
+	_precision = 2
 	_unit = 'v'
-	_unitFormat: str = '{}{}'
-	_suffix = ''
+	_unitFormat: str = '{decorated}{unit}'
 
 
 class Direction(Measurement):
-	_suffix = 'º'
-	_format = "{:3d}"
-
+	_precision = 0
+	_decorator = 'º'
 
 	def __init__(self, *args, **kwargs):
 		super(Direction, self).__init__(*args, **kwargs)
 
 	def __str__(self) -> str:
-		return str(round(self))
+		string = self.formatString.format(self)
+		return '{cardinal} ({value}{decorator})'.format(cardinal=self.cardinal, value=string, decorator=self._decorator)
 
 	@property
 	def cardinal(self):

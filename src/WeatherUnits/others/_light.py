@@ -18,7 +18,7 @@ class Illuminance(Light):
 	def __new__(cls, value):
 		if value > 1000:
 			cls._format = '{2:1f}'
-			cls._suffix = 'k'
+			cls._decorator = 'k'
 			value /= 1000
 		return float.__new__(cls, value)
 

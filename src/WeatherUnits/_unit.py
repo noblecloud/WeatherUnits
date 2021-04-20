@@ -12,13 +12,15 @@ class SmartFloat(float):
 	_unit: str = ''
 	_suffix: str = ''
 	_decorator: str = ''
-	_unitFormat: str = '{decorated}{unit}'
+	_unitFormat: str = '{decorated} {unit}'
 	_format: str = '{value}{decorator}'
 
 	def __new__(cls, value):
 		return float.__new__(cls, value)
 
 	def __init__(self, value):
+		decimal = list(len(n) for n in str(value).split('.'))[-1]
+		self._precision = min(self._precision, decimal)
 		float.__init__(value)
 
 	def __str__(self) -> str:
