@@ -10,7 +10,13 @@ class TestHeat(TestCase):
 	fHigh = temperature.Fahrenheit(212)
 	kHigh = temperature.Kelvin(373.15)
 
-	def test__celsius(self):
+	cRoom: temperature.Celsius = temperature.Celsius(20.0)
+	fRoom = temperature.Fahrenheit(68.0)
+	cDewpoint = temperature.Celsius(13.2)
+	fDewpoint = temperature.Fahrenheit(55.76)
+
+
+	def test_celsius(self):
 		low: temperature.Celsius = self.cLow
 		self.assertEqual(self.fLow, low.f)
 		self.assertEqual(self.kLow, low.kel)
@@ -27,7 +33,7 @@ class TestHeat(TestCase):
 		self.assertEqual('0ºc', low.withUnit)
 		self.assertEqual('0º', str(low))
 
-	def test__fahrenheit(self):
+	def test_fahrenheit(self):
 		low: temperature.Fahrenheit = self.fLow
 		self.assertEqual(self.cLow, low.c)
 		self.assertEqual(self.kLow, low.kel)
@@ -44,7 +50,7 @@ class TestHeat(TestCase):
 		self.assertEqual('32ºf', low.withUnit)
 		self.assertEqual('32º', str(low))
 
-	def test__kelvin(self):
+	def test_kelvin(self):
 		low: temperature.Kelvin = self.kLow
 		self.assertEqual(self.fLow, low.f)
 		self.assertEqual(self.cLow, low.c)
@@ -57,3 +63,7 @@ class TestHeat(TestCase):
 
 		self.assertEqual('273k', low.withUnit)
 		self.assertEqual('273', str(low))
+
+	def test_dewpoint(self):
+		self.assertEqual(self.cDewpoint, self.cRoom.dewpoint(65))
+		self.assertEqual(self.fDewpoint, self.fRoom.dewpoint(65))
