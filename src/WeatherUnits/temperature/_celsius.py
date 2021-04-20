@@ -1,7 +1,7 @@
-from . import Heat
+from . import Temperature
 
 
-class Celsius(Heat):
+class Celsius(Temperature):
 	_unit = 'c'
 
 	def _celsius(self, delta: bool = False):

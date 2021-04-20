@@ -21,7 +21,7 @@ class Wind(derived.Wind):
 		return self
 
 
-class Heat(temperature.Celsius):
+class Temperature(temperature.Celsius):
 	pass
 
 

@@ -1,7 +1,7 @@
-from . import Heat
+from . import Temperature
 
 
-class Kelvin(Heat):
+class Kelvin(Temperature):
 	_format = '{value}{decorator}'
 	_decorator = ''
 	_unit = 'k'

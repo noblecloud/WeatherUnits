@@ -1,4 +1,4 @@
-from .units import Heat, Wind, Precipitation, PrecipitationDaily, PrecipitationType
+from .units import Temperature, Wind, Precipitation, PrecipitationDaily, PrecipitationType
 from ...length import Kilometer
 from ...others import Direction, Humidity, Lux, RadiantFlux, Volts
 from ...pressure import mmHg
@@ -19,7 +19,7 @@ classes = {
 
 		'windSampleInterval': Second,
 		'pressure':           mmHg,
-		'temperature':        Heat,
+		'temperature':        Temperature,
 		'humidity':           Humidity,
 
 		'illuminance':        Lux,
