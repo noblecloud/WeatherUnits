@@ -37,8 +37,8 @@ class SmartFloat(float):
 		whole, decimal = (len(n) for n in str(float(self)).strip('0').split('.'))
 
 		# Prevents negative float precision
-		decimal = max(0, self._max - (1 if not whole else whole)) if round(self % 1, self._precision) else 0
-		return f"{{:{whole}.{decimal}{self._unitType}}}".format(self)
+		decimal = min(self._precision, max(0, self._max - (1 if not whole else whole)) if round(self % 1, self._precision) else 0)
+		return f"{{:{whole}.{decimal}{self._unitType}}}"
 
 	@property
 	def withUnit(self):

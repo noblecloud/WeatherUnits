@@ -15,9 +15,6 @@ class _Length(Measurement):
 	_yards: Callable
 	_miles: Callable
 
-	def __str__(self) -> str:
-		return self.formatString.format(self).rstrip('0').rstrip('.')
-
 	@property
 	def mm(self):
 		from . import Millimeter

@@ -11,9 +11,6 @@ class _Mass(Measurement):
 	_ounce: Callable
 	_pound: Callable
 
-	def __str__(self) -> str:
-		return self.formatString.format(self).rstrip('0').rstrip('.')
-
 	@property
 	def milligram(self):
 		from . import Milligram
