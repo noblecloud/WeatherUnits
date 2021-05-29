@@ -100,15 +100,17 @@ class AbnormalScale(Measurement):
 	_value: Union[int, float]
 	_factors: list[int, float]
 	_scale: int
+	_multiplier: int = 1
 
-	def changeScale(self, newScale: Union[int, float]):
+	def changeScale(self, newScale: Union[int, float], factors: list[int, float] = None):
+		factors = factors if factors else self._factors
 		newScale += 1
 		newValue = self
 		if newScale < self._scale + 1:
-			for x in self._factors[newScale:self._scale + 1]:
+			for x in factors[newScale:self._scale + 1]:
 				newValue *= x
 		elif newScale > self._scale + 1:
-			for x in self._factors[self._scale + 1:newScale]:
+			for x in factors[self._scale + 1:newScale]:
 				newValue /= x
 
 		return newValue
