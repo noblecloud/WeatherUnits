@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum as _Enum
 
 from ... import derived, temperature, length, mass, time
 from ..._unit import Measurement
@@ -69,11 +69,11 @@ class PrecipitationDaily(derived.Precipitation):
 	def __init__(self, value):
 		numerator = length.Millimeter(float(value))
 		denominator = time.Day(1)
-		n, d = self._config['Units']['wind'].split(',')
+		n, d = self._config['Units']['precipitationRate'].split(',')
 		super(PrecipitationDaily, self).__init__(numerator[n], denominator[d])
 
 
-class PrecipitationType(Enum):
+class PrecipitationType(_Enum):
 	NONE = 0
 	RAIN = 1
 	HAIL = 2
