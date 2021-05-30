@@ -54,3 +54,7 @@ class _Length(Measurement):
 	def mi(self):
 		from . import Mile
 		return Mile(self._miles())
+
+	def __getitem__(self, item):
+		item = 'inch' if item == 'in' else item
+		super().__getitem__(item)
