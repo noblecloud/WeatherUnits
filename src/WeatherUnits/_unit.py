@@ -14,6 +14,7 @@ class SmartFloat(float):
 	_decorator: str = ''
 	_unitFormat: str = '{decorated} {unit}'
 	_format: str = '{value}{decorator}'
+	_title: str = ''
 
 	def __new__(cls, value):
 		return float.__new__(cls, value)
@@ -21,6 +22,8 @@ class SmartFloat(float):
 	def __init__(self, value):
 		decimal = list(len(n) for n in str(value).split('.'))[-1]
 		self._precision = min(self._precision, decimal)
+		if isinstance(value, SmartFloat):
+			self._title = value._title
 		float.__init__(value)
 
 	def __str__(self) -> str:
@@ -60,6 +63,14 @@ class SmartFloat(float):
 	def name(self):
 		return self.__class__.__name__
 
+	@property
+	def title(self):
+		return self._title if self._title else self.name
+
+	@title.setter
+	def title(self, value):
+		self._title = value
+
 
 class Measurement(SmartFloat):
 	_type = ''
@@ -81,7 +92,10 @@ class Measurement(SmartFloat):
 	def localized(self):
 		if self.convertible:
 			try:
-				return self[self._config['Units'][self._type.lower()]]
+				selector = self._config['Units'][self._type.lower()]
+				new = self[selector]
+				new.title = self.title
+				return new
 			except AttributeError or KeyError as e:
 				BadConversion("Unable to get localized type for {}".format(self.name), e)
 		else:

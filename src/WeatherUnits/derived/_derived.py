@@ -26,7 +26,9 @@ class _Derived(Measurement):
 			newClass = self.__class__
 			n, d = self._config['Units'][self._type.lower()].split(',')
 			n = 'inch' if n == 'in' else n
-			return newClass(self._numerator[n], self._denominator[d])
+			new = newClass(self._numerator[n], self._denominator[d])
+			new.title = self.title
+			return new
 		except KeyError:
 			logging.error('Measurement {} was unable to localize from {}'.format(self.name, self.unit))
 			return self
