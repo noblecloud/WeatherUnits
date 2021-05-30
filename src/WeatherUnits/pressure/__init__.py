@@ -1,6 +1,6 @@
 from ._pressure import Pressure
-from ._metric import mmHg, hPa
-from ._imperial import inHg
+from ._metric import *
+from ._imperial import *
 
 from enum import Enum as _Enum
 
