@@ -5,6 +5,10 @@ class Light(Measurement):
 	_type = 'light'
 
 
+class UVI(Light):
+	_format = "{:1d}"
+
+
 class Irradiance(Light):
 	_format = "{:4d}"
 	_unit = 'W/m²'

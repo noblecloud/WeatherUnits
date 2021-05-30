@@ -24,3 +24,9 @@ class Direction(Measurement):
 		dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
 		ix = round(self / (360. / len(dirs)))
 		return dirs[ix % len(dirs)]
+
+
+class Strikes(Measurement):
+	_type = 'LightningStrikes'
+	_precision = 0
+

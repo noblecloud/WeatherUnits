@@ -34,6 +34,16 @@ class _Time(AbnormalScale):
 		return self.changeScale(8)
 
 	@property
+	def auto(self):
+		if self._seconds() < 60:
+			return self.s
+		elif self._minutes() < 60:
+			return self.min
+		elif self._hours() < 24:
+			return self.hour
+		return
+
+	@property
 	def millisecond(self):
 		from ..time import Millisecond
 		return Millisecond(self._milliseconds())
@@ -46,12 +56,16 @@ class _Time(AbnormalScale):
 	@property
 	def minute(self):
 		from ..time import Minute
-		return Minute(self._minutes())
+		minute = Minute(self._minutes())
+		minute.title = self.title
+		return minute
 
 	@property
 	def hour(self):
 		from ..time import Hour
-		return Hour(self._hours())
+		hour = Hour(self._hours())
+		hour.title = self.title
+		return hour
 
 	@property
 	def day(self):
