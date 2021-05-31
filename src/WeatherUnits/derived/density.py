@@ -1,6 +1,6 @@
 from ..mass import Mass
 from . import Derived
-from ._volume import Volume
+from .volume import Volume
 
 
 class Density(Derived):

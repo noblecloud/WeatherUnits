@@ -4,7 +4,7 @@ from typing import Callable
 from .._unit import Measurement
 
 
-class _Temperature(Measurement):
+class Temperature(Measurement):
 	_type = 'heat'
 	_decorator = 'º'
 	_unitFormat: str = '{decorated}{unit}'

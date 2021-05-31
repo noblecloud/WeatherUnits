@@ -1,6 +1,6 @@
-from ._pressure import Pressure
-from ._metric import *
-from ._imperial import *
+from .pressure import Pressure
+from .metric import *
+from .imperial import *
 
 from enum import Enum as _Enum
 

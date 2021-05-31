@@ -6,11 +6,13 @@ class Volts(Measurement):
 	_precision = 2
 	_unit = 'v'
 	_unitFormat: str = '{decorated}{unit}'
+	_type = 'Voltage'
 
 
 class Direction(Measurement):
 	_precision = 0
 	_decorator = 'º'
+	_type = 'Direction'
 
 	def __init__(self, *args, **kwargs):
 		super(Direction, self).__init__(*args, **kwargs)

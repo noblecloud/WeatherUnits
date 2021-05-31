@@ -1,9 +1,9 @@
 from ..length import Length
-from . import Derived
 from ..time import Time
+from .speed import Speed as Rate
 
 
-class Precipitation(Derived):
+class Precipitation(Rate):
 	_type = 'precipitationRate'
 	_numerator: Length
 	_denominator: Time

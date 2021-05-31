@@ -1,7 +1,7 @@
 from .._unit import AbnormalScale
 
 
-class _Time(AbnormalScale):
+class Time(AbnormalScale):
 	_type = 'time'
 	_format = '{:2.2f}'
 	_factors = [1, 1000, 60, 60, 12, 365, 10, 10, 10]

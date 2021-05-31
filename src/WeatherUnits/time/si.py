@@ -1,30 +1,30 @@
-from . import Time as _Time
+from .time import Time
 
 
-class Millisecond(_Time):
+class Millisecond(Time):
 	_unit = 'ms'
 	_format = '{:4.0f}'
 	_scale = 0
 
 
-class Second(_Time):
+class Second(Time):
 	_unit = 's'
 	_format = '{:2.1f}'
 	_scale = 1
 
 
-class Minute(_Time):
+class Minute(Time):
 	_unit = 'min'
 	_format = '{:2.1f}'
 	_scale = 2
 
 
-class Hour(_Time):
+class Hour(Time):
 	_unit = 'hr'
 	_scale = 3
 
 
-class Day(_Time):
+class Day(Time):
 	_unit = 'd'
 	_scale = 4
 
@@ -41,21 +41,21 @@ class Day(_Time):
 # 	_multiplier = 30
 
 
-class Year(_Time):
+class Year(Time):
 	_unit = 'yr'
 	_scale = 5
 
 
-class Decade(_Time):
+class Decade(Time):
 	_unit = 'dec'
 	_scale = 6
 
 
-class Century(_Time):
+class Century(Time):
 	_unit = 'cen'
 	_scale = 7
 
 
-class Millennia(_Time):
+class Millennia(Time):
 	_unit = 'mel'
 	_scale = 8
