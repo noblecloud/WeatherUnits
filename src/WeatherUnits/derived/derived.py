@@ -1,24 +1,24 @@
-from .._unit import Measurement
-from .. import config
+from .._unit import Measurement as _Measurement
+from .. import config as _config
 
 
-class _Derived(Measurement):
+class Derived(_Measurement):
 	_type = 'derived'
-	_numerator: Measurement
-	_denominator: Measurement
+	_numerator: _Measurement
+	_denominator: _Measurement
 
 	def __new__(cls, numerator, denominator):
 		value = numerator / denominator
-		return Measurement.__new__(cls, value)
+		return _Measurement.__new__(cls, value)
 
 	def __init__(self, numerator, denominator):
 		self._numerator = numerator
 		self._denominator = denominator
-		Measurement.__init__(self, self._numerator / self._denominator)
+		_Measurement.__init__(self, self._numerator / self._denominator)
 
 	# TODO: Implement into child classes
 	def _getUnit(self) -> tuple[str, str]:
-		return config['Units'][self._type].split('/')
+		return _config['Units'][self._type].split('/')
 
 	@property
 	def localized(self):

@@ -1,12 +1,8 @@
-from ..length import Length
-from ..time import Time
-from .speed import Speed as Rate
+from .speed import Speed as _Rate
 
 
-class Precipitation(Rate):
+class Precipitation(_Rate):
 	_type = 'precipitationRate'
-	_numerator: Length
-	_denominator: Time
 
 	@property
 	def fth(self):

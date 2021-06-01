@@ -1,9 +1,9 @@
-from ..mass import Mass
-from . import Derived
-from .volume import Volume
+from ..mass import Mass as _Mass
+from . import Derived as _Derived
+from .volume import Volume as _Volume
 
 
-class Density(Derived):
+class Density(_Derived):
 	_type = 'density'
-	_numerator: Mass
-	_denominator: Volume
+	_numerator: _Mass
+	_denominator: _Volume
