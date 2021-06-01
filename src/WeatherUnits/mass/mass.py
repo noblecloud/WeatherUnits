@@ -27,6 +27,11 @@ class _Mass(Measurement):
 		return Kilogram(self._kilogram())
 
 	@property
+	def dram(self):
+		from . import Dram
+		return Dram(self._dram())
+
+	@property
 	def ounce(self):
 		from . import Ounce
 		return Ounce(self._ounce())

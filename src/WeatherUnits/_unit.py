@@ -1,10 +1,10 @@
-from typing import Union
-from . import config
-from .errors import BadConversion
+from . import config as _config
+import errors as _errors
+import utils
 
 
 class SmartFloat(float):
-	_config = config
+	_config = _config
 	_precision: int = 1
 	_max = 3
 
@@ -74,19 +74,40 @@ class SmartFloat(float):
 
 class Measurement(SmartFloat):
 	_type = ''
+	_Scale: utils.ScaleMeta = None
 
 	def __new__(cls, value):
+		if isinstance(value, cls.__mro__[1]):
+			value = value.__class__.changeScale(value, cls._Scale[cls.__name__])
+		if isinstance(value, Measurement):
+			raise _errors.BadConversion(cls.__name__, value.__class__.__name__)
 		return SmartFloat.__new__(cls, value)
 
 	def __init__(self, value):
-		self._config = config
+		if isinstance(value, Measurement):
+			self._title = value.title
+			SmartFloat.__init__(self, value)
 		SmartFloat.__init__(self, value)
 
 	def __getitem__(self, item):
 		try:
 			return self.__getattribute__(item)
 		except ValueError:
-			raise BadConversion
+			raise _errors.BadConversion
+
+	def changeScale(self, newUnit: utils.ScaleMeta):
+		if self._Scale:
+			multiplier = self._scale * newUnit
+			if self._scale > newUnit:
+				return self * multiplier
+			else:
+				return self / multiplier
+		else:
+			return None
+
+	@property
+	def _scale(self):
+		return self._Scale[self.name]
 
 	@property
 	def localized(self):
@@ -97,7 +118,7 @@ class Measurement(SmartFloat):
 				new.title = self.title
 				return new
 			except AttributeError or KeyError as e:
-				BadConversion("Unable to get localized type for {}".format(self.name), e)
+				_errors.BadConversion("Unable to get localized type for {}".format(self.name), e)
 		else:
 			return self
 
@@ -110,21 +131,3 @@ class Measurement(SmartFloat):
 		return str(self)
 
 
-class AbnormalScale(Measurement):
-	_value: Union[int, float]
-	_factors: list[int, float]
-	_scale: int
-	_multiplier: int = 1
-
-	def changeScale(self, newScale: Union[int, float], factors: list[int, float] = None):
-		factors = factors if factors else self._factors
-		newScale += 1
-		newValue = self
-		if newScale < self._scale + 1:
-			for x in factors[newScale:self._scale + 1]:
-				newValue *= x
-		elif newScale > self._scale + 1:
-			for x in factors[self._scale + 1:newScale]:
-				newValue /= x
-
-		return newValue

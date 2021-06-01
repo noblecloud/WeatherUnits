@@ -1,94 +1,73 @@
-from . import Length, Millimeter, Centimeter, Meter, Kilometer
-from .._unit import AbnormalScale
+from ..utils import ScaleMeta
+from . import Length as _Length
 
 
-class _Imperial(Length, AbnormalScale):
-	# 0 base, 1 line, 2 inch, 3 foot, 4 yard
-	_factors = [1.0, 12.0, 12.0, 3.0, 1760.0]
+class Scale(ScaleMeta):
+	Line = 1
+	Inch = 12
+	Foot = 12
+	Yard = 3
+	Mile = 1760
+
+
+class _Imperial(_Length):
 	_format = '{:2.2f}'
-	_metric: Meter
-	_scale: int
+	_Scale = Scale
 
 	def _lines(self):
-		return self.changeScale(0)
+		return self.changeScale(self._scale.Line)
 
 	def _inches(self):
-		return self.changeScale(1)
+		return self.changeScale(self._scale.Inch)
 
 	def _feet(self):
-		return self.changeScale(2)
+		return self.changeScale(self._scale.Foot)
 
 	def _yards(self):
-		return self.changeScale(3)
+		return self.changeScale(self._scale.Yard)
 
 	def _miles(self):
-		return self.changeScale(4)
+		return self.changeScale(self._scale.Mile)
 
 	def _millimeter(self):
-		return self._metric.mm
+		return self._lines() * 2.11666666
 
 	def _centimeter(self):
-		return self._metric.cm
+		return self._inches() * 2.54
 
 	def _meter(self):
-		return self._metric.m
+		return self._feet() * 0.3048
 
 	def _kilometer(self):
-		return self._metric.km
+		return self._miles() * 1.609344
 
 
 class Line(_Imperial):
 	_type = 'microDistance'
 	_format = '{:2.2f}'
-	_scale = 0
-	_metric: Millimeter
 	_unit = 'ln'
 
 	def __init__(self, value):
 		super().__init__(value)
-		self._metric = Millimeter(value * 2.11666666)
 
 
 class Inch(_Imperial):
 	_type = 'smallDistance'
 	_format = '{:2.2f}'
-	_scale = 1
-	_metric: Centimeter
 	_unit = 'in'
-
-	def __init__(self, value):
-		super().__init__(value)
-		self._metric = Centimeter(value * 2.54)
 
 
 class Foot(_Imperial):
 	_type = 'mediumDistance'
-	_scale = 2
-	_metric: Meter
 	_unit = 'ft'
-
-	def __init__(self, value):
-		super().__init__(value)
-		self._metric = Meter(value * 0.3048)
 
 
 class Yard(_Imperial):
 	_type = 'mediumDistance'
-	_scale = 3
-	_metric: Meter
 	_unit = 'yd'
-
-	def __init__(self, value):
-		super().__init__(value)
-		self._metric = Meter(value * 0.9144)
 
 
 class Mile(_Imperial):
 	_type = 'largeDistance'
-	_scale = 4
-	_metric: Kilometer
 	_unit = 'mi'
 
-	def __init__(self, value):
-		super().__init__(value)
-		self._metric = Kilometer(value * 1.609344)

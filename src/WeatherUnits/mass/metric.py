@@ -1,4 +1,3 @@
-from typing import Any
 from . import Mass
 
 
@@ -6,13 +5,15 @@ class _Metric(Mass):
 	_format = '{:2.1f}'
 	_magnitude: int
 	_scale: int
-	_imperial: Any
 
-	def _pound(self):
-		return self._kilogram() * 2.2046226218
+	def _dram(self):
+		return self._ounce() * 16
 
 	def _ounce(self):
 		return self._pound() * 16
+
+	def _pound(self):
+		return self._kilogram() * 2.2046226218
 
 	def _milligram(self):
 		return self * pow(10, self._magnitude + 2)
@@ -25,7 +26,6 @@ class _Metric(Mass):
 
 
 class Milligram(_Metric):
-	_type = 'micro'
 	_format = '{:3.1f}'
 	_magnitude = -2
 	_scale = 1
@@ -33,14 +33,12 @@ class Milligram(_Metric):
 
 
 class Gram(_Metric):
-	_type = 'small'
 	_magnitude = 0
 	_scale = 2
 	_unit = 'g'
 
 
 class Kilogram(_Metric):
-	_type = 'large'
 	_magnitude = 3
 	_scale = 4
 	_unit = 'kg'

@@ -1,19 +1,8 @@
-from typing import Callable, Union
-from .._unit import Measurement
+from .._unit import Measurement as _Measurement
 
 
-class _Length(Measurement):
+class _Length(_Measurement):
 	_type = 'length'
-
-	_millimeter: Callable
-	_centimeter: Callable
-	_meter: Callable
-	_kilometer: Callable
-	_lines: Callable
-	_inches: Callable
-	_feet: Callable
-	_yards: Callable
-	_miles: Callable
 
 	@property
 	def mm(self):

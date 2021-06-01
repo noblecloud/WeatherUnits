@@ -1,37 +1,50 @@
-from .._unit import AbnormalScale
+from .._unit import Measurement
+from utils import ScaleMeta as _ScaleMeta
 
 
-class Time(AbnormalScale):
+class Scale(_ScaleMeta):
+	Millisecond = 1
+	Second = 1000
+	Minute = 60
+	Hour = 60
+	Day = 24
+	Year = 365
+	Decade = 10
+	Century = 10
+	Millennia = 10
+
+
+class Time(Measurement):
 	_type = 'time'
 	_format = '{:2.2f}'
-	_factors = [1, 1000, 60, 60, 12, 365, 10, 10, 10]
+	_Scale = Scale
 
 	def _milliseconds(self):
-		return self.changeScale(0)
+		return self.changeScale(self._scale.Millisecond)
 
 	def _seconds(self):
-		return self.changeScale(1)
+		return self.changeScale(self._scale.Second)
 
 	def _minutes(self):
-		return self.changeScale(2)
+		return self.changeScale(self._scale.Minute)
 
 	def _hours(self):
-		return self.changeScale(3)
+		return self.changeScale(self._scale.Hour)
 
 	def _days(self):
-		return self.changeScale(4)
+		return self.changeScale(self._scale.Day)
 
 	def _years(self):
-		return self.changeScale(5)
+		return self.changeScale(self._scale.Year)
 
 	def _decade(self):
-		return self.changeScale(6)
+		return self.changeScale(self._scale.Decade)
 
 	def _century(self):
-		return self.changeScale(7)
+		return self.changeScale(self._scale.Century)
 
 	def _millennia(self):
-		return self.changeScale(8)
+		return self.changeScale(self._scale.Millennia)
 
 	@property
 	def auto(self):

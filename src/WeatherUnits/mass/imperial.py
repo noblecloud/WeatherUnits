@@ -1,48 +1,63 @@
-from . import Mass, Gram, Kilogram
-from .._unit import AbnormalScale
 
 
-class _Imperial(Mass, AbnormalScale):
-	# 0 base, 1 line, 2 inch, 3 foot, 4 yard
-	_factors = [1.0, 16.0, 1.0]
-	_format = '{:2.2f}'
-	_metric: Kilogram
-	_scale: int
+from . import Mass as _Mass
+from utils import ScaleMeta as _ScaleMeta
+
+
+class Scale(_ScaleMeta):
+	Base = 1
+	Dram = 1
+	Ounce = 16
+	Pound = 16
+	Hundredweight = 100
+	Ton = 20
+
+
+class _Imperial(_Mass):
+	_format = '{:2.1f}'
+	_Scale = Scale
+
+	def _dram(self):
+		return self.changeScale(self._scale.Dram)
 
 	def _ounce(self):
-		return self.changeScale(0)
+		return self.changeScale(self._scale.Ounce)
 
 	def _pound(self):
-		return self.changeScale(1)
+		return self.changeScale(self._scale.Pound)
+
+	def _hundredweight(self):
+		return self.changeScale(self._scale.Hundredweight)
+
+	def _ton(self):
+		return self.changeScale(self._scale.Ton)
 
 	def _milligram(self):
-		return self._metric.mg
+		return self._ounce() * 0.02834952312
 
 	def _gram(self):
-		return self._metric.g
+		return self._ounce() * 28.349523125
 
 	def _kilogram(self):
-		return self._metric.kg
+		return self._pound() * 0.45359237
+
+
+class Dram(_Imperial):
+	_format = '{:1.1f}'
+	_unit = 'dr'
 
 
 class Ounce(_Imperial):
-	_type = 'small'
-	_format = '{:2.2f}'
-	_scale = 0
-	_metric: Gram
 	_unit = 'oz'
-
-	def __init__(self, value):
-		super().__init__(value)
-		self._metric = Gram(value * 28.349523125)
 
 
 class Pound(_Imperial):
-	_type = 'medium'
-	_scale = 1
-	_metric: Kilogram
 	_unit = 'lbs'
 
-	def __init__(self, value):
-		super().__init__(value)
-		self._metric = Kilogram(value * 0.45359237)
+
+class Hundredweight(_Imperial):
+	_unit = 'cwt'
+
+
+class Ton(_Imperial):
+	_unit = 't'
