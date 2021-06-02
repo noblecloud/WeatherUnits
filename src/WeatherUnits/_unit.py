@@ -77,10 +77,6 @@ class Measurement(SmartFloat):
 	_Scale: utils.ScaleMeta = None
 
 	def __new__(cls, value):
-		if isinstance(value, cls.__mro__[1]):
-			value = value.__class__.changeScale(value, cls._Scale[cls.__name__])
-		if isinstance(value, Measurement):
-			raise _errors.BadConversion(cls.__name__, value.__class__.__name__)
 		return SmartFloat.__new__(cls, value)
 
 	def __init__(self, value):
@@ -94,16 +90,6 @@ class Measurement(SmartFloat):
 			return self.__getattribute__(item)
 		except ValueError:
 			raise _errors.BadConversion
-
-	def changeScale(self, newUnit: utils.ScaleMeta):
-		if self._Scale:
-			multiplier = self._scale * newUnit
-			if self._scale > newUnit:
-				return self * multiplier
-			else:
-				return self / multiplier
-		else:
-			return None
 
 	@property
 	def _scale(self):
@@ -131,3 +117,34 @@ class Measurement(SmartFloat):
 		return str(self)
 
 
+class MeasurementSystem(Measurement):
+	_baseUnit = None
+
+	def __new__(cls, value):
+		if not cls._baseUnit:
+			raise _errors.NoBaseUnitDefined(cls)
+		'''For this to work each unit class must have a _baseUnit defined for each scale'''
+
+		# If values are siblings change to sibling class with changeScale()
+		if isinstance(value, cls.__mro__[1]):
+			return cls(value.__class__.changeScale(value, cls._Scale[cls.__name__]))
+
+		# if values are cousins initiate with values base sibling causing a recursive call to __new__
+		elif isinstance(value, cls.__mro__[2]):
+			return cls(value.__getattribute__(cls._baseUnit))
+
+		elif isinstance(value, Measurement):
+			raise _errors.BadConversion(cls.__name__, value.__class__.__name__)
+
+		else:
+			return Measurement.__new__(cls, value)
+
+	def changeScale(self, newUnit: utils.ScaleMeta):
+		if self._Scale:
+			multiplier = self._scale * newUnit
+			if self._scale > newUnit:
+				return self * multiplier
+			else:
+				return self / multiplier
+		else:
+			return None
