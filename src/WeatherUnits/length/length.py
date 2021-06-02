@@ -1,48 +1,56 @@
-from .._unit import Measurement as _Measurement
+from .._unit import MeasurementSystem as _MS
 
 
-class _Length(_Measurement):
+class Length(_MS):
 	_type = 'length'
 
+
 	@property
-	def mm(self):
+	def millimeter(self):
 		from . import Millimeter
 		return Millimeter(self._millimeter())
+	mm = millimeter
 
 	@property
-	def cm(self):
+	def centimeter(self):
 		from . import Centimeter
 		return Centimeter(self._centimeter())
+	cm = centimeter
 
 	@property
-	def m(self):
+	def meter(self):
 		from . import Meter
 		return Meter(self._meter())
+	m = meter
 
 	@property
-	def km(self):
+	def kilometer(self):
 		from . import Kilometer
 		return Kilometer(self._kilometer())
+	km = kilometer
 
 	@property
 	def inch(self):
 		from . import Inch
-		return Inch(self._inches())
+		return Inch(self._inch())
 
 	@property
-	def ft(self):
+	def foot(self):
 		from . import Foot
-		return Foot(self._feet())
+		return Foot(self._foot())
+	ft = foot
 
 	@property
-	def yd(self):
+	def yard(self):
 		from . import Yard
-		return Yard(self._yards())
+		return Yard(self._yard())
+	yd = yard
 
 	@property
-	def mi(self):
+	def mile(self):
 		from . import Mile
-		return Mile(self._miles())
+		return Mile(self._mile())
+	mi = mile
 
 	def __getitem__(self, item):
 		item = 'inch' if item == 'in' else item

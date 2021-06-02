@@ -8,25 +8,29 @@ class _Scale(ScaleMeta):
 	Decimeter = 10
 	Meter = 10
 	Decameter = 10
-	Hectometre = 10
+	Hectometer = 10
 	Kilometer = 10
 
 
 class _Metric(_Length):
 	_format = '{:2.1f}'
 	_Scale = _Scale
+	_baseUnit = 'meter'
 
-	def _feet(self):
-		return self._meter() * 3.2808399
+	def _line(self):
+		return self._millimeter() * 0.4724409448818898
 
-	def _inches(self):
-		return self._centimeter() * 0.393701
+	def _foot(self):
+		return self._meter() * 3.280839895013123
 
-	def _miles(self):
-		return self._meter() * 0.621371
+	def _inch(self):
+		return self._centimeter() * 0.3937007874015748
 
-	def _yards(self):
-		return self._feet() * 3
+	def _mile(self):
+		return self._kilometer() * 0.6213711922373338
+
+	def _yard(self):
+		return self._foot() * 3
 
 	def _millimeter(self):
 		return self.changeScale(_Scale.Millimeter)
@@ -52,9 +56,24 @@ class Centimeter(_Metric):
 	_unit = 'cm'
 
 
+class Decimeter(_Metric):
+	_type = 'mediumSmallDistance'
+	_unit = 'dm'
+
+
 class Meter(_Metric):
 	_type = 'mediumDistance'
 	_unit = 'm'
+
+
+class Decameter(_Metric):
+	_type = 'mediumLargeDistance'
+	_unit = 'dam'
+
+
+class Hectometer(_Metric):
+	_type = 'largeDistance'
+	_unit = 'hm'
 
 
 class Kilometer(_Metric):

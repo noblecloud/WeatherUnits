@@ -13,42 +13,40 @@ class Scale(ScaleMeta):
 class _Imperial(_Length):
 	_format = '{:2.2f}'
 	_Scale = Scale
+	_baseUnit = 'foot'
 
-	def _lines(self):
+	def _line(self):
 		return self.changeScale(self._scale.Line)
 
-	def _inches(self):
+	def _inch(self):
 		return self.changeScale(self._scale.Inch)
 
-	def _feet(self):
+	def _foot(self):
 		return self.changeScale(self._scale.Foot)
 
-	def _yards(self):
+	def _yard(self):
 		return self.changeScale(self._scale.Yard)
 
-	def _miles(self):
+	def _mile(self):
 		return self.changeScale(self._scale.Mile)
 
 	def _millimeter(self):
-		return self._lines() * 2.11666666
+		return self._line() * 2.11666666
 
 	def _centimeter(self):
-		return self._inches() * 2.54
+		return self._inch() * 2.54
 
 	def _meter(self):
-		return self._feet() * 0.3048
+		return self._foot() * 0.3048
 
 	def _kilometer(self):
-		return self._miles() * 1.609344
+		return self._mile() * 1.609344
 
 
 class Line(_Imperial):
 	_type = 'microDistance'
 	_format = '{:2.2f}'
 	_unit = 'ln'
-
-	def __init__(self, value):
-		super().__init__(value)
 
 
 class Inch(_Imperial):
