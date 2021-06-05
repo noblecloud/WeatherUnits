@@ -4,8 +4,7 @@ from . import Mass as _Mass
 from utils import ScaleMeta as _ScaleMeta
 
 
-class Scale(_ScaleMeta):
-	Base = 1
+class _Scale(_ScaleMeta):
 	Dram = 1
 	Ounce = 16
 	Pound = 16
@@ -13,9 +12,10 @@ class Scale(_ScaleMeta):
 	Ton = 20
 
 
-class _Imperial(_Mass):
+class Imperial(_Mass):
 	_format = '{:2.1f}'
-	_Scale = Scale
+	_Scale = _Scale
+	_baseUnit = 'pound'
 
 	def _dram(self):
 		return self.changeScale(self._scale.Dram)
@@ -42,22 +42,22 @@ class _Imperial(_Mass):
 		return self._pound() * 0.45359237
 
 
-class Dram(_Imperial):
+class Dram(Imperial):
 	_format = '{:1.1f}'
 	_unit = 'dr'
 
 
-class Ounce(_Imperial):
+class Ounce(Imperial):
 	_unit = 'oz'
 
 
-class Pound(_Imperial):
+class Pound(Imperial):
 	_unit = 'lbs'
 
 
-class Hundredweight(_Imperial):
+class Hundredweight(Imperial):
 	_unit = 'cwt'
 
 
-class Ton(_Imperial):
+class Ton(Imperial):
 	_unit = 't'

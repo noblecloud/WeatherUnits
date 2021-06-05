@@ -17,20 +17,8 @@ class _Metric(_Length):
 	_Scale = _Scale
 	_baseUnit = 'meter'
 
-	def _line(self):
-		return self._millimeter() * 0.4724409448818898
-
 	def _foot(self):
 		return self._meter() * 3.280839895013123
-
-	def _inch(self):
-		return self._centimeter() * 0.3937007874015748
-
-	def _mile(self):
-		return self._kilometer() * 0.6213711922373338
-
-	def _yard(self):
-		return self._foot() * 3
 
 	def _millimeter(self):
 		return self.changeScale(_Scale.Millimeter)

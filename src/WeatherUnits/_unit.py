@@ -1,3 +1,5 @@
+from typing import Optional, Union
+
 from . import config as _config
 import errors as _errors
 import utils
@@ -116,6 +118,22 @@ class Measurement(SmartFloat):
 	def str(self):
 		return str(self)
 
+	def __mul__(self, other):
+		value = super().__mul__(other)
+		return self.__class__(value)
+
+	def __add__(self, other):
+		value = super().__add__(other)
+		return self.__class__(value)
+
+	def __sub__(self, other):
+		value = super().__sub__(other)
+		return self.__class__(value)
+
+	def __truediv__(self, other):
+		value = super().__truediv__(other)
+		return self.__class__(value)
+
 
 class MeasurementSystem(Measurement):
 	_baseUnit = None
@@ -139,12 +157,12 @@ class MeasurementSystem(Measurement):
 		else:
 			return Measurement.__new__(cls, value)
 
-	def changeScale(self, newUnit: utils.ScaleMeta):
+	def changeScale(self, newUnit: utils.ScaleMeta) -> Optional[float]:
 		if self._Scale:
 			multiplier = self._scale * newUnit
 			if self._scale > newUnit:
-				return self * multiplier
+				return float(self) * multiplier
 			else:
-				return self / multiplier
+				return float(self) / multiplier
 		else:
 			return None

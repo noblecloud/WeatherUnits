@@ -1,15 +1,9 @@
 from typing import Callable
-from .._unit import Measurement
+from .._unit import MeasurementSystem as _MS
 
 
-class _Mass(Measurement):
+class _Mass(_MS):
 	_type = 'mass'
-
-	_milligram: Callable
-	_gram: Callable
-	_kilogram: Callable
-	_ounce: Callable
-	_pound: Callable
 
 	@property
 	def milligram(self):

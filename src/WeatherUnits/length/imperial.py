@@ -2,7 +2,7 @@ from ..utils import ScaleMeta
 from . import Length as _Length
 
 
-class Scale(ScaleMeta):
+class _Scale(ScaleMeta):
 	Line = 1
 	Inch = 12
 	Foot = 12
@@ -12,7 +12,7 @@ class Scale(ScaleMeta):
 
 class _Imperial(_Length):
 	_format = '{:2.2f}'
-	_Scale = Scale
+	_Scale = _Scale
 	_baseUnit = 'foot'
 
 	def _line(self):

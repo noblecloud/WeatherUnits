@@ -1,10 +1,17 @@
-from . import Mass
+from . import Mass as _Mass
+from utils import ScaleMeta as _ScaleMeta
 
 
-class _Metric(Mass):
+class _Scale(_ScaleMeta):
+	Milligram = 1
+	Gram = 1000
+	Kilogram = 1000
+
+
+class Metric(_Mass):
 	_format = '{:2.1f}'
-	_magnitude: int
-	_scale: int
+	_Scale = _Scale
+	_baseUnit = 'gram'
 
 	def _dram(self):
 		return self._ounce() * 16
@@ -16,29 +23,23 @@ class _Metric(Mass):
 		return self._kilogram() * 2.2046226218
 
 	def _milligram(self):
-		return self * pow(10, self._magnitude + 2)
+		return self.changeScale(_Scale.Milligram)
 
 	def _gram(self):
-		return self * pow(10, self._magnitude)
+		return self.changeScale(_Scale.Gram)
 
 	def _kilogram(self):
-		return self * pow(10, self._magnitude - 3)
+		return self.changeScale(_Scale.Kilogram)
 
 
-class Milligram(_Metric):
+class Milligram(Metric):
 	_format = '{:3.1f}'
-	_magnitude = -2
-	_scale = 1
 	_unit = 'mg'
 
 
-class Gram(_Metric):
-	_magnitude = 0
-	_scale = 2
+class Gram(Metric):
 	_unit = 'g'
 
 
-class Kilogram(_Metric):
-	_magnitude = 3
-	_scale = 4
+class Kilogram(Metric):
 	_unit = 'kg'
