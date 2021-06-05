@@ -14,7 +14,7 @@ class Wind(derived.Wind):
 		numerator = length.Meter(float(value))
 		denominator = time.Second(1)
 		n, d = self._config['Units']['wind'].split(',')
-		super(Wind, self).__init__(numerator[n], denominator[d])
+		super(Wind, self).__init__(getattr(numerator, n), getattr(denominator, d))
 
 	@property
 	def localized(self):

@@ -1,8 +1,7 @@
 from typing import Optional, Union
 
 from . import config as _config
-import errors as _errors
-import utils
+from . import errors as _errors, utils as _utils
 
 
 class SmartFloat(float):
@@ -31,6 +30,9 @@ class SmartFloat(float):
 	def __str__(self) -> str:
 		string = self.formatString.format(self)
 		return '{value}{decorator}'.format(value=string, decorator=self._decorator)
+
+	def __bool__(self):
+		return self or self._unit
 
 	def strip(self):
 		return self._format.format(str(self)).rstrip('0').rstrip('.')
@@ -76,7 +78,7 @@ class SmartFloat(float):
 
 class Measurement(SmartFloat):
 	_type = ''
-	_Scale: utils.ScaleMeta = None
+	_Scale: _utils.ScaleMeta = None
 
 	def __new__(cls, value):
 		return SmartFloat.__new__(cls, value)
@@ -149,7 +151,7 @@ class MeasurementSystem(Measurement):
 
 		# if values are cousins initiate with values base sibling causing a recursive call to __new__
 		elif isinstance(value, cls.__mro__[2]):
-			return cls(value.__getattribute__(cls._baseUnit))
+			return cls(value.__getattribute__('_'+cls._baseUnit)())
 
 		elif isinstance(value, Measurement):
 			raise _errors.BadConversion(cls.__name__, value.__class__.__name__)
@@ -157,7 +159,7 @@ class MeasurementSystem(Measurement):
 		else:
 			return Measurement.__new__(cls, value)
 
-	def changeScale(self, newUnit: utils.ScaleMeta) -> Optional[float]:
+	def changeScale(self, newUnit: _utils.ScaleMeta) -> Optional[float]:
 		if self._Scale:
 			multiplier = self._scale * newUnit
 			if self._scale > newUnit:

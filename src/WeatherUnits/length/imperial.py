@@ -1,8 +1,8 @@
-from ..utils import ScaleMeta
+from ..utils import ScaleMeta as _ScaleMeta
 from . import Length as _Length
 
 
-class _Scale(ScaleMeta):
+class _Scale(_ScaleMeta):
 	Line = 1
 	Inch = 12
 	Foot = 12
@@ -30,17 +30,8 @@ class _Imperial(_Length):
 	def _mile(self):
 		return self.changeScale(self._scale.Mile)
 
-	def _millimeter(self):
-		return self._line() * 2.11666666
-
-	def _centimeter(self):
-		return self._inch() * 2.54
-
 	def _meter(self):
 		return self._foot() * 0.3048
-
-	def _kilometer(self):
-		return self._mile() * 1.609344
 
 
 class Line(_Imperial):

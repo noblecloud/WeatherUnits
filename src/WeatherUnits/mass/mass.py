@@ -1,4 +1,3 @@
-from typing import Callable
 from .._unit import MeasurementSystem as _MS
 
 
@@ -8,32 +7,32 @@ class _Mass(_MS):
 	@property
 	def milligram(self):
 		from . import Milligram
-		return Milligram(self._milligram())
+		return Milligram(self)
 
 	@property
 	def gram(self):
 		from . import Gram
-		return Gram(self._gram())
+		return Gram(self)
 
 	@property
 	def kilogram(self):
 		from . import Kilogram
-		return Kilogram(self._kilogram())
+		return Kilogram(self)
 
 	@property
 	def dram(self):
 		from . import Dram
-		return Dram(self._dram())
+		return Dram(self)
 
 	@property
 	def ounce(self):
 		from . import Ounce
-		return Ounce(self._ounce())
+		return Ounce(self)
 
 	@property
 	def pound(self):
 		from . import Pound
-		return Pound(self._pound())
+		return Pound(self)
 
 	mg = milligram
 	g = gram

@@ -1,7 +1,5 @@
-
-
+from ..utils import ScaleMeta as _ScaleMeta
 from . import Mass as _Mass
-from utils import ScaleMeta as _ScaleMeta
 
 
 class _Scale(_ScaleMeta):

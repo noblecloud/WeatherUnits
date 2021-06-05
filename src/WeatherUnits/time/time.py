@@ -1,5 +1,5 @@
-from .._unit import Measurement
-from utils import ScaleMeta as _ScaleMeta
+from .._unit import MeasurementSystem as _MS
+from ..utils import ScaleMeta as _ScaleMeta
 
 
 class Scale(_ScaleMeta):
@@ -14,10 +14,11 @@ class Scale(_ScaleMeta):
 	Millennia = 10
 
 
-class Time(Measurement):
+class Time(_MS):
 	_type = 'time'
 	_format = '{:2.2f}'
 	_Scale = Scale
+	_baseUnit = 'second'
 
 	def _milliseconds(self):
 		return self.changeScale(self._scale.Millisecond)

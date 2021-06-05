@@ -1,3 +1,5 @@
+import logging
+
 from .._unit import Measurement as _Measurement
 from .. import config as _config
 
@@ -14,7 +16,7 @@ class Derived(_Measurement):
 	def __init__(self, numerator, denominator):
 		self._numerator = numerator
 		self._denominator = denominator
-		_Measurement.__init__(self, self._numerator / self._denominator)
+		_Measurement.__init__(self, float(self._numerator) / float(self._denominator))
 
 	# TODO: Implement into child classes
 	def _getUnit(self) -> tuple[str, str]:
@@ -26,7 +28,7 @@ class Derived(_Measurement):
 			newClass = self.__class__
 			n, d = self._config['Units'][self._type.lower()].split(',')
 			n = 'inch' if n == 'in' else n
-			new = newClass(self._numerator[n], self._denominator[d])
+			new = newClass(getattr(self._numerator, n), getattr(self._denominator, d))
 			new.title = self.title
 			return new
 		except KeyError:

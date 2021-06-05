@@ -1,8 +1,8 @@
-from ..utils import ScaleMeta
+from ..utils import ScaleMeta as _ScaleMeta
 from . import Length as _Length
 
 
-class _Scale(ScaleMeta):
+class _Scale(_ScaleMeta):
 	Millimeter = 1
 	Centimeter = 10
 	Decimeter = 10

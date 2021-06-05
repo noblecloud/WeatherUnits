@@ -8,48 +8,48 @@ class Length(_MS):
 	@property
 	def millimeter(self):
 		from . import Millimeter
-		return Millimeter(self._millimeter())
+		return Millimeter(self)
 	mm = millimeter
 
 	@property
 	def centimeter(self):
 		from . import Centimeter
-		return Centimeter(self._centimeter())
+		return Centimeter(self)
 	cm = centimeter
 
 	@property
 	def meter(self):
 		from . import Meter
-		return Meter(self._meter())
+		return Meter(self)
 	m = meter
 
 	@property
 	def kilometer(self):
 		from . import Kilometer
-		return Kilometer(self._kilometer())
+		return Kilometer(self)
 	km = kilometer
 
 	@property
 	def inch(self):
 		from . import Inch
-		return Inch(self._inch())
+		return Inch(self)
 
 	@property
 	def foot(self):
 		from . import Foot
-		return Foot(self._foot())
+		return Foot(self)
 	ft = foot
 
 	@property
 	def yard(self):
 		from . import Yard
-		return Yard(self._yard())
+		return Yard(self)
 	yd = yard
 
 	@property
 	def mile(self):
 		from . import Mile
-		return Mile(self._mile())
+		return Mile(self)
 	mi = mile
 
 	def __getitem__(self, item):
