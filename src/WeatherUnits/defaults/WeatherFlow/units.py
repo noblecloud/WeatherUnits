@@ -1,7 +1,7 @@
 from enum import Enum as _Enum
 
 from ... import derived, temperature, length, mass, time
-from ... import Measurement
+from ... import Measurement, MeasurementGroup
 
 
 class Wind(derived.Wind):
@@ -45,6 +45,7 @@ class Density(derived.Density):
 		return self
 
 
+@MeasurementGroup
 class Precipitation(derived.Precipitation):
 	def __new__(cls, numerator):
 		value = numerator / 1
@@ -55,10 +56,6 @@ class Precipitation(derived.Precipitation):
 		denominator = time.Hour(1)
 		n, d = self._config['Units']['precipitationRate'].split(',')
 		super(Precipitation, self).__init__(numerator[n], denominator[d])
-
-	@property
-	def localized(self):
-		return self
 
 
 class PrecipitationDaily(derived.Precipitation):

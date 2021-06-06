@@ -64,7 +64,7 @@ class SmartFloat(float):
 		return '{value}{decorator}'.format(value=string, decorator=self._decorator)
 
 	def __bool__(self):
-		return self or self._unit
+		return super().__bool__() or bool(self._unit)
 
 	def strip(self):
 		return self._format.format(str(self)).rstrip('0').rstrip('.')
@@ -113,7 +113,7 @@ class SmartFloat(float):
 
 
 class Measurement(SmartFloat):
-	_type = ''
+	_type: type
 	_Scale: _utils.ScaleMeta = None
 
 	def __new__(cls, value):
@@ -139,7 +139,7 @@ class Measurement(SmartFloat):
 	def localized(self):
 		if self.convertible:
 			try:
-				selector = self._config['Units'][self._type.lower()]
+				selector = self._config['Units'][str(self._type).lower()]
 				selector = 'inch' if selector == 'in' else selector
 				new = getattr(self, selector)
 				new.title = self.title
@@ -157,30 +157,43 @@ class Measurement(SmartFloat):
 	def str(self):
 		return str(self)
 
+	@property
+	def type(self) -> type:
+		return self._type
+
+	def _convert(self, other):
+		if isinstance(other, self.type):
+			return self.__class__(other)
+		else:
+			return other
+
 	def __mul__(self, other):
-		value = super().__mul__(self.__class__(other))
-		return self.__class__(value)
+		other = self._convert(other) if isinstance(other, self.type) else other
+		return self.__class__(super().__mul__(other))
 
 	def __add__(self, other):
-		value = super().__add__(self.__class__(other))
-		return self.__class__(value)
+		other = self._convert(other) if isinstance(other, self.type) else other
+		return self.__class__(super().__add__(other))
 
 	def __sub__(self, other):
-		value = super().__sub__(self.__class__(other))
-		return self.__class__(value)
+		other = self._convert(other) if isinstance(other, self.type) else other
+		return self.__class__(super().__sub__(other))
 
 	def __truediv__(self, other):
-		if isinstance(other, self.__class__):
-			value = self.__class__(other)
-		i = 0
+		other = self._convert(other)
 
-		while self.__class__.__mro__[i] != other.__class__.__mro__[i] and i < 4:
-			i += 1
-		if i == 1 or i == 2:
-			value = self.__class__(other)
-			value = super().__truediv__(value)
-		elif issubclass(self.__class__, Measurement):
+		if isinstance(other, self.type):
+			value = super().__truediv__(self._convert(other))
+
+		elif issubclass(self.__class__, DerivedMeasurement) and not isinstance(other, Measurement):
+			return DerivedMeasurement(self, self.denominator.__class__(other))
+
+		elif not isinstance(other, Measurement):
+			value = super().__truediv__(float(other))
+
+		elif issubclass(other.__class__, Measurement):
 			return DerivedMeasurement(self, other)
+
 		return self.__class__(value)
 
 
