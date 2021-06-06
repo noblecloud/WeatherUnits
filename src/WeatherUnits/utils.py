@@ -62,7 +62,29 @@ class ScaleMeta(_Enum, metaclass=AddressableEnum):
 	def __gt__(self, other):
 		if isinstance(other, self.__class__):
 			return self.index > other.index
+		else:
+			return self.index > int(other)
 
 	def __lt__(self, other):
 		if isinstance(other, self.__class__):
 			return self.index < other.index
+		else:
+			return self.index < int(other)
+
+	def __eq__(self, other):
+		if isinstance(other, self.__class__):
+			return self.index == other.index
+		else:
+			return self.index == int(other)
+
+	def __le__(self, other):
+		if isinstance(other, self.__class__):
+			return self.index <= other.index
+		else:
+			return self.index <= int(other)
+
+	def __ge__(self, other):
+		if isinstance(other, self.__class__):
+			return self.index >= other.index
+		else:
+			return self.index >= int(other)
