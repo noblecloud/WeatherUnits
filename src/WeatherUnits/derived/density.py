@@ -1,5 +1,5 @@
 from ..mass import Mass as _Mass
-from . import Derived as _Derived
+from .._unit import Derived as _Derived
 from .volume import Volume as _Volume
 
 

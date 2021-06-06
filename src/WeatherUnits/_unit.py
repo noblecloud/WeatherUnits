@@ -1,4 +1,5 @@
-from typing import Optional, Union
+import logging
+from typing import Optional
 
 from . import config as _config
 from . import errors as _errors, utils as _utils
@@ -54,6 +55,10 @@ class SmartFloat(float):
 	@property
 	def unit(self) -> str:
 		return self._unit
+
+	@property
+	def unitArray(self):
+		return [self._unit]
 
 	@property
 	def suffix(self):
@@ -134,7 +139,15 @@ class Measurement(SmartFloat):
 		return self.__class__(value)
 
 	def __truediv__(self, other):
-		value = super().__truediv__(other)
+		i = 0
+
+		while self.__class__.__mro__[i] != other.__class__.__mro__[i] and i < 4:
+			i += 1
+		if i == 1 or i == 2:
+			value = self.__class__(other)
+			value = super().__truediv__(value)
+		elif issubclass(self.__class__, Measurement):
+			return Derived(self, other)
 		return self.__class__(value)
 
 
@@ -169,3 +182,71 @@ class MeasurementSystem(Measurement):
 				return float(self) / multiplier
 		else:
 			return None
+
+
+class Derived(Measurement):
+	_type = 'derived'
+	_numerator: Measurement
+	_denominator: Measurement
+
+	def __new__(cls, numerator, denominator):
+		value = float(numerator) / float(denominator)
+		return Measurement.__new__(cls, value)
+
+	def __init__(self, numerator, denominator):
+		self._numerator = numerator
+		self._denominator = denominator
+		Measurement.__init__(self, float(self._numerator) / float(self._denominator))
+
+	# TODO: Implement into child classes
+	def _getUnit(self) -> tuple[str, str]:
+		return _config['Units'][self._type].split('/')
+
+	@property
+	def localized(self):
+		try:
+			newClass = self.__class__
+			n, d = self._config['Units'][self._type.lower()].split(',')
+			n = 'inch' if n == 'in' else n
+			new = newClass(getattr(self._numerator, n), getattr(self._denominator, d))
+			new.title = self.title
+			return new
+		except KeyError:
+			logging.error('Measurement {} was unable to localize from {}'.format(self.name, self.unit))
+			return self
+
+	@property
+	def unit(self):
+		if self._suffix:
+			return self._suffix
+		elif issubclass(self.__class__, Derived):
+			l = self.unitArray
+			i = 0
+			while i < len(l):
+				power = 0
+				while i + 1 < len(l) and l[i] == l[i + 1]:
+					power += 1
+					l.pop(i)
+				if power:
+					unicodePlace = 177 if power < 4 else 0x2074
+					l[i] = f"{l[i]}{power + 177:c}"
+				i += 1
+			return '/'.join(l)
+		elif self._numerator.unit == 'mi' and self._denominator.unit == 'hr':
+			return 'mph'
+		else:
+			return '{}/{}'.format(self._numerator.unit, self._denominator.unit)
+
+	@property
+	def unitArray(self) -> list[str]:
+		return [*self._numerator.unitArray, *self._denominator.unitArray]
+
+	@property
+	def numerator(self) -> Measurement:
+		return self._numerator
+	n = numerator
+
+	@property
+	def denominator(self) -> Measurement:
+		return self._denominator
+	d = denominator
