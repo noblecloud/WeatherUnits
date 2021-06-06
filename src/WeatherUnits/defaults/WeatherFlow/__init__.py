@@ -1,19 +1,20 @@
 from .units import Temperature, Wind, Precipitation, PrecipitationDaily, PrecipitationType
 from ...length import Kilometer
-from ...others import Direction, Humidity, Lux, RadiantFlux, Volts
+from ...others import Direction, Humidity, Lux, RadiantFlux, Voltage, Strikes, UVI
+
 from ...pressure import mmHg
-from ...time import Minute, Second
+from ...time import Minute, Second, Day, Hour
 
 LargeDistance = Kilometer
 Brightness = Lux
 Irradiance = RadiantFlux
-Power = Volts
+Power = Voltage
 Pressure = mmHg
 
 classes = {
 		'time':               int,
-		'day':                int,
-		'hour':               int,
+		'day':                Day,
+		'hour':               Hour,
 		'windSpeed':          Wind,
 		'direction':          Direction,
 
@@ -23,7 +24,7 @@ classes = {
 		'humidity':           Humidity,
 
 		'illuminance':        Lux,
-		'uvi':                int,
+		'uvi':                UVI,
 		'irradiance':         RadiantFlux,
 		'precipitation':      Precipitation,
 		'precipitationDaily': PrecipitationDaily,
@@ -31,10 +32,10 @@ classes = {
 		'precipitationType':  PrecipitationType,
 		'distance':           Kilometer,
 		'lightningDistance':  Kilometer,
-		'lightning':          int,
+		'lightning':          Strikes,
 		'energy':             int,
 
-		'battery':            Volts,
+		'battery':            Voltage,
 		'reportInterval':     Minute,
 		'reportIntervalFine': Second
 
