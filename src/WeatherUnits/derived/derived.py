@@ -47,7 +47,9 @@ class Derived(_Measurement):
 	@property
 	def numerator(self):
 		return self._numerator
+	n = numerator
 
 	@property
 	def denominator(self):
 		return self._denominator
+	d = denominator
