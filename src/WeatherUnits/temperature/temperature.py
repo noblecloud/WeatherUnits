@@ -1,17 +1,11 @@
 from math import log as _log
-from typing import Callable
-
-from .._unit import Measurement
+from .._unit import Measurement as _Measurement
 
 
-class Temperature(Measurement):
+class Temperature(_Measurement):
 	_type = 'heat'
 	_decorator = 'º'
 	_unitFormat: str = '{decorated}{unit}'
-
-	_celsius: Callable
-	_fahrenheit: Callable
-	_kelvin: Callable
 
 	@property
 	def celsius(self):

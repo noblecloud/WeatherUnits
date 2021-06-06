@@ -1,7 +1,7 @@
-from . import Pressure
+from . import Pressure as _Pressure
 
 
-class inHg(Pressure):
+class inHg(_Pressure):
 	_unit = 'inHg'
 	_format = '{2.2f}'
 

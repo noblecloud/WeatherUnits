@@ -4,7 +4,6 @@ from .._unit import MeasurementSystem as _MS
 class Length(_MS):
 	_type = 'length'
 
-
 	@property
 	def millimeter(self):
 		from . import Millimeter

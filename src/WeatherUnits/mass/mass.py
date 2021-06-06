@@ -1,7 +1,7 @@
 from .._unit import MeasurementSystem as _MS
 
 
-class _Mass(_MS):
+class Mass(_MS):
 	_type = 'mass'
 
 	@property

@@ -1,7 +1,7 @@
-from . import Pressure
+from . import Pressure as _Pressure
 
 
-class mmHg(Pressure):
+class mmHg(_Pressure):
 	_unit = "mmHg"
 
 	def _hPa(self):
@@ -14,7 +14,7 @@ class mmHg(Pressure):
 		return self * 0.03937007827511842
 
 
-class hPa(Pressure):
+class hPa(_Pressure):
 	_unit = 'hPa'
 
 	def _hPa(self):

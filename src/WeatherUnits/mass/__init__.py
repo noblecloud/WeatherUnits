@@ -1,3 +1,3 @@
-from .mass import _Mass as Mass
+from .mass import Mass
 from .metric import *
 from .imperial import *

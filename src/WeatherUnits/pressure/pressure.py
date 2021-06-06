@@ -1,9 +1,9 @@
 from typing import Callable
 
-from .._unit import Measurement
+from .._unit import Measurement as _Measurement
 
 
-class Pressure(Measurement):
+class Pressure(_Measurement):
 	_type = 'pressure'
 	_format = "{:4d}"
 	_hPa: Callable
