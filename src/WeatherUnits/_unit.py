@@ -104,7 +104,8 @@ class Measurement(SmartFloat):
 		if self.convertible:
 			try:
 				selector = self._config['Units'][self._type.lower()]
-				new = self[selector]
+				selector = 'inch' if selector == 'in' else selector
+				new = getattr(self, selector)
 				new.title = self.title
 				return new
 			except AttributeError or KeyError as e:
@@ -151,7 +152,7 @@ class MeasurementSystem(Measurement):
 
 		# if values are cousins initiate with values base sibling causing a recursive call to __new__
 		elif isinstance(value, cls.__mro__[2]):
-			return cls(value.__getattribute__('_'+cls._baseUnit)())
+			return cls(value.__getattribute__('_' + cls._baseUnit)())
 
 		elif isinstance(value, Measurement):
 			raise _errors.BadConversion(cls.__name__, value.__class__.__name__)
