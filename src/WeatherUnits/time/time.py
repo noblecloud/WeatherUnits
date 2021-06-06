@@ -20,22 +20,22 @@ class Time(_MS):
 	_Scale = Scale
 	_baseUnit = 'second'
 
-	def _milliseconds(self):
+	def _millisecond(self):
 		return self.changeScale(self._scale.Millisecond)
 
-	def _seconds(self):
+	def _second(self):
 		return self.changeScale(self._scale.Second)
 
-	def _minutes(self):
+	def _minute(self):
 		return self.changeScale(self._scale.Minute)
 
-	def _hours(self):
+	def _hour(self):
 		return self.changeScale(self._scale.Hour)
 
-	def _days(self):
+	def _day(self):
 		return self.changeScale(self._scale.Day)
 
-	def _years(self):
+	def _year(self):
 		return self.changeScale(self._scale.Year)
 
 	def _decade(self):
@@ -59,32 +59,23 @@ class Time(_MS):
 
 	@property
 	def millisecond(self):
-		from ..time import Millisecond
-		return Millisecond(self._milliseconds())
+		return Millisecond(self)
 
 	@property
 	def second(self):
-		from ..time import Second
-		return Second(self._seconds())
+		return Second(self)
 
 	@property
 	def minute(self):
-		from ..time import Minute
-		minute = Minute(self._minutes())
-		minute.title = self.title
-		return minute
+		return Minute(self)
 
 	@property
 	def hour(self):
-		from ..time import Hour
-		hour = Hour(self._hours())
-		hour.title = self.title
-		return hour
+		return Hour(self)
 
 	@property
 	def day(self):
-		from ..time import Day
-		return Day(self._days())
+		return Day(self)
 
 	# @property
 	# def week(self):
@@ -98,25 +89,19 @@ class Time(_MS):
 
 	@property
 	def year(self):
-		from ..time import Year
-		return Year(self._years())
+		return Year(self)
 
 	@property
 	def decade(self):
-		from ..time import Decade
-		return Decade(self._decade())
-
+		return Decade(self)
 
 	@property
 	def century(self):
-		from ..time import Century
-		return Century(self._century())
-
+		return Century(self)
 
 	@property
 	def millennia(self):
-		from ..time import Millennia
-		return Millennia(self._millennia())
+		return Millennia(self)
 
 
 	## abbreviations
@@ -129,3 +114,55 @@ class Time(_MS):
 	s = second
 	sec = second
 	ms = millisecond
+
+
+class Millisecond(Time):
+	_unit = 'ms'
+	_format = '{:4.0f}'
+
+
+@BaseUnit
+class Second(Time):
+	_unit = 's'
+	_format = '{:2.1f}'
+
+
+class Minute(Time):
+	_unit = 'min'
+	_format = '{:2.1f}'
+
+
+class Hour(Time):
+	_unit = 'hr'
+
+
+class Day(Time):
+	_unit = 'd'
+
+
+# class Week(_Time):
+# 	_unit = 'wk'
+# 	_scale = 4
+# 	_multiplier = 7
+#
+#
+# class Month(_Time):
+# 	_unit = 'mnt'
+# 	_scale = 4
+# 	_multiplier = 30
+
+
+class Year(Time):
+	_unit = 'yr'
+
+
+class Decade(Time):
+	_unit = 'dec'
+
+
+class Century(Time):
+	_unit = 'cen'
+
+
+class Millennia(Time):
+	_unit = 'mel'
