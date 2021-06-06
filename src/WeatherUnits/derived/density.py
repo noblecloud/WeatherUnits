@@ -1,9 +1,9 @@
 from ..mass import Mass as _Mass
-from .._unit import Derived as _Derived
+from .. import DerivedMeasurement as _DerivedMeasurement, MeasurementGroup
 from .volume import Volume as _Volume
 
 
-class Density(_Derived):
-	_type = 'density'
+@MeasurementGroup
+class Density(_DerivedMeasurement):
 	_numerator: _Mass
 	_denominator: _Volume

@@ -1,8 +1,9 @@
 from .speed import Speed as _Rate
+from .. import MeasurementGroup
 
 
+@MeasurementGroup
 class Precipitation(_Rate):
-	_type = 'precipitationRate'
 
 	@property
 	def fth(self):

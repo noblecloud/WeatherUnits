@@ -1,4 +1,5 @@
 from ..utils import ScaleMeta as _ScaleMeta
+from .. import UnitSystem, BaseUnit
 from . import Length as _Length
 
 
@@ -10,10 +11,10 @@ class _Scale(_ScaleMeta):
 	Mile = 1760
 
 
-class _Imperial(_Length):
+@UnitSystem
+class Imperial(_Length):
 	_format = '{:2.2f}'
 	_Scale = _Scale
-	_baseUnit = 'foot'
 
 	def _line(self):
 		return self.changeScale(self._scale.Line)
@@ -34,29 +35,25 @@ class _Imperial(_Length):
 		return self._foot() * 0.3048
 
 
-class Line(_Imperial):
-	_type = 'microDistance'
+class Line(Imperial):
 	_format = '{:2.2f}'
 	_unit = 'ln'
 
 
-class Inch(_Imperial):
-	_type = 'smallDistance'
+class Inch(Imperial):
 	_format = '{:2.2f}'
 	_unit = 'in'
 
 
-class Foot(_Imperial):
-	_type = 'mediumDistance'
+@BaseUnit
+class Foot(Imperial):
 	_unit = 'ft'
 
 
-class Yard(_Imperial):
-	_type = 'mediumDistance'
+class Yard(Imperial):
 	_unit = 'yd'
 
 
-class Mile(_Imperial):
-	_type = 'largeDistance'
+class Mile(Imperial):
 	_unit = 'mi'
 

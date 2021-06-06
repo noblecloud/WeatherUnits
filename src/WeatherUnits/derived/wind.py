@@ -1,6 +1,8 @@
 from .speed import Speed as _Speed
+from .. import MeasurementGroup
 
 
+@MeasurementGroup
 class Wind(_Speed):
 	@property
 	def fts(self):

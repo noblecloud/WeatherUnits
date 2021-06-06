@@ -1,8 +1,9 @@
 import logging
 from typing import Optional
 
-from . import config as _config
-from . import errors as _errors, utils as _utils
+from .. import config as _config
+from .. import errors as _errors, utils as _utils
+from .decorators import *
 
 
 class UnitMeta(str):
@@ -33,7 +34,6 @@ class UnitMeta(str):
 			return f"{super().__str__()}{abs(self._power) + 176:c}"
 		else:
 			return super().__str__()
-
 
 
 class SmartFloat(float):
@@ -170,6 +170,8 @@ class Measurement(SmartFloat):
 		return self.__class__(value)
 
 	def __truediv__(self, other):
+		if isinstance(other, self.__class__):
+			value = self.__class__(other)
 		i = 0
 
 		while self.__class__.__mro__[i] != other.__class__.__mro__[i] and i < 4:
@@ -178,12 +180,13 @@ class Measurement(SmartFloat):
 			value = self.__class__(other)
 			value = super().__truediv__(value)
 		elif issubclass(self.__class__, Measurement):
-			return Derived(self, other)
+			return DerivedMeasurement(self, other)
 		return self.__class__(value)
 
 
 class MeasurementSystem(Measurement):
 	_baseUnit = None
+	_unitSystem: type = None
 
 	def __new__(cls, value):
 		if not cls._baseUnit:
@@ -214,8 +217,12 @@ class MeasurementSystem(Measurement):
 		else:
 			return None
 
+	@property
+	def unitSystem(self):
+		return self._unitSystem.__name__
 
-class Derived(Measurement):
+
+class DerivedMeasurement(Measurement):
 	_type = 'derived'
 	_numerator: Measurement
 	_denominator: Measurement
@@ -250,7 +257,7 @@ class Derived(Measurement):
 	def unit(self):
 		if self._suffix:
 			return self._suffix
-		elif issubclass(self.__class__, Derived):
+		elif issubclass(self.__class__, DerivedMeasurement):
 			l = self.unitArray
 			i = 0
 			while i < len(l):

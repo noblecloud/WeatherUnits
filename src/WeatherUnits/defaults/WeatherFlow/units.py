@@ -1,7 +1,7 @@
 from enum import Enum as _Enum
 
 from ... import derived, temperature, length, mass, time
-from ..._unit import Measurement
+from ... import Measurement
 
 
 class Wind(derived.Wind):

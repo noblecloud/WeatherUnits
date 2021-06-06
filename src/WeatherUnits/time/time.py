@@ -1,4 +1,4 @@
-from .._unit import MeasurementSystem as _MS
+from .. import MeasurementSystem as _MS, MeasurementGroup, BaseUnit, UnitSystem
 from ..utils import ScaleMeta as _ScaleMeta
 
 
@@ -14,11 +14,11 @@ class Scale(_ScaleMeta):
 	Millennia = 10
 
 
+@UnitSystem
+@MeasurementGroup
 class Time(_MS):
-	_type = 'time'
 	_format = '{:2.2f}'
 	_Scale = Scale
-	_baseUnit = 'second'
 
 	def _millisecond(self):
 		return self.changeScale(self._scale.Millisecond)
@@ -49,11 +49,11 @@ class Time(_MS):
 
 	@property
 	def auto(self):
-		if self._seconds() < 60:
+		if self._second() < 60 and self._scale <= self._Scale.Second:
 			return self.s
-		elif self._minutes() < 60:
+		elif self._minute() < 60 and self._scale <= self._Scale.Minute:
 			return self.min
-		elif self._hours() < 24:
+		elif self._hour() < 24 and self._scale <= self._Scale.Hour:
 			return self.hour
 		return
 

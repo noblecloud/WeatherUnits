@@ -1,10 +1,10 @@
 from typing import Callable
 
-from .._unit import Measurement as _Measurement
+from .. import Measurement as _Measurement, MeasurementGroup
 
 
+@MeasurementGroup
 class Pressure(_Measurement):
-	_type = 'pressure'
 	_format = "{:4d}"
 	_hPa: Callable
 	_mmHg: Callable

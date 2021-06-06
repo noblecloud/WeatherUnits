@@ -1,5 +1,6 @@
 from ..utils import ScaleMeta as _ScaleMeta
 from . import Mass as _Mass
+from .. import UnitSystem, BaseUnit
 
 
 class _Scale(_ScaleMeta):
@@ -10,10 +11,10 @@ class _Scale(_ScaleMeta):
 	Ton = 20
 
 
+@UnitSystem
 class Imperial(_Mass):
 	_format = '{:2.1f}'
 	_Scale = _Scale
-	_baseUnit = 'pound'
 
 	def _dram(self):
 		return self.changeScale(self._scale.Dram)
@@ -49,6 +50,7 @@ class Ounce(Imperial):
 	_unit = 'oz'
 
 
+@BaseUnit
 class Pound(Imperial):
 	_unit = 'lbs'
 

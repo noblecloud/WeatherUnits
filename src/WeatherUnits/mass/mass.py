@@ -1,8 +1,8 @@
-from .._unit import MeasurementSystem as _MS
+from .. import MeasurementSystem as _MS, MeasurementGroup
 
 
+@MeasurementGroup
 class Mass(_MS):
-	_type = 'mass'
 
 	@property
 	def milligram(self):

@@ -1,18 +1,18 @@
-from .._unit import Measurement
+from .. import Measurement, MeasurementGroup
 
 
-class Volts(Measurement):
+@MeasurementGroup
+class Voltage(Measurement):
 	_max = 3
 	_precision = 2
 	_unit = 'v'
 	_unitFormat: str = '{decorated}{unit}'
-	_type = 'Voltage'
 
 
+@MeasurementGroup
 class Direction(Measurement):
 	_precision = 0
 	_decorator = 'º'
-	_type = 'Direction'
 
 	def __init__(self, *args, **kwargs):
 		super(Direction, self).__init__(*args, **kwargs)
@@ -28,7 +28,7 @@ class Direction(Measurement):
 		return dirs[ix % len(dirs)]
 
 
+@MeasurementGroup
 class Strikes(Measurement):
-	_type = 'LightningStrikes'
 	_precision = 0
 

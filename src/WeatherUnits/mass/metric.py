@@ -1,5 +1,6 @@
 from ..utils import ScaleMeta as _ScaleMeta
 from . import Mass as _Mass
+from .. import UnitSystem, BaseUnit
 
 
 class _Scale(_ScaleMeta):
@@ -8,10 +9,10 @@ class _Scale(_ScaleMeta):
 	Kilogram = 1000
 
 
+@UnitSystem
 class Metric(_Mass):
 	_format = '{:2.1f}'
 	_Scale = _Scale
-	_baseUnit = 'gram'
 
 	def _dram(self):
 		return self._ounce() * 16
@@ -37,6 +38,7 @@ class Milligram(Metric):
 	_unit = 'mg'
 
 
+@BaseUnit
 class Gram(Metric):
 	_unit = 'g'
 

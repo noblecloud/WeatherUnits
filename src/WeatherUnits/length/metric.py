@@ -1,5 +1,6 @@
 from ..utils import ScaleMeta as _ScaleMeta
 from . import Length as _Length
+from .. import UnitSystem, BaseUnit
 
 
 class _Scale(_ScaleMeta):
@@ -12,10 +13,10 @@ class _Scale(_ScaleMeta):
 	Kilometer = 10
 
 
-class _Metric(_Length):
+@UnitSystem
+class Metric(_Length):
 	_format = '{:2.1f}'
 	_Scale = _Scale
-	_baseUnit = 'meter'
 
 	def _foot(self):
 		return self._meter() * 3.280839895013123
@@ -33,37 +34,31 @@ class _Metric(_Length):
 		return self.changeScale(_Scale.Kilometer)
 
 
-class Millimeter(_Metric):
-	_type = 'microDistance'
+class Millimeter(Metric):
 	_format = '{:3.1f}'
 	_unit = 'mm'
 
 
-class Centimeter(_Metric):
-	_type = 'smallDistance'
+class Centimeter(Metric):
 	_unit = 'cm'
 
 
-class Decimeter(_Metric):
-	_type = 'mediumSmallDistance'
+class Decimeter(Metric):
 	_unit = 'dm'
 
 
-class Meter(_Metric):
-	_type = 'mediumDistance'
+@BaseUnit
+class Meter(Metric):
 	_unit = 'm'
 
 
-class Decameter(_Metric):
-	_type = 'mediumLargeDistance'
+class Decameter(Metric):
 	_unit = 'dam'
 
 
-class Hectometer(_Metric):
-	_type = 'largeDistance'
+class Hectometer(Metric):
 	_unit = 'hm'
 
 
-class Kilometer(_Metric):
-	_type = 'largeDistance'
+class Kilometer(Metric):
 	_unit = 'km'

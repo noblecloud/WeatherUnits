@@ -1,8 +1,8 @@
-from .._unit import MeasurementSystem as _MS
+from .. import MeasurementSystem as _MS, MeasurementGroup
 
 
+@MeasurementGroup
 class Length(_MS):
-	_type = 'length'
 
 	@property
 	def millimeter(self):

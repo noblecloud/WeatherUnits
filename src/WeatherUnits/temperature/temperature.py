@@ -1,9 +1,9 @@
 from math import log as _log
-from .._unit import Measurement as _Measurement
+from .. import Measurement as _Measurement, MeasurementGroup
 
 
+@MeasurementGroup
 class Temperature(_Measurement):
-	_type = 'heat'
 	_decorator = 'º'
 	_unitFormat: str = '{decorated}{unit}'
 

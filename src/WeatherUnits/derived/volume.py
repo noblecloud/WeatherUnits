@@ -1,16 +1,16 @@
 from typing import Union
 
-from .._unit import Measurement as _Measurement
+from .. import Measurement as _Measurement, MeasurementGroup
 from ..length import Foot as _Foot, Length as _Length, Meter as _Meter
 
 
+@MeasurementGroup
 class Volume(_Measurement):
 	_x: _Length
 	_y: _Length
 	_z: _Length
 	_unitClass = _Length
 	_cube: bool
-	_type = 'volume'
 
 	def __init__(self, x: Union[_Length, int, float], y: Union[_Length, int, float] = 0, z: Union[_Length, int, float] = 0, cube: bool = True):
 		if cube and not (z and y):
