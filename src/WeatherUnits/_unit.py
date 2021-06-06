@@ -5,6 +5,37 @@ from . import config as _config
 from . import errors as _errors, utils as _utils
 
 
+class UnitMeta(str):
+	_power = 1
+
+	def __new__(cls, value):
+		return str.__new__(cls, value)
+
+	def __init__(self, value):
+		str.__init__(value)
+
+	def __mul__(self, other):
+		if isinstance(other, self.__class__):
+			self._power += other._power
+			return self
+		elif isinstance(other, UnitMeta):
+			return UnitMeta(self + other)
+
+	def __truediv__(self, other):
+		if isinstance(other, self.__class__):
+			self._power -= 1
+			return self
+
+	def __str__(self):
+		if self._power > 1:
+			return f"{super().__str__()}{self._power + 176:c}"
+		elif self._power < 0:
+			return f"{super().__str__()}{abs(self._power) + 176:c}"
+		else:
+			return super().__str__()
+
+
+
 class SmartFloat(float):
 	_config = _config
 	_precision: int = 1
@@ -127,15 +158,15 @@ class Measurement(SmartFloat):
 		return str(self)
 
 	def __mul__(self, other):
-		value = super().__mul__(other)
+		value = super().__mul__(self.__class__(other))
 		return self.__class__(value)
 
 	def __add__(self, other):
-		value = super().__add__(other)
+		value = super().__add__(self.__class__(other))
 		return self.__class__(value)
 
 	def __sub__(self, other):
-		value = super().__sub__(other)
+		value = super().__sub__(self.__class__(other))
 		return self.__class__(value)
 
 	def __truediv__(self, other):
