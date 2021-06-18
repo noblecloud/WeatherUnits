@@ -1,6 +1,6 @@
 from ...others import UVI, Direction, Lux, RadiantFlux, Voltage, Strikes, Humidity
 from ...time import *
-from pressure.metric.mercury import mmHg
+from ...pressure import mmHg
 from ...derived import Wind, Precipitation, PrecipitationDaily, PrecipitationHourly, PrecipitationMinutely
 from ...temperature import Celsius
 from ...length import Kilometer, Meter, Millimeter
