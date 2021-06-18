@@ -32,9 +32,12 @@ def NoSpaceBeforeUnit(cls):
 
 def strToDict(string: str, cls: type) -> type:
 
+	def stringToBool(item: string):
+		return item.lower() in ('yes', 'true', 't', '1')
+
 	def parseString(item):
 		key, value = item.split('=')
-		expectedTypes = {'max': int, 'precision': int, 'unitSpacer': bool, 'shorten': bool}
+		expectedTypes = {'max': int, 'precision': int, 'unitSpacer': stringToBool, 'shorten': stringToBool, 'thousandsSeparator': stringToBool}
 		return f'_{key}', expectedTypes[key](value)
 
 	conf = [parseString(a) for a in [(y.strip(' ')) for y in string.split(',')]]
