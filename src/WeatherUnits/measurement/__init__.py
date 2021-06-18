@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 from .. import config as _config
 from .. import errors as _errors, utils as _utils
@@ -120,9 +120,12 @@ class Measurement(SmartFloat):
 	def __new__(cls, value):
 		return SmartFloat.__new__(cls, value)
 
-	def __init__(self, value):
+	def __init__(self, value, title: str = None):
 		if isinstance(value, Measurement):
-			self._title = value.title
+			if title is not None:
+				self._title = title
+			else:
+				self._title = value.title
 			SmartFloat.__init__(self, value)
 		SmartFloat.__init__(self, value)
 
@@ -133,7 +136,7 @@ class Measurement(SmartFloat):
 			raise _errors.BadConversion
 
 	@property
-	def _scale(self):
+	def scale(self):
 		return self._Scale[self.name]
 
 	@property
@@ -152,7 +155,7 @@ class Measurement(SmartFloat):
 
 	@property
 	def convertible(self):
-		return self._type in self._config['Units']
+		return self._type.__name__.lower() in self._config['Units']
 
 	@property
 	def str(self):
