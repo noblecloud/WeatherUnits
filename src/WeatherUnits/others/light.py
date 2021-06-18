@@ -6,7 +6,6 @@ from .. import Measurement, NamedType
 class Light(Measurement):
 	pass
 
-@Integer
 @NamedType
 class UVI(Light):
 	_max = 2
