@@ -62,7 +62,7 @@ def Integer(cls):
 
 def PropertiesFromConfig(cls):
 	try:
-		cls = strToDict(properties[cls._unit], cls)
+		cls = strToDict(properties[cls.__name__], cls)
 	except Exception as e:
 		print(e)
 	return cls

@@ -206,17 +206,25 @@ class MeasurementSystem(Measurement):
 	_unitSystem: type = None
 
 	def __new__(cls, value):
-		if not cls._baseUnit:
+		value: Union[int, float, MeasurementSystem, SystemVariant]
+		if isinstance(value, MeasurementSystem) and (not cls._baseUnit or not value.__class__._baseUnit):
+			'''For this to work each unit class must have a _baseUnit defined for each scale'''
 			raise _errors.NoBaseUnitDefined(cls)
-		'''For this to work each unit class must have a _baseUnit defined for each scale'''
+		system = issubclass(cls, MeasurementSystem) and issubclass(value.__class__, MeasurementSystem)
+		siblings, cousins = [cls._baseUnit == value._baseUnit, cls._type == value._type] if system else (False, False)
+		variant = issubclass(cls, SystemVariant)
 
 		# If values are siblings change to sibling class with changeScale()
-		if isinstance(value, cls.__mro__[1]):
+		if siblings and not variant:
 			return cls(value.__class__.changeScale(value, cls._Scale[cls.__name__]))
 
-		# if values are cousins initiate with values base sibling causing a recursive call to __new__
-		elif isinstance(value, cls.__mro__[2]):
-			return cls(value.__getattribute__('_' + cls._baseUnit)())
+		# If values are siblings and new value is a variant
+		elif siblings and variant:
+			return cls(value.__class__.changeScale(value, cls._Scale[cls._baseUnit.__name__]) * cls._multiplier)
+
+		# If values are cousins initiate with values base sibling causing a recursive call to __new__
+		elif cousins:
+			return cls.__new__(cls, cls._baseUnit(value.__getattribute__('_' + cls._baseUnit.__name__.lower())()))
 
 		elif isinstance(value, Measurement):
 			raise _errors.BadConversion(cls.__name__, value.__class__.__name__)
@@ -226,8 +234,8 @@ class MeasurementSystem(Measurement):
 
 	def changeScale(self, newUnit: _utils.ScaleMeta) -> Optional[float]:
 		if self._Scale:
-			multiplier = self._scale * newUnit
-			if self._scale > newUnit:
+			multiplier = self.scale * newUnit
+			if self.scale > newUnit:
 				return float(self) * multiplier
 			else:
 				return float(self) / multiplier
@@ -237,6 +245,13 @@ class MeasurementSystem(Measurement):
 	@property
 	def unitSystem(self):
 		return self._unitSystem.__name__
+
+
+class SystemVariant:
+	_multiplier: float = 1.0
+
+
+unitFixes = {'mi/hr': 'mph'}
 
 
 class DerivedMeasurement(Measurement):
@@ -290,8 +305,6 @@ class DerivedMeasurement(Measurement):
 					l[i] = f"{l[i]}{power + 177:c}"
 				i += 1
 			return '/'.join(l)
-		elif self._numerator.unit == 'mi' and self._denominator.unit == 'hr':
-			return 'mph'
 		else:
 			return '{}/{}'.format(self._numerator.unit, self._denominator.unit)
 
@@ -310,3 +323,25 @@ class DerivedMeasurement(Measurement):
 		return self._denominator
 
 	d = denominator
+
+	@property
+	def dArr(self):
+		arr = []
+		if isinstance(self.n, DerivedMeasurement):
+			arr += [*self.n.dArr]
+		if isinstance(self.d, DerivedMeasurement):
+			arr += [*self.d.dArr]
+		else:
+			arr += [self.d.unit]
+		return arr
+
+	@property
+	def nArr(self):
+		arr = []
+		if isinstance(self.d, DerivedMeasurement):
+			arr += [*self.n.nArr]
+		if isinstance(self.n, DerivedMeasurement):
+			arr += [*self.n.nArr]
+		else:
+			arr += [self.n.unit]
+		return arr
