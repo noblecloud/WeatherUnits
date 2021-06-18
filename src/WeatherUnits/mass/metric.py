@@ -8,6 +8,7 @@ class _Scale(_ScaleMeta):
 	Milligram = 1
 	Gram = 1000
 	Kilogram = 1000
+	Base = 'Gram'
 
 
 @UnitSystem

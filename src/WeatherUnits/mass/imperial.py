@@ -10,6 +10,7 @@ class _Scale(_ScaleMeta):
 	Pound = 16
 	Hundredweight = 100
 	Ton = 20
+	Base = 'Pound'
 
 
 @UnitSystem

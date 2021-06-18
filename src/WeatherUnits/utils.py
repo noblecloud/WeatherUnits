@@ -30,9 +30,24 @@ class Indexer:
 class ScaleMeta(_Enum, metaclass=AddressableEnum):
 
 	def __new__(cls, *args):
-		obj = object.__new__(cls)
-		obj._value_ = Indexer.get(cls)
-		obj._mul_ = args[0]
+		if isinstance(args[0], int):
+			obj = object.__new__(cls)
+			obj._value_ = Indexer.get(cls)
+			obj._mul_ = args[0]
+			obj.isVariant = False
+		elif isinstance(args[0], float):
+			obj = object.__new__(cls)
+			obj._value_ = Indexer.get(cls)
+			obj._mul_ = args[0]
+			obj.isVariant = True
+		elif isinstance(args[0], str):
+			obj = object.__new__(cls)
+			obj._value_ = getattr(cls, args[0]).index
+			obj._mul_ = getattr(cls, args[0]).value
+			obj.isVariant = False
+		else:
+			obj = None
+
 		return obj
 
 	def __str__(self):
@@ -41,6 +56,8 @@ class ScaleMeta(_Enum, metaclass=AddressableEnum):
 	# this makes sure that the description is read-only
 	@property
 	def index(self):
+		if self.isVariant:
+			return self.Base.index + 1
 		return self._value_
 
 	@property
@@ -52,11 +69,15 @@ class ScaleMeta(_Enum, metaclass=AddressableEnum):
 
 	def __mul__(self, other):
 		if isinstance(other, self.__class__):
+			variant = self.isVariant or other.isVariant
 			val = 1
 			array = self.__class__[min(self.index, other.index) + 1: max(self.index, other.index) + 1]
 			array.sort(key=lambda x: x.index)
+			array = array[:-1] if variant else array
 			for i in array:
 				val *= i.value
+			if variant:
+				val *= self.value if self.isVariant else other.value
 			return val
 
 	def __gt__(self, other):

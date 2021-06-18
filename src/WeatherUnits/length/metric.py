@@ -12,6 +12,7 @@ class _Scale(_ScaleMeta):
 	Decameter = 10
 	Hectometer = 10
 	Kilometer = 10
+	Base = 'Meter'
 
 
 @UnitSystem

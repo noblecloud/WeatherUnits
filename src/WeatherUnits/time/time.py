@@ -13,7 +13,7 @@ class Scale(_ScaleMeta):
 	Decade = 10
 	Century = 10
 	Millennia = 10
-
+	Base = 'Second'
 
 @UnitSystem
 @NamedType

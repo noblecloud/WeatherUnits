@@ -213,7 +213,7 @@ class Measurement(SmartFloat):
 		return self.transform(other)
 
 	def transform(self, other):
-		if self.__class__ != other.__class__:
+		if self.type != other.type:
 			logging.warning(f'{self.withUnit} and {other.withUnit} are not identical types, this may cause issues')
 		other.__dict__.update(self.__dict__)
 		if other._updateFunction:
@@ -232,15 +232,16 @@ class MeasurementSystem(Measurement):
 			raise _errors.NoBaseUnitDefined(cls)
 		system = issubclass(cls, MeasurementSystem) and issubclass(value.__class__, MeasurementSystem)
 		siblings, cousins = [cls._baseUnit == value._baseUnit, cls._type == value._type] if system else (False, False)
-		variant = issubclass(cls, SystemVariant)
+		variant = issubclass(cls, SystemVariant) and issubclass(value.__class__, SystemVariant)
 
 		# If values are siblings change to sibling class with changeScale()
-		if siblings and not variant:
+		if siblings:
+			value = value._baseUnit(value) if variant else value
 			return cls(value.__class__.changeScale(value, cls._Scale[cls.__name__]))
 
-		# If values are siblings and new value is a variant
-		elif siblings and variant:
-			return cls(value.__class__.changeScale(value, cls._Scale[cls._baseUnit.__name__]) * cls._multiplier)
+		# If values are siblings and both variants
+			# intermediate = cls(value.__class__.changeScale(value, cls._Scale.Base))
+			# return cls(value.__class__.changeScale(value, intermediate._Scale[intermediate.__class__.__name__]))
 
 		# If values are cousins initiate with values base sibling causing a recursive call to __new__
 		elif cousins:
@@ -265,6 +266,10 @@ class MeasurementSystem(Measurement):
 	@property
 	def unitSystem(self):
 		return self._unitSystem.__name__
+
+	@property
+	def isSystemVariant(self):
+		return issubclass(self.__class__, SystemVariant)
 
 
 class SystemVariant:

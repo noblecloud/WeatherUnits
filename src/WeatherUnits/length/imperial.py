@@ -10,6 +10,7 @@ class _Scale(_ScaleMeta):
 	Foot = 12
 	Yard = 3
 	Mile = 1760
+	Base = 'Foot'
 
 # _format = '{:2.2f}'
 

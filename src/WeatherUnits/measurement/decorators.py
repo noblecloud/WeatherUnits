@@ -22,6 +22,7 @@ def UnitSystem(cls):
 
 def BaseUnit(cls):
 	cls._unitSystem._baseUnit = cls
+	cls._Scale._baseUnit = cls._Scale.Base
 	return cls
 
 
