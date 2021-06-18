@@ -39,49 +39,50 @@ class UnitMeta(str):
 class SmartFloat(float):
 	_config = _config
 	_precision: int = 1
-	_max = 3
-
-	_unitType: str = 'f'
+	_max: int = 3
 	_unit: str = ''
 	_suffix: str = ''
 	_decorator: str = ''
-	_unitFormat: str = '{decorated} {unit}'
-	_format: str = '{value}{decorator}'
+	_unitSpacer = True
 	_title: str = ''
+	_scale = 1
+	_shorten: bool = True
 
 	def __new__(cls, value):
 		return float.__new__(cls, value)
 
 	def __init__(self, value):
-		decimal = list(len(n) for n in str(value).split('.'))[-1]
+		self._scale, decimal = list(len(n) for n in str(float(value)).split('.'))
 		self._precision = min(self._precision, decimal)
 		if isinstance(value, SmartFloat):
 			self._title = value._title
 		float.__init__(value)
 
 	def __str__(self) -> str:
-		string = self.formatString.format(self)
-		return '{value}{decorator}'.format(value=string, decorator=self._decorator)
+		if self._shorten:
+			c, valueString = 0, float(self)
+			while 4 <= len(str(int(valueString))) > self._max:
+				c += 1
+				valueString /= 1000
+			suffix = ['', 'k', 'm', 'B'][c]
+		else:
+			valueString = self
+			c = False
+			suffix = ''
+
+		newScale, decimal = list(len(n) for n in str(round(valueString, self._precision)).strip('0').split('.'))
+		decimal = min(self._precision, 1 if not decimal and c else decimal)
+		formatStr = f"{{:{newScale}.{decimal}f}}"
+		valueString = formatStr.format(valueString)
+
+		return f'{valueString}{suffix}{self._decorator}'
 
 	def __bool__(self):
-		return super().__bool__() or bool(self._unit)
-
-	def strip(self):
-		return self._format.format(str(self)).rstrip('0').rstrip('.')
-
-	@property
-	def formatString(self) -> str:
-		# Get number length of number before and after decimal
-		# Could probably use a more efficient algorithm
-		whole, decimal = (len(n) for n in str(float(self)).strip('0').split('.'))
-
-		# Prevents negative float precision
-		decimal = min(self._precision, max(0, self._max - (1 if not whole else whole)) if round(self % 1, self._precision) else 0)
-		return f"{{:{whole}.{decimal}{self._unitType}}}"
+		return super().__bool__() or bool(self.unit)
 
 	@property
 	def withUnit(self):
-		return self._unitFormat.format(decorated=str(self), unit=self.unit)
+		return f'{str(self)}{" " if self._unitSpacer else ""}{self._unit}'
 
 	@property
 	def unit(self) -> str:
