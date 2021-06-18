@@ -1,4 +1,4 @@
-from src.WeatherUnits import NoSpaceBeforeUnit
+from .. import NoSpaceBeforeUnit
 from . import Temperature as _Temperature
 
 class Kelvin(_Temperature):

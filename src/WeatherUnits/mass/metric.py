@@ -1,4 +1,4 @@
-from src.WeatherUnits import Large, Small, Tiny
+from .. import Large, Small, Tiny
 from ..utils import ScaleMeta as _ScaleMeta
 from . import Mass as _Mass
 from .. import UnitSystem, BaseUnit

@@ -1,4 +1,4 @@
-from src.WeatherUnits import SystemVariant
+from .. import SystemVariant
 from .. import MeasurementSystem as _MS, NamedType, BaseUnit, UnitSystem
 from ..utils import ScaleMeta as _ScaleMeta
 

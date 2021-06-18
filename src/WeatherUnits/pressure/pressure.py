@@ -1,5 +1,5 @@
 from .. import MeasurementSystem as _MeasurementSystem, NamedType
-from src.WeatherUnits import BaseUnit, Huge, Large, Medium, PropertiesFromConfig, Small, SystemVariant, Tiny, UnitSystem
+from .. import BaseUnit, Huge, Large, Medium, PropertiesFromConfig, Small, SystemVariant, Tiny, UnitSystem
 from utils import ScaleMeta as _ScaleMeta
 
 

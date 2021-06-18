@@ -1,4 +1,4 @@
-from src.WeatherUnits import Integer
+from .. import Integer
 from .. import Measurement as _Measurement, NamedType
 
 
