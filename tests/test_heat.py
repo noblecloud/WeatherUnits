@@ -30,8 +30,7 @@ class TestHeat(TestCase):
 		delta = temperature.Celsius(10)
 		self.assertEqual(temperature.Fahrenheit(18), delta.fDelta)
 
-		self.assertEqual('0ºc', low.withUnit)
-		self.assertEqual('0º', str(low))
+		self.assertEqual('0ºc', str(low))
 
 	def test_fahrenheit(self):
 		low: temperature.Fahrenheit = self.fLow
@@ -47,8 +46,7 @@ class TestHeat(TestCase):
 		delta = temperature.Fahrenheit(18)
 		self.assertEqual(temperature.Celsius(10), delta.cDelta)
 
-		self.assertEqual('32ºf', low.withUnit)
-		self.assertEqual('32º', str(low))
+		self.assertEqual('32ºf', str(low))
 
 	def test_kelvin(self):
 		low: temperature.Kelvin = self.kLow
@@ -61,8 +59,7 @@ class TestHeat(TestCase):
 		self.assertEqual(self.kHigh, high.kel)
 		self.assertEqual(self.fHigh, high.f)
 
-		self.assertEqual('273k', low.withUnit)
-		self.assertEqual('273', str(low))
+		self.assertEqual('273.1k', str(low))
 
 	def test_dewpoint(self):
 		self.assertEqual(self.cDewpoint, self.cRoom.dewpoint(65))
