@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 from .. import config as _config
 from .. import errors as _errors, utils as _utils
@@ -40,13 +40,15 @@ class SmartFloat(float):
 	_config = _config
 	_precision: int = 1
 	_max: int = 3
+	_lengthHint: int = None
 	_unit: str = ''
 	_suffix: str = ''
 	_decorator: str = ''
-	_unitSpacer = True
+	_unitSpacer = False
 	_title: str = ''
 	_scale = 1
 	_shorten: bool = True
+	_thousandsSeparator = False
 
 	def __new__(cls, value):
 		return float.__new__(cls, value)
@@ -72,7 +74,8 @@ class SmartFloat(float):
 
 		newScale, decimal = list(len(n) for n in str(round(valueString, self._precision)).strip('0').split('.'))
 		decimal = min(self._precision, 1 if not decimal and c else decimal)
-		formatStr = f"{{:{newScale}.{decimal}f}}"
+		self._lengthHint = newScale + decimal
+		formatStr = f"{{:{',' if self._thousandsSeparator else ''}.{decimal}f}}"
 		valueString = formatStr.format(valueString)
 
 		return f'{valueString}{suffix}{self._decorator}'
@@ -116,6 +119,7 @@ class SmartFloat(float):
 class Measurement(SmartFloat):
 	_type: type
 	_Scale: _utils.ScaleMeta = None
+	_updateFunction: Optional[Callable] = None
 
 	def __new__(cls, value):
 		return SmartFloat.__new__(cls, value)
@@ -165,11 +169,13 @@ class Measurement(SmartFloat):
 	def type(self) -> type:
 		return self._type
 
-	def _convert(self, other):
-		if isinstance(other, self.type):
-			return self.__class__(other)
-		else:
-			return other
+	@property
+	def updateFunction(self):
+		return self._updateFunction
+
+	@updateFunction.setter
+	def updateFunction(self, function: callable):
+		self._updateFunction = function
 
 	def __mul__(self, other):
 		other = self._convert(other) if isinstance(other, self.type) else other
@@ -199,6 +205,20 @@ class Measurement(SmartFloat):
 			return DerivedMeasurement(self, other)
 
 		return self.__class__(value)
+
+	def __or__(self, other):
+		return self.transform(other)
+
+	def __lshift__(self, other):
+		return self.transform(other)
+
+	def transform(self, other):
+		if self.__class__ != other.__class__:
+			logging.warning(f'{self.withUnit} and {other.withUnit} are not identical types, this may cause issues')
+		other.__dict__.update(self.__dict__)
+		if other._updateFunction:
+			other._updateFunction(other)
+		return other
 
 
 class MeasurementSystem(Measurement):

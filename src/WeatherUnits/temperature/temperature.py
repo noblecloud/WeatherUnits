@@ -1,9 +1,10 @@
 from math import log as _log
 
-from src.WeatherUnits import NoSpaceBeforeUnit
+from src.WeatherUnits import NoSpaceBeforeUnit, PropertiesFromConfig
 from .. import Measurement as _Measurement, NamedType
 
-@NoSpaceBeforeUnit
+
+@PropertiesFromConfig
 @NamedType
 class Temperature(_Measurement):
 	_decorator = 'º'
