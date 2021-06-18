@@ -1,3 +1,5 @@
+import logging
+
 from .. import config as _config
 
 properties = _config['UnitProperties']
@@ -28,10 +30,17 @@ def NoSpaceBeforeUnit(cls):
 	return cls
 
 
-def strToDict(string, cls) -> dict[str:int]:
-	conf = {a[0]: int(a[1]) for a in [(y.strip(' ').split('=')) for y in string.split(',')]}
-	for key, value in conf.items():
-		setattr(cls, f'_{key}', value)
+def strToDict(string: str, cls: type) -> type:
+
+	def parseString(item):
+		key, value = item.split('=')
+		expectedTypes = {'max': int, 'precision': int, 'unitSpacer': bool, 'shorten': bool}
+		return f'_{key}', expectedTypes[key](value)
+
+	conf = [parseString(a) for a in [(y.strip(' ')) for y in string.split(',')]]
+	for item in conf:
+		setattr(cls, item[0], item[1])
+
 	return cls
 
 
@@ -60,9 +69,25 @@ def Integer(cls):
 	return cls
 
 
+class NoConfigSpecifiedForUnit(Exception):
+	pass
+
+
 def PropertiesFromConfig(cls):
+	noConfig = True
+	try:
+		cls = strToDict(properties[cls._type.__name__.lower()], cls)
+		noConfig = False
+	except KeyError:
+		pass
+	except AttributeError:
+		logging.warning(f'{cls.__name__.lower()} has no type defined')
 	try:
 		cls = strToDict(properties[cls.__name__], cls)
-	except Exception as e:
-		print(e)
-	return cls
+		noConfig = False
+	except KeyError:
+		pass
+	finally:
+		if noConfig:
+			logging.warning(f'Config for {cls._type.__name__} was not found')
+		return cls
