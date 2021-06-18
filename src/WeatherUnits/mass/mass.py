@@ -1,7 +1,7 @@
-from .. import MeasurementSystem as _MS, MeasurementGroup
+from .. import MeasurementSystem as _MS, NamedType
 
 
-@MeasurementGroup
+@NamedType
 class Mass(_MS):
 
 	@property

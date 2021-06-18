@@ -6,10 +6,9 @@ class Voltage(Measurement):
 	_max = 3
 	_precision = 2
 	_unit = 'v'
-	_unitFormat: str = '{decorated}{unit}'
 
 
-@MeasurementGroup
+@NamedType
 class Direction(Measurement):
 	_precision = 0
 	_decorator = 'º'
@@ -28,7 +27,7 @@ class Direction(Measurement):
 		return dirs[ix % len(dirs)]
 
 
-@MeasurementGroup
+@NamedType
 class Strikes(Measurement):
 	_precision = 0
 

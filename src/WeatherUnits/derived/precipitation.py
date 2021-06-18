@@ -1,8 +1,10 @@
 from .speed import Speed as _Rate
-from .. import MeasurementGroup
+from .. import NamedType, Measurement as _Measurement, NamedSubType
+from ..length import Length as _Length
+from ..time import Day as _Day, Minute as _Minute, Hour as _Hour
 
 
-@MeasurementGroup
+@NamedType
 class Precipitation(_Rate):
 
 	@property

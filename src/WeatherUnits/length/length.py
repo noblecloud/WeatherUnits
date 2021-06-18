@@ -1,7 +1,7 @@
 from .. import MeasurementSystem as _MS, MeasurementGroup
 
 
-@MeasurementGroup
+@NamedType
 class Length(_MS):
 
 	@property

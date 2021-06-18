@@ -1,11 +1,12 @@
 from math import log as _log
-from .. import Measurement as _Measurement, MeasurementGroup
 
+from src.WeatherUnits import NoSpaceBeforeUnit
+from .. import Measurement as _Measurement, NamedType
 
-@MeasurementGroup
+@NoSpaceBeforeUnit
+@NamedType
 class Temperature(_Measurement):
 	_decorator = 'º'
-	_unitFormat: str = '{decorated}{unit}'
 
 	@property
 	def celsius(self):

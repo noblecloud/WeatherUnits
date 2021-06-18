@@ -139,7 +139,7 @@ class Measurement(SmartFloat):
 	def localized(self):
 		if self.convertible:
 			try:
-				selector = self._config['Units'][str(self._type).lower()]
+				selector = self._config['Units'][self.type.__name__.lower()]
 				selector = 'inch' if selector == 'in' else selector
 				new = getattr(self, selector)
 				new.title = self.title
@@ -257,8 +257,9 @@ class DerivedMeasurement(Measurement):
 	def localized(self):
 		try:
 			newClass = self.__class__
-			n, d = self._config['Units'][self._type.lower()].split(',')
+			n, d = self._config['Units'][self.type.__name__.lower()].split(',')
 			n = 'inch' if n == 'in' else n
+			d = self.d.unit if d == '*' else d
 			new = newClass(getattr(self._numerator, n), getattr(self._denominator, d))
 			new.title = self.title
 			return new
@@ -268,8 +269,10 @@ class DerivedMeasurement(Measurement):
 
 	@property
 	def unit(self):
-		if self._suffix:
-			return self._suffix
+		if self._unit:
+			return self._unit
+		elif self._numerator.unit == 'mi' and self._denominator.unit == 'hr':
+			return 'mph'
 		elif issubclass(self.__class__, DerivedMeasurement):
 			l = self.unitArray
 			i = 0
@@ -295,9 +298,11 @@ class DerivedMeasurement(Measurement):
 	@property
 	def numerator(self) -> Measurement:
 		return self._numerator
+
 	n = numerator
 
 	@property
 	def denominator(self) -> Measurement:
 		return self._denominator
+
 	d = denominator

@@ -1,3 +1,4 @@
+from src.WeatherUnits import Huge, Large, Small, Tiny
 from ..utils import ScaleMeta as _ScaleMeta
 from . import Mass as _Mass
 from .. import UnitSystem, BaseUnit
@@ -41,23 +42,24 @@ class Imperial(_Mass):
 		return self._pound() * 0.45359237
 
 
+@Tiny
 class Dram(Imperial):
 	_format = '{:1.1f}'
 	_unit = 'dr'
 
-
+@Small
 class Ounce(Imperial):
 	_unit = 'oz'
 
-
+@Small
 @BaseUnit
 class Pound(Imperial):
 	_unit = 'lbs'
 
-
+@Large
 class Hundredweight(Imperial):
 	_unit = 'cwt'
 
-
+@Huge
 class Ton(Imperial):
 	_unit = 't'

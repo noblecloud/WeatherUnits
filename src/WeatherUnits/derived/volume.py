@@ -1,10 +1,10 @@
 from typing import Union
 
-from .. import Measurement as _Measurement, MeasurementGroup
+from .. import Measurement as _Measurement, NamedType
 from ..length import Foot as _Foot, Length as _Length, Meter as _Meter
 
 
-@MeasurementGroup
+@NamedType
 class Volume(_Measurement):
 	_x: _Length
 	_y: _Length

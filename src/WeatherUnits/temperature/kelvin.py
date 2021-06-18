@@ -1,11 +1,9 @@
+from src.WeatherUnits import NoSpaceBeforeUnit
 from . import Temperature as _Temperature
 
-
 class Kelvin(_Temperature):
-	_format = '{value}{decorator}'
 	_decorator = ''
 	_unit = 'k'
-	_unitFormat: str = '{decorated}{unit}'
 
 	def _kelvin(self):
 		return self

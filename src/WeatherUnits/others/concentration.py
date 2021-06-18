@@ -1,8 +1,9 @@
-from .. import Measurement as _Measurement, MeasurementGroup
+from src.WeatherUnits import Integer
+from .. import Measurement as _Measurement, NamedType
 
 
-@MeasurementGroup
+@Integer
+@NamedType
 class Humidity(_Measurement):
-	_format = "{:2d}"
 	_unit = ''
 	_decorator = '%'

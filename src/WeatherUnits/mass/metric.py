@@ -1,3 +1,4 @@
+from src.WeatherUnits import Large, Small, Tiny
 from ..utils import ScaleMeta as _ScaleMeta
 from . import Mass as _Mass
 from .. import UnitSystem, BaseUnit
@@ -11,7 +12,6 @@ class _Scale(_ScaleMeta):
 
 @UnitSystem
 class Metric(_Mass):
-	_format = '{:2.1f}'
 	_Scale = _Scale
 
 	def _dram(self):
@@ -33,15 +33,17 @@ class Metric(_Mass):
 		return self.changeScale(_Scale.Kilogram)
 
 
+@Tiny
 class Milligram(Metric):
-	_format = '{:3.1f}'
 	_unit = 'mg'
 
 
+@Small
 @BaseUnit
 class Gram(Metric):
 	_unit = 'g'
 
 
+@Large
 class Kilogram(Metric):
 	_unit = 'kg'

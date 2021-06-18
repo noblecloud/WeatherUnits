@@ -1,3 +1,4 @@
+from src.WeatherUnits import Large, Medium, Small, Tiny
 from ..utils import ScaleMeta as _ScaleMeta
 from . import Length as _Length
 from .. import UnitSystem, BaseUnit
@@ -15,7 +16,6 @@ class _Scale(_ScaleMeta):
 
 @UnitSystem
 class Metric(_Length):
-	_format = '{:2.1f}'
 	_Scale = _Scale
 
 	def _foot(self):
@@ -34,31 +34,37 @@ class Metric(_Length):
 		return self.changeScale(_Scale.Kilometer)
 
 
+@Tiny
 class Millimeter(Metric):
-	_format = '{:3.1f}'
 	_unit = 'mm'
 
 
+@Small
 class Centimeter(Metric):
 	_unit = 'cm'
 
 
+@Small
 class Decimeter(Metric):
 	_unit = 'dm'
 
 
+@Medium
 @BaseUnit
 class Meter(Metric):
 	_unit = 'm'
 
 
+@Medium
 class Decameter(Metric):
 	_unit = 'dam'
 
 
+@Large
 class Hectometer(Metric):
 	_unit = 'hm'
 
 
+@Large
 class Kilometer(Metric):
 	_unit = 'km'
