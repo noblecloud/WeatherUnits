@@ -1,4 +1,4 @@
-from .. import MeasurementSystem as _MS, MeasurementGroup
+from .. import MeasurementSystem as _MS, NamedType
 
 
 @NamedType

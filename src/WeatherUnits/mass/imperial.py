@@ -14,23 +14,22 @@ class _Scale(_ScaleMeta):
 
 @UnitSystem
 class Imperial(_Mass):
-	_format = '{:2.1f}'
 	_Scale = _Scale
 
 	def _dram(self):
-		return self.changeScale(self._scale.Dram)
+		return self.changeScale(self.scale.Dram)
 
 	def _ounce(self):
-		return self.changeScale(self._scale.Ounce)
+		return self.changeScale(self.scale.Ounce)
 
 	def _pound(self):
-		return self.changeScale(self._scale.Pound)
+		return self.changeScale(self.scale.Pound)
 
 	def _hundredweight(self):
-		return self.changeScale(self._scale.Hundredweight)
+		return self.changeScale(self.scale.Hundredweight)
 
 	def _ton(self):
-		return self.changeScale(self._scale.Ton)
+		return self.changeScale(self.scale.Ton)
 
 	def _milligram(self):
 		return self._ounce() * 0.02834952312
@@ -44,7 +43,6 @@ class Imperial(_Mass):
 
 @Tiny
 class Dram(Imperial):
-	_format = '{:1.1f}'
 	_unit = 'dr'
 
 @Small

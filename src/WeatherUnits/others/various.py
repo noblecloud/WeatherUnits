@@ -1,7 +1,6 @@
-from .. import Measurement, MeasurementGroup
+from .. import Measurement, NamedType
 
-
-@MeasurementGroup
+@NamedType
 class Voltage(Measurement):
 	_max = 3
 	_precision = 2
@@ -26,8 +25,7 @@ class Direction(Measurement):
 		ix = round(self / (360. / len(dirs)))
 		return dirs[ix % len(dirs)]
 
-
 @NamedType
 class Strikes(Measurement):
-	_precision = 0
-
+	# TODO: Create discrete number class for this and similar measurements
+	unit = 'strikes'
