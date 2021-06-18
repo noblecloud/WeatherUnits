@@ -44,7 +44,7 @@ class SmartFloat(float):
 	_unit: str = ''
 	_suffix: str = ''
 	_decorator: str = ''
-	_unitSpacer = False
+	_unitSpacer = True
 	_title: str = ''
 	_scale = 1
 	_shorten: bool = True
