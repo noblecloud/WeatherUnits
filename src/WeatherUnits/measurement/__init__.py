@@ -192,6 +192,12 @@ class Measurement(SmartFloat):
 	def updateFunction(self, function: callable):
 		self._updateFunction = function
 
+	def _convert(self, other):
+		if isinstance(other, self.type):
+			return self.__class__(other)
+		else:
+			return other
+
 	def __mul__(self, other):
 		other = self._convert(other) if isinstance(other, self.type) else other
 		return self.__class__(super().__mul__(other))
