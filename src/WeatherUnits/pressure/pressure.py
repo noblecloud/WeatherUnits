@@ -1,32 +1,82 @@
-from typing import Callable
+from .. import MeasurementSystem as _MeasurementSystem, NamedType
+from src.WeatherUnits import BaseUnit, Huge, Large, Medium, PropertiesFromConfig, Small, SystemVariant, Tiny, UnitSystem
+from utils import ScaleMeta as _ScaleMeta
 
-from .. import Measurement as _Measurement, MeasurementGroup
+
+@NamedType
+@UnitSystem
+class Pressure(_MeasurementSystem):
+
+	class _Scale(_ScaleMeta):
+		Pascal = 1
+		Decapascal = 10
+		Hectopascals = 10
+		Kilopascal = 10
+		Megapascal = 10
+		Gigapascal = 10
+		Base = 'Pascal'
+		Atmosphere = 101325.
+		TechnicalAtmosphere = 98066.5
+		PoundsPerSquareInch = 6894.757293168
+		mmHg = 1 / 0.00750062
+		inHg = 1 / 0.00029530
 
 
-@MeasurementGroup
-class Pressure(_Measurement):
-	_format = "{:4d}"
-	_hPa: Callable
-	_mmHg: Callable
-	_inHg: Callable
+@Tiny
+@BaseUnit
+class Pascal(Pressure):
+	_unit = 'Pa'
 
-	@property
-	def hPa(self):
-		from ..pressure import hPa
-		return hPa(self._hPa())
 
-	@property
-	def mmHg(self):
-		from ..pressure import mmHg
-		return mmHg(self._mmHg())
+@Small
+class Decapascal(Pressure):
+	_unit = 'daPa'
 
-	@property
-	def inHg(self):
-		from ..pressure import inHg
-		return inHg(self._inHg())
 
-	mb = hPa
-	mbar = hPa
-	bar = hPa
-	inches = inHg
-	mm = mmHg
+@Medium
+class Hectopascals(Pressure):
+	_unit = 'hPa'
+
+
+@Large
+class Kilopascal(Pressure):
+	_unit = 'kPa'
+
+
+@Huge
+class Megapascal(Pressure):
+	_unit = 'MPa'
+
+
+@Huge
+class Gigapascal(Pressure):
+	_unit = 'GPa'
+
+
+@PropertiesFromConfig
+class mmHg(Pascal, SystemVariant):
+	_unit = "mmHg"
+
+
+class inHg(Pascal, SystemVariant):
+	_unit = 'inHg'
+
+
+class Atmosphere(Pascal, SystemVariant):
+	_unit = 'atm'
+
+
+class TechnicalAtmosphere(Pascal, SystemVariant):
+	_unit = 'at'
+
+
+class PoundsPerSquareInch(Pascal, SystemVariant):
+	_unit = 'psi'
+
+
+# Other Names #
+Bar = Kilopascal
+kPa = Kilopascal
+mbar = Hectopascals
+hPa = Hectopascals
+psi = PoundsPerSquareInch
