@@ -49,6 +49,7 @@ class SmartFloat(float):
 	_showUnit: bool = True
 	_shorten: bool = True
 	_thousandsSeparator = False
+	_combineUnitAndSuffix: bool = False
 
 	def __new__(cls, value):
 		return float.__new__(cls, value)
@@ -75,9 +76,11 @@ class SmartFloat(float):
 		newScale, decimal = list(len(n) for n in str(round(valueFloat, self._precision)).strip('0').split('.'))
 		decimal = min(self._precision, 1 if not decimal and c else decimal)
 		formatStr = f"{{:{',' if self._thousandsSeparator else ''}.{decimal}f}}"
-		valueString = formatStr.format(10 ** newScale if hintString else valueFloat)
-		unit = '' if not self._showUnit or forceUnit else f'{" " if self._unitSpacer else ""}{self._unit}'
-		return f'{valueString}{suffix}{self._decorator}{unit}'
+		valueString = formatStr.format(10 ** max(newScale - 1, 0) if hintString else valueFloat)
+		needsSpacer = self._unitSpacer and forceUnit or c
+		spacer = " " if needsSpacer else ""
+		unit = self._unit if self._showUnit and forceUnit else ''
+		return f'{valueString}{suffix}{self._decorator}{spacer}{unit}'
 
 	def __str__(self):
 		return self._string()
@@ -88,6 +91,10 @@ class SmartFloat(float):
 	@property
 	def withUnit(self):
 		return self._string(forceUnit=True)
+
+	@property
+	def withoutUnit(self):
+		return self._string(forceUnit=False)
 
 	@property
 	def unit(self) -> str:
@@ -128,11 +135,11 @@ class SmartFloat(float):
 	@property
 	def sizeHint(self) -> int:
 		# length = len(string) - (0.5 * (string.count('.') + string.count(','))
-		return self._string(hintString=True)
+		return self._string(hintString=True).replace('1', '0')
 
 
 class Measurement(SmartFloat):
-	_type: type
+	_type: type = None
 	_Scale: _utils.ScaleMeta = None
 	_updateFunction: Optional[Callable] = None
 
@@ -182,7 +189,7 @@ class Measurement(SmartFloat):
 
 	@property
 	def type(self) -> type:
-		return self._type
+		return self._type if self._type is not None else self.__class__.__mro__[0]
 
 	@property
 	def updateFunction(self):

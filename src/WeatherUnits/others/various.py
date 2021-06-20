@@ -1,5 +1,6 @@
-from .. import Measurement, NamedType
+from .. import Measurement, NamedType, PropertiesFromConfig
 
+@PropertiesFromConfig
 @NamedType
 class Voltage(Measurement):
 	_max = 3
@@ -16,7 +17,7 @@ class Direction(Measurement):
 		super(Direction, self).__init__(*args, **kwargs)
 
 	def __str__(self) -> str:
-		string = self.formatString.format(self)
+		string = string = self._string()
 		return '{cardinal} ({value}{decorator})'.format(cardinal=self.cardinal, value=string, decorator=self._decorator)
 
 	@property
