@@ -27,6 +27,13 @@ class Indexer:
 		return cls.i
 
 
+def toCamelCase(string, titleCase: bool = False) -> str:
+	string = (string.lower() if string.isupper() else string)
+	for char in ['-', ' ', '.', '_']:
+		string.replace(char, '')
+	return string[0].upper() if titleCase else string[0].lower() + string[1:]
+
+
 class ScaleMeta(_Enum, metaclass=AddressableEnum):
 
 	def __new__(cls, *args):
@@ -109,3 +116,19 @@ class ScaleMeta(_Enum, metaclass=AddressableEnum):
 			return self.index >= other.index
 		else:
 			return self.index >= int(other)
+
+
+'''https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python'''
+
+
+def levenshtein(seq1, seq2):
+	oneago = None
+	thisrow = range(1, len(seq2) + 1) + [0]
+	for x in range(len(seq1)):
+		twoago, oneago, thisrow = oneago, thisrow, [0] * len(seq2) + [x + 1]
+		for y in range(len(seq2)):
+			delcost = oneago[y] + 1
+			addcost = thisrow[y - 1] + 1
+			subcost = oneago[y - 1] + (seq1[x] != seq2[y])
+			thisrow[y] = min(delcost, addcost, subcost)
+	return thisrow[len(seq2) - 1]
