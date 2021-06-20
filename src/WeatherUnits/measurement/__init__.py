@@ -50,6 +50,7 @@ class SmartFloat(float):
 	_shorten: bool = True
 	_thousandsSeparator = False
 	_combineUnitAndSuffix: bool = False
+	_subscriptionKey: str = None
 
 	def __new__(cls, value):
 		return float.__new__(cls, value)
@@ -123,6 +124,20 @@ class SmartFloat(float):
 	@title.setter
 	def title(self, value):
 		self._title = value
+
+	@property
+	def subscriptionKey(self) -> str:
+		if self._subscriptionKey:
+			return self._subscriptionKey
+		else:
+			t = self.title
+			t = t.lower() if t.isupper() else t
+			t = t.replace(' ', '')
+			return f"{t[0].lower()}{t[1:]}"
+
+	@subscriptionKey.setter
+	def subscriptionKey(self, value: str):
+		self._subscriptionKey = value
 
 	@property
 	def showUnit(self):
