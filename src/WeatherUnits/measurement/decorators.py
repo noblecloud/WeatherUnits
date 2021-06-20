@@ -1,5 +1,6 @@
 import logging
 
+from utils import toCamelCase
 from .. import config as _config
 
 properties = _config['UnitProperties']
@@ -33,17 +34,22 @@ def NoSpaceBeforeUnit(cls):
 
 def strToDict(string: str, cls: type) -> type:
 
-	def stringToBool(item: string):
-		return item.lower() in ('yes', 'true', 't', '1')
-
-	def parseString(item):
+	def parseString(item: str):
 		key, value = item.split('=')
-		expectedTypes = {'max': int, 'precision': int, 'unitSpacer': stringToBool, 'shorten': stringToBool, 'thousandsSeparator': stringToBool}
-		return f'_{key}', expectedTypes[key](value)
+		# expectedTypes = {'max': int, 'precision': int, 'unitSpacer': stringToBool, 'shorten': stringToBool, 'thousandsSeparator': stringToBool, 'cardinal': stringToBool, 'degrees': stringToBool}
+		if value.isnumeric():
+			value = float(value)
+			if value.is_integer():
+				value = int(value)
+		if value == 'True':
+			value = True
+		elif value == 'False':
+			value = False
+		return f'_{key}', value
 
 	conf = [parseString(a) for a in [(y.strip(' ')) for y in string.split(',')]]
 	for item in conf:
-		setattr(cls, item[0], item[1])
+		setattr(cls, *item)
 
 	return cls
 
@@ -78,20 +84,22 @@ class NoConfigSpecifiedForUnit(Exception):
 
 
 def PropertiesFromConfig(cls):
-	noConfig = True
-	try:
-		cls = strToDict(properties[cls._type.__name__.lower()], cls)
-		noConfig = False
-	except KeyError:
-		pass
-	except AttributeError:
-		logging.warning(f'{cls.__name__.lower()} has no type defined')
-	try:
-		cls = strToDict(properties[cls.__name__], cls)
-		noConfig = False
-	except KeyError:
-		pass
-	finally:
-		if noConfig:
-			logging.warning(f'Config for {cls._type.__name__} was not found')
-		return cls
+	possibleNames = [cls.__name__.lower(), toCamelCase(cls.__name__), cls.__name__]
+
+	if hasattr(cls, '_type') and cls._type is not None:
+		possibleTypes = [cls._type.__name__.lower(), toCamelCase(cls._type.__name__), cls._type.__name__]
+		for classType in possibleTypes:
+			try:
+				cls = strToDict(properties[classType], cls)
+				break
+			except KeyError:
+				pass
+		else:
+			logging.warning(f'{cls.__name__} has no type defined')
+	for name in possibleNames:
+		try:
+			cls = strToDict(properties[name], cls)
+			break
+		except KeyError:
+			pass
+	return cls
