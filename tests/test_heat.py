@@ -1,5 +1,5 @@
 from unittest import TestCase
-from src.WeatherUnits import *
+from ..base import *
 
 
 class TestHeat(TestCase):

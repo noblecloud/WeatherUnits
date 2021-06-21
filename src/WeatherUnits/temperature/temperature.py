@@ -1,7 +1,8 @@
 from math import log as _log
 
-from .. import NoSpaceBeforeUnit, PropertiesFromConfig
-from .. import Measurement as _Measurement, NamedType
+from ..base import NoSpaceBeforeUnit, PropertiesFromConfig
+from ..base import NamedType
+from ..base import Measurement as _Measurement
 
 
 @PropertiesFromConfig

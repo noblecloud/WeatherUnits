@@ -1,4 +1,6 @@
-from .. import Measurement, NamedType, PropertiesFromConfig
+from ..base import NamedType, PropertiesFromConfig
+from ..base import Measurement
+
 
 @NamedType
 @PropertiesFromConfig

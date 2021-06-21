@@ -1,5 +1,6 @@
 from .speed import Speed as _Rate
-from .. import NamedType, Measurement as _Measurement, NamedSubType
+from ..base.Decorators import NamedType, NamedSubType
+from ..base.Measurement import Measurement as _Measurement
 from ..length import Length as _Length
 from ..time import Day as _Day, Minute as _Minute, Hour as _Hour
 

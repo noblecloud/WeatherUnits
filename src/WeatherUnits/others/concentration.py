@@ -1,5 +1,6 @@
-from .. import Integer
-from .. import Measurement as _Measurement, NamedType
+from ..base import Integer
+from ..base import NamedType
+from ..base import Measurement as _Measurement
 
 
 @NamedType

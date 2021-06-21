@@ -1,7 +1,7 @@
-from .. import Large, Small, Tiny
+from ..base import Large, Small, Tiny
 from ..utils import ScaleMeta as _ScaleMeta
 from . import Mass as _Mass
-from .. import UnitSystem, BaseUnit
+from ..base import UnitSystem, BaseUnit
 
 
 class _Scale(_ScaleMeta):

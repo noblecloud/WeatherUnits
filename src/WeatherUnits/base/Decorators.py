@@ -1,7 +1,7 @@
 import logging
 
 from ..utils import toCamelCase
-from .. import config as _config
+from ..config import config as _config
 
 
 properties = _config['UnitProperties']

@@ -1,5 +1,6 @@
-from .. import MeasurementSystem as _MeasurementSystem, NamedType
-from .. import BaseUnit, Huge, Large, Medium, PropertiesFromConfig, Small, SystemVariant, Tiny, UnitSystem
+from ..base import NamedType
+from ..base import MeasurementSystem as _MeasurementSystem
+from ..base import BaseUnit, Huge, Large, Medium, PropertiesFromConfig, Small, SystemVariant, Tiny, UnitSystem
 from ..utils import ScaleMeta as _ScaleMeta
 
 

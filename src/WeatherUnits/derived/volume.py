@@ -1,6 +1,7 @@
 from typing import Union
 
-from .. import Measurement as _Measurement, NamedType
+from ..base.Decorators import NamedType
+from ..base.Measurement import Measurement as _Measurement
 from ..length import Foot as _Foot, Length as _Length, Meter as _Meter
 
 

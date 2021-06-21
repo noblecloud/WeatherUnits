@@ -1,5 +1,6 @@
 from ..mass import Mass as _Mass
-from .. import DerivedMeasurement as _DerivedMeasurement, NamedType
+from ..base import NamedType
+from ..base.Measurement import DerivedMeasurement as _DerivedMeasurement
 from .volume import Volume as _Volume
 
 

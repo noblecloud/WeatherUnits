@@ -1,7 +1,6 @@
-from .. import Large, Medium, Small, Tiny
+from ..base.Decorators import Large, Medium, Small, Tiny, UnitSystem, BaseUnit
 from ..utils import ScaleMeta as _ScaleMeta
 from . import Length as _Length
-from .. import UnitSystem, BaseUnit
 
 
 class _Scale(_ScaleMeta):

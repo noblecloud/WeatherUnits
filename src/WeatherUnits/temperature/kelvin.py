@@ -1,5 +1,6 @@
-from .. import NoSpaceBeforeUnit
+from ..base import NoSpaceBeforeUnit
 from . import Temperature as _Temperature
+
 
 class Kelvin(_Temperature):
 	_decorator = ''

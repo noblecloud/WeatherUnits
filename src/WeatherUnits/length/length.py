@@ -1,4 +1,5 @@
-from .. import MeasurementSystem as _MS, NamedType
+from ..base.Decorators import NamedType
+from ..base.ScalingMeasurement import MeasurementSystem as _MS
 
 
 @NamedType

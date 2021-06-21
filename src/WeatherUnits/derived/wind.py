@@ -1,5 +1,5 @@
 from .speed import Speed as _Speed
-from .. import NamedType
+from ..base import NamedType
 
 
 @NamedType
