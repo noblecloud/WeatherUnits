@@ -11,20 +11,23 @@ class Direction(Measurement):
 	def __init__(self, *args, **kwargs):
 		super(Direction, self).__init__(*args, **kwargs)
 
-	def __str__(self) -> str:
-		string = string = self._string()
+	def _string(self, **kwargs) -> str:
 		if self._cardinal and self._degrees:
-			return f'{self.cardinal} ({self._string()})'
+			return f'{self.cardinal} ({super()._string(**kwargs)})'
 		if self._cardinal:
 			return f'{self.cardinal}'
 		else:
-			return f'{self._string()}'
+			return f'{super()._string(**kwargs)}'
 
 	@property
 	def cardinal(self):
 		dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
 		ix = round(self / (360. / len(dirs)))
 		return dirs[ix % len(dirs)]
+
+	@property
+	def decorator(self):
+		return self._decorator if not self._cardinal else ''
 
 
 @PropertiesFromConfig

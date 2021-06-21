@@ -5,6 +5,7 @@ from .. import config as _config
 from .. import errors as _errors, utils as _utils
 from .decorators import *
 
+from math import nan
 
 class UnitMeta(str):
 	_power = 1
@@ -51,15 +52,29 @@ class SmartFloat(float):
 	_thousandsSeparator = False
 	_combineUnitAndSuffix: bool = False
 	_subscriptionKey: str = None
+	_sizeHint: str = None
+
+	@classmethod
+	def noneToNan(cls, value):
+		if not isinstance(value, float):
+			try:
+				value = float(value)
+			except ValueError:
+				value = nan
+			except TypeError:
+				value = nan
+		return value
 
 	def __new__(cls, value):
+		value = cls.noneToNan(value)
 		return float.__new__(cls, value)
 
 	def __init__(self, value):
+		# if isinstance(value, SmartFloat):
+		# 	self._title = value._title if value._title is not None else self._title
+		value = self.noneToNan(value)
 		self._scale, decimal = list(len(n) for n in str(float(value)).split('.'))
 		self._precision = min(self._precision, decimal)
-		if isinstance(value, SmartFloat):
-			self._title = value._title
 		float.__init__(value)
 
 	def _string(self, hintString: bool = False, forceUnit: bool = False) -> str:
@@ -88,6 +103,10 @@ class SmartFloat(float):
 
 	def __bool__(self):
 		return super().__bool__() or bool(self.unit)
+
+	@property
+	def valueUnset(self) -> bool:
+		return self == nan
 
 	@property
 	def withUnit(self):
@@ -150,7 +169,11 @@ class SmartFloat(float):
 	@property
 	def sizeHint(self) -> int:
 		# length = len(string) - (0.5 * (string.count('.') + string.count(','))
-		return self._string(hintString=True).replace('1', '0')
+		return self._string(hintString=True).replace('1', '0') if self._sizeHint is None else self._sizeHint
+
+	@property
+	def decorator(self):
+		self._decorator
 
 
 class Measurement(SmartFloat):
@@ -256,9 +279,10 @@ class Measurement(SmartFloat):
 		return self.transform(other)
 
 	def transform(self, other):
+		nonTransferred = ['_unit', '_suffix', '_scale']
 		if self.type != other.type:
 			logging.warning(f'{self.withUnit} and {other.withUnit} are not identical types, this may cause issues')
-		other.__dict__.update(self.__dict__)
+		other.__dict__.update({key:value for key, value in self.__dict__.items() if key not in nonTransferred and value is not None})
 		if other._updateFunction:
 			other._updateFunction(other)
 		return other
