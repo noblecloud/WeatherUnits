@@ -1,9 +1,18 @@
 from ..base import NamedType
 from ..base import MeasurementSystem as _MS
 
+__all__ = ['Mass']
 
 @NamedType
 class Mass(_MS):
+	Gram: type
+	Milligram: type
+	Kilogram: type
+	Dram: type
+	Ounce: type
+	Pound: type
+	Hundredweight: type
+	Ton: type
 
 	@property
 	def milligram(self):
@@ -40,4 +49,3 @@ class Mass(_MS):
 	kg = kilogram
 	oz = ounce
 	lbs = pound
-

@@ -7,5 +7,11 @@ from . import length
 from . import mass
 from . import time
 from . import pressure
-from . import derived
-from . import others
+from .derived import *
+from .others import *
+
+Temperature = temperature.Temperature
+Length =length.Length
+Mass = mass.Mass
+Time = time.Time
+Pressure = pressure.Pressure

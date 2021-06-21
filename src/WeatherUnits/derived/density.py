@@ -3,6 +3,8 @@ from ..base import NamedType
 from ..base.Measurement import DerivedMeasurement as _DerivedMeasurement
 from .volume import Volume as _Volume
 
+__all__ = ['Density']
+
 
 @NamedType
 class Density(_DerivedMeasurement):

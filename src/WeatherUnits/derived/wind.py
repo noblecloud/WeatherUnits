@@ -1,35 +1,30 @@
-from .speed import Speed as _Speed
+from .speed import Speed
 from ..base import NamedType
+from ..others import Direction
+
+__all__ = ['Wind']
 
 
 @NamedType
-class Wind(_Speed):
-	@property
-	def fts(self):
-		return _Speed(self._numerator.ft, self._denominator.s)
+class Wind(Speed):
+
+	# TODO: Add support for setting both speed and direction
+	__direction: Direction = None
+
+
+	# def __init__(self, speed: Speed = None, direction: Direction = None):
+	# 	if direction is not None:
+	# 		self.__direction = direction
+	# 	if
+	# 	super(Wind, self).__init__(Speed)
 
 	@property
-	def mih(self):
-		converted = _Speed(self._numerator.mi, self._denominator.hr)
-		converted._suffix = 'mph'
-		return converted
+	def direction(self):
+		return self.__direction
 
-	@property
-	def inh(self):
-		return _Speed(self._numerator.inch, self._denominator.hr)
-
-	@property
-	def ms(self):
-		return _Speed(self._numerator.m, self._denominator.s)
-
-	@property
-	def mh(self):
-		return _Speed(self._numerator.m, self._denominator.hr)
-
-	@property
-	def kmh(self):
-		return _Speed(self._numerator.km, self._denominator.hr)
-
-	@property
-	def mmh(self):
-		return _Speed(self._numerator.mm, self._denominator.hr)
+	@direction.setter
+	def direction(self, value):
+		if isinstance(value, Direction):
+			self.__direction |= value
+		else:
+			self.__direction = value

@@ -4,19 +4,15 @@ from ..base.Decorators import UnitSystem, BaseUnit
 from .length import Length as _Length
 
 
-class _Scale(_ScaleMeta):
-	Line = 1
-	Inch = 12
-	Foot = 12
-	Yard = 3
-	Mile = 1760
-	Base = 'Foot'
-
-# _format = '{:2.2f}'
-
 @UnitSystem
 class Imperial(_Length):
-	_Scale = _Scale
+	class _Scale(_ScaleMeta):
+		Line = 1
+		Inch = 12
+		Foot = 12
+		Yard = 3
+		Mile = 1760
+		Base = 'Foot'
 
 	def _line(self):
 		return self.changeScale(self.scale.Line)

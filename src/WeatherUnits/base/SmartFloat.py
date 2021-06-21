@@ -8,6 +8,8 @@ log = logging.getLogger('SmartFloat')
 
 properties = _config['UnitProperties']
 
+__all__ = ['SmartFloat']
+
 
 class Meta(type):
 	def __new__(cls, name, bases, dct):
@@ -107,22 +109,31 @@ class SmartFloat(float, metaclass=Meta):
 	def _string(self, hintString: bool = False, forceUnit: bool = False) -> str:
 		if self._shorten:
 			c, valueFloat = 0, float(self)
-			while 4 <= len(str(int(valueFloat))) > self._max:
+			numberLength = len(str(int(valueFloat)))
+			while numberLength > 3 and numberLength > self._max:
 				c += 1
 				valueFloat /= 1000
+				numberLength = len(str(int(valueFloat)))
 			suffix = ['', 'k', 'm', 'B'][c]
 		else:
 			valueFloat = self
 			c = False
 			suffix = ''
 
+		# TODO: Allow for precision to be overridden if number is scaled.  (10,110 becomes 10.11k instead of 10.1k)
 		newScale, decimal = list(len(n) for n in str(round(valueFloat, self._precision)).strip('0').split('.'))
-		decimal = min(self._precision, 1 if not decimal and c else decimal)
+
+		# Max amount of precision that can be displayed while keeping string under max length
+		intAllowedPrecision = max(0, self._max - newScale)
+
+		# Allow at least on level of precision if
+		# Removed 1 if not decimal and c else decimal
+		decimal = min(self._precision, intAllowedPrecision)
 		formatStr = f"{{:{',' if self._thousandsSeparator else ''}.{decimal}f}}"
 		valueString = formatStr.format(10 ** max(newScale - 1, 0) if hintString else valueFloat)
-		needsSpacer = self._unitSpacer and forceUnit or c
+		needsSpacer = self._unitSpacer or (forceUnit and self._unitSpacer) or c
 		spacer = " " if needsSpacer else ""
-		unit = self._unit if self._showUnit and forceUnit else ''
+		unit = self._unit if self._showUnit or forceUnit else ''
 		return f'{valueString}{suffix}{self._decorator}{spacer}{unit}'
 
 	def __str__(self):

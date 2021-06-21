@@ -1,8 +1,11 @@
 import logging
 from typing import Callable, Optional
 
+from .SmartFloat import Meta
 from .. import errors
 from . import SmartFloat
+
+__all__ = ['Measurement', 'DerivedMeasurement']
 
 
 class Measurement(SmartFloat):
@@ -22,7 +25,7 @@ class Measurement(SmartFloat):
 		SmartFloat.__init__(self, value)
 
 	@property
-	def localized(self):
+	def localize(self):
 		if self.convertible:
 			try:
 				selector = self._config['Units'][self.type.__name__.lower()]
@@ -130,10 +133,10 @@ class DerivedMeasurement(Measurement):
 
 	# TODO: Implement into child classes
 	def _getUnit(self) -> tuple[str, str]:
-		return _config['Units'][self._type].split('/')
+		return self._config['Units'][self._type].split('/')
 
 	@property
-	def localized(self):
+	def localize(self):
 		try:
 			newClass = self.__class__
 			n, d = self._config['Units'][self.type.__name__.lower()].split(',')

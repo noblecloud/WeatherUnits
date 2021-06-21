@@ -3,9 +3,16 @@ from ..base import NamedType
 from ..base import Measurement
 
 
+__all__ = ['Light']
+
 @NamedType
 class Light(Measurement):
-	pass
+	UVI: type
+	Illuminance: type
+	Irradiance: type
+	RadiantFlux: type
+	Lux: type
+	Brightness: type
 
 @NamedType
 class UVI(Light):
@@ -25,3 +32,12 @@ class Illuminance(Light):
 RadiantFlux = Irradiance
 Lux = Illuminance
 Brightness = Illuminance
+
+
+Light.UVI = UVI
+Light.Illuminance = Illuminance
+Light.Irradiance = Irradiance
+
+Light.RadiantFlux = Irradiance
+Light.Lux = Illuminance
+Light.Brightness = Illuminance

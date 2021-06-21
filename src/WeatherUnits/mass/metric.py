@@ -4,16 +4,14 @@ from . import Mass as _Mass
 from ..base import UnitSystem, BaseUnit
 
 
-class _Scale(_ScaleMeta):
-	Milligram = 1
-	Gram = 1000
-	Kilogram = 1000
-	Base = 'Gram'
-
-
 @UnitSystem
 class Metric(_Mass):
-	_Scale = _Scale
+
+	class _Scale(_ScaleMeta):
+		Milligram = 1
+		Gram = 1000
+		Kilogram = 1000
+		Base = 'Gram'
 
 	def _dram(self):
 		return self._ounce() * 16
@@ -25,13 +23,13 @@ class Metric(_Mass):
 		return self._kilogram() * 2.2046226218
 
 	def _milligram(self):
-		return self.changeScale(_Scale.Milligram)
+		return self.changeScale(self._Scale.Milligram)
 
 	def _gram(self):
-		return self.changeScale(_Scale.Gram)
+		return self.changeScale(self._Scale.Gram)
 
 	def _kilogram(self):
-		return self.changeScale(_Scale.Kilogram)
+		return self.changeScale(self._Scale.Kilogram)
 
 
 @Tiny

@@ -4,6 +4,19 @@ from ..base.ScalingMeasurement import MeasurementSystem as _MS
 
 @NamedType
 class Length(_MS):
+	Millimeter: type
+	Centimeter: type
+	Decimeter: type
+	Meter: type
+	Decameter: type
+	Hectometer: type
+	Kilometer: type
+
+	Line: type
+	Inch: type
+	Foot: type
+	Yard: type
+	Mile: type
 
 	@property
 	def millimeter(self):

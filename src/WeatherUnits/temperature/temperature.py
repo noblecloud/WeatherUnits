@@ -1,13 +1,16 @@
 from math import log as _log
 
-from ..base import NoSpaceBeforeUnit, PropertiesFromConfig
 from ..base import NamedType
 from ..base import Measurement as _Measurement
 
 
-@PropertiesFromConfig
 @NamedType
 class Temperature(_Measurement):
+
+	Celsius: type
+	Fahrenheit: type
+	Kelvin: type
+
 	_decorator = 'º'
 
 	@property

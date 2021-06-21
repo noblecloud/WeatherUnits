@@ -4,9 +4,15 @@ from ..base.Decorators import NamedType
 from ..base.Measurement import Measurement as _Measurement
 from ..length import Foot as _Foot, Length as _Length, Meter as _Meter
 
+__all__ = ['Volume']
+
 
 @NamedType
 class Volume(_Measurement):
+
+	CubicFoot: type
+	CubicMeter: type
+
 	_x: _Length
 	_y: _Length
 	_z: _Length
@@ -88,3 +94,7 @@ class CubicFoot(Volume):
 		y = self._y.m
 		z = self._z.m
 		return CubicMeter(x, y, z)
+
+
+Volume.CubicMeter = CubicMeter
+Volume.CubicFoot = CubicFoot

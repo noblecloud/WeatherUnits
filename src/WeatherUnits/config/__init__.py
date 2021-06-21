@@ -18,7 +18,7 @@ class Config(ConfigParser):
 			self.locale = locale
 		if path is None:
 			path = 'us.ini' if self.locale.lower().endswith('us') else 'si.ini'
-		super(Config, self).__init__(*args, **kwargs)
+		super(Config, self).__init__(*args, **kwargs, allow_no_value=False)
 		with importlib.resources.path(__package__, path) as path:
 			self.path = path
 		self.read(path)
@@ -62,6 +62,10 @@ class Config(ConfigParser):
 	@property
 	def lon(self):
 		return float(self['Location']['lon'])
+
+	@property
+	def unitProperties(self):
+		return self['UnitProperties']
 
 
 config = Config()

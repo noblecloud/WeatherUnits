@@ -3,24 +3,37 @@ from ..base import NamedType, BaseUnit, UnitSystem
 from ..base import MeasurementSystem as _MS
 from ..utils import ScaleMeta as _ScaleMeta
 
+__all__ = ['Time']
 
-class Scale(_ScaleMeta):
-	Millisecond = 1
-	Second = 1000
-	Minute = 60
-	Hour = 60
-	Day = 24
-	Year = 365
-	Decade = 10
-	Century = 10
-	Millennia = 10
-	Base = 'Second'
 
 @UnitSystem
 @NamedType
 class Time(_MS):
+
+	Millisecond: type
+	Second: type
+	Minute: type
+	Hour: type
+	Day: type
+	Week: type
+	Year: type
+	Decade: type
+	Century: type
+	Millennia: type
+
+	class _Scale(_ScaleMeta):
+		Millisecond = 1
+		Second = 1000
+		Minute = 60
+		Hour = 60
+		Day = 24
+		Year = 365
+		Decade = 10
+		Century = 10
+		Millennia = 10
+		Base = 'Second'
+
 	_format = '{:2.2f}'
-	_Scale = Scale
 
 	def _millisecond(self):
 		return self.changeScale(self.scale.Millisecond)
@@ -104,13 +117,11 @@ class Time(_MS):
 
 	@property
 	def week(self):
-		from ..time import Week
-		return Week(self._day() / 7)
+		return Time.Week(self._day() / 7)
 
 	@property
 	def month(self):
-		from ..time import Month
-		return Month(self._day() / 30)
+		return Time.Month(self._day() / 30)
 
 	@property
 	def year(self):
@@ -166,11 +177,13 @@ class Day(Time):
 
 
 class Week(Time, SystemVariant):
+	# TODO: Change over to new method
 	_unit = 'wk'
 	_multiplier = 1/604800
 
 
 class Month(Time, SystemVariant):
+	# TODO: Change over to new method
 	_unit = 'mth'
 	_multiplier = 1/2592000
 
@@ -189,3 +202,15 @@ class Century(Time):
 
 class Millennia(Time):
 	_unit = 'mel'
+
+
+Time.Millisecond = Millisecond
+Time.Second = Second
+Time.Minute = Minute
+Time.Hour = Hour
+Time.Day = Day
+Time.Week = Week
+Time.Year = Year
+Time.Decade = Decade
+Time.Century = Century
+Time.Millennia = Millennia

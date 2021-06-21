@@ -3,35 +3,33 @@ from ..utils import ScaleMeta as _ScaleMeta
 from . import Length as _Length
 
 
-class _Scale(_ScaleMeta):
-	Millimeter = 1
-	Centimeter = 10
-	Decimeter = 10
-	Meter = 10
-	Decameter = 10
-	Hectometer = 10
-	Kilometer = 10
-	Base = 'Meter'
-
-
 @UnitSystem
 class Metric(_Length):
-	_Scale = _Scale
+
+	class _Scale(_ScaleMeta):
+		Millimeter = 1
+		Centimeter = 10
+		Decimeter = 10
+		Meter = 10
+		Decameter = 10
+		Hectometer = 10
+		Kilometer = 10
+		Base = 'Meter'
 
 	def _foot(self):
 		return self._meter() * 3.280839895013123
 
 	def _millimeter(self):
-		return self.changeScale(_Scale.Millimeter)
+		return self.changeScale(self._Scale.Millimeter)
 
 	def _centimeter(self):
-		return self.changeScale(_Scale.Centimeter)
+		return self.changeScale(self._Scale.Centimeter)
 
 	def _meter(self):
-		return self.changeScale(_Scale.Meter)
+		return self.changeScale(self._Scale.Meter)
 
 	def _kilometer(self):
-		return self.changeScale(_Scale.Kilometer)
+		return self.changeScale(self._Scale.Kilometer)
 
 
 @Tiny

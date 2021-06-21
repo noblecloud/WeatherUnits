@@ -104,3 +104,8 @@ def PropertiesFromConfig(cls):
 		except KeyError:
 			pass
 	return cls
+
+
+def synonym(cls):
+	cls.__name__ = cls.__mro__[1].__name__
+	return cls

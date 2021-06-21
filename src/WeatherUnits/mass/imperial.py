@@ -4,18 +4,16 @@ from . import Mass as _Mass
 from ..base import UnitSystem, BaseUnit
 
 
-class _Scale(_ScaleMeta):
-	Dram = 1
-	Ounce = 16
-	Pound = 16
-	Hundredweight = 100
-	Ton = 20
-	Base = 'Pound'
-
-
 @UnitSystem
 class Imperial(_Mass):
-	_Scale = _Scale
+
+	class _Scale(_ScaleMeta):
+		Dram = 1
+		Ounce = 16
+		Pound = 16
+		Hundredweight = 100
+		Ton = 20
+		Base = 'Pound'
 
 	def _dram(self):
 		return self.changeScale(self.scale.Dram)

@@ -1,12 +1,28 @@
-from .speed import Speed as _Rate
+from enum import Enum
+
+from .speed import Speed
 from ..base.Decorators import NamedType, NamedSubType
-from ..base.Measurement import Measurement as _Measurement
-from ..length import Length as _Length
-from ..time import Day as _Day, Minute as _Minute, Hour as _Hour
+from ..base.Measurement import Measurement
+from ..length import Length
+from ..time import Time
+
+__all__ = ['Precipitation']
 
 
 @NamedType
-class Precipitation(_Rate):
+class Precipitation(Speed):
+	_numerator: Length
+	_denominator: Time
+	Daily: type
+	Hourly: type
+	Minutely: type
+
+	class Type(Enum):
+		NONE = 0
+		Rain = 1
+		Hail = 2
+		Sleet = 3
+		Snow = 4
 
 	@property
 	def fth(self):
@@ -38,36 +54,41 @@ class Precipitation(_Rate):
 
 
 @NamedSubType
-class PrecipitationDaily(Precipitation):
-	def __new__(cls, numerator: _Length, denominator: int = 1):
-		value = float(numerator) / float(denominator)
-		return _Measurement.__new__(cls, value)
+class Daily(Precipitation):
+	# def __new__(cls, numerator: Length, denominator: int = 1):
+	# 	value = float(numerator) / float(denominator)
+	# 	return Measurement.__new__(cls, value)
 
-	def __init__(self, numerator: _Length, denominator: int = 1):
+	def __init__(self, numerator: Length, denominator: int = 1):
 		self._numerator = numerator
-		self._denominator = _Day(denominator)
-		_Measurement.__init__(self, float(self._numerator) / float(self._denominator))
+		self._denominator = Time.Day(denominator)
+		Measurement.__init__(self, float(self._numerator) / float(self._denominator))
 
 
 @NamedSubType
-class PrecipitationHourly(Precipitation):
-	def __new__(cls, numerator: _Length, denominator: int = 1):
+class Hourly(Precipitation):
+	def __new__(cls, numerator: Length, denominator: int = 1):
 		value = float(numerator) / float(denominator)
-		return _Measurement.__new__(cls, value)
+		return Measurement.__new__(cls, value)
 
-	def __init__(self, numerator: _Length, denominator: int = 1):
+	def __init__(self, numerator: Length, denominator: int = 1):
 		self._numerator = numerator
-		self._denominator = _Hour(denominator)
-		_Measurement.__init__(self, float(self._numerator) / float(self._denominator))
+		self._denominator = Time.Hour(denominator)
+		Measurement.__init__(self, float(self._numerator) / float(self._denominator))
 
 
 @NamedSubType
-class PrecipitationMinutely(Precipitation):
-	def __new__(cls, numerator: _Length, denominator: int = 1):
+class Minutely(Precipitation):
+	def __new__(cls, numerator: Length, denominator: int = 1):
 		value = float(numerator) / float(denominator)
-		return _Measurement.__new__(cls, value)
+		return Measurement.__new__(cls, value)
 
-	def __init__(self, numerator: _Length, denominator: int = 1):
+	def __init__(self, numerator: Length, denominator: int = 1):
 		self._numerator = numerator
-		self._denominator = _Minute(denominator)
-		_Measurement.__init__(self, float(self._numerator) / float(self._denominator))
+		self._denominator = Time.Minute(denominator)
+		Measurement.__init__(self, float(self._numerator) / float(self._denominator))
+
+
+Precipitation.Daily = Daily
+Precipitation.Hourly = Hourly
+Precipitation.Minutely = Minutely
