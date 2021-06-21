@@ -54,7 +54,6 @@ class Gigapascal(Pressure):
 	_unit = 'GPa'
 
 
-@PropertiesFromConfig
 class mmHg(Pascal, SystemVariant):
 	_unit = "mmHg"
 

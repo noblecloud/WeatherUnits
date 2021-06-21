@@ -3,7 +3,6 @@ from ..base import Measurement
 
 
 @NamedType
-@PropertiesFromConfig
 class Direction(Measurement):
 	_precision = 0
 	_decorator = 'º'
@@ -32,7 +31,6 @@ class Direction(Measurement):
 		return self._decorator if not self._cardinal else ''
 
 
-@PropertiesFromConfig
 @NamedType
 class Voltage(Measurement):
 	_max = 3
@@ -41,7 +39,6 @@ class Voltage(Measurement):
 
 
 @NamedType
-@PropertiesFromConfig
 class Strikes(Measurement):
 	# TODO: Create discrete number class for this and similar measurements
 	unit = 'strikes'
