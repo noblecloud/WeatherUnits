@@ -7,6 +7,7 @@ from .decorators import *
 
 from math import nan
 
+
 class UnitMeta(str):
 	_power = 1
 

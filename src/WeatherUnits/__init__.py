@@ -1,4 +1,4 @@
-from ._config import config
+from .config import config
 from . import errors
 from .measurement import *
 from . import temperature
