@@ -1,6 +1,7 @@
 from ..base import NamedType
 from ..base import Measurement
 from . import light
+
 Light = light.Light
 
 __all__ = ['Light', 'Direction', 'Humidity', 'Voltage', 'Strikes']
@@ -17,7 +18,12 @@ class Direction(Measurement):
 	_precision = 0
 	_decorator = 'º'
 	_cardinal = True
-	_degrees = False
+	_shorten = True
+
+	_dirsAbbrv = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+	_dirsFull = ['North', 'North Northeast', 'East Northeast', 'East', 'East Southeast', 'Southeast',
+	             'South Southeast', 'South', 'South Southwest', 'Southwest', 'West Southwest', 'West',
+	             'West Northwest', 'Northwest', 'North Northwest']
 
 	def __init__(self, *args, **kwargs):
 		super(Direction, self).__init__(*args, **kwargs)
@@ -32,9 +38,7 @@ class Direction(Measurement):
 
 	@property
 	def cardinal(self):
-		dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
-		ix = round(self / (360. / len(dirs)))
-		return dirs[ix % len(dirs)]
+		return self._dirsAbbrv if self._shorten else self._dirsFull[round(self / 22.5) % 16]
 
 	@property
 	def decorator(self):

@@ -109,7 +109,7 @@ class Pressure(_MeasurementSystem):
 	def millibar(self):
 		return Millibar(self)
 
-	mbar = millibar = mBar
+	mbar = mBar = millibar
 
 
 
@@ -183,12 +183,5 @@ Pressure.Kilopascal = Kilopascal
 Pressure.Gigapascal = Gigapascal
 Pressure.Atmosphere = Atmosphere
 Pressure.TechnicalAtmosphere = TechnicalAtmosphere
+Pressure.TechnicalAtmosphere = TechnicalAtmosphere
 Pressure.PoundsPerSquareInch = PoundsPerSquareInch
-Pressure.mmHg = mmHg
-Pressure.inHg = inHg
-Pressure.Bar = Bar
-Pressure.kPa = Kilopascal
-Pressure.mbar = mBar
-Pressure.mBar = mBar
-Pressure.hPa = Hectopascal
-Pressure.psi = PoundsPerSquareInch
