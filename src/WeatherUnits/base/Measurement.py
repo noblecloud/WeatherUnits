@@ -142,8 +142,8 @@ class DerivedMeasurement(Measurement):
 	@property
 	def localize(self):
 		try:
-			newClass = self.__class__
-			n, d = self._config['Units'][self.type.__name__.lower()].split(',')
+
+			n, d = self._config['Units'][self.type.__name__.lower()].split('/')
 			n = 'inch' if n == 'in' else n
 			d = self.d.unit if d == '*' else d
 			new = newClass(getattr(self._numerator, n), getattr(self._denominator, d))
