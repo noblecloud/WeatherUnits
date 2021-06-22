@@ -56,23 +56,23 @@ def strToDict(string: str, cls: type) -> type:
 
 
 def Tiny(cls):
-	return strToDict(properties['tiny'], cls)
+	return strToDict(properties['Tiny'], cls)
 
 
 def Small(cls):
-	return strToDict(properties['small'], cls)
+	return strToDict(properties['Small'], cls)
 
 
 def Medium(cls):
-	return strToDict(properties['medium'], cls)
+	return strToDict(properties['Medium'], cls)
 
 
 def Large(cls):
-	return strToDict(properties['large'], cls)
+	return strToDict(properties['Large'], cls)
 
 
 def Huge(cls):
-	return strToDict(properties['huge'], cls)
+	return strToDict(properties['Huge'], cls)
 
 
 def Integer(cls):

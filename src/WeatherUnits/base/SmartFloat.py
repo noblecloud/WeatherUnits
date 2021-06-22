@@ -1,4 +1,5 @@
 import logging
+from typing import Union
 
 from math import nan
 
@@ -11,57 +12,71 @@ properties = _config['UnitProperties']
 __all__ = ['SmartFloat']
 
 
+def convertString(value: str) -> Union[int, float, str, bool]:
+	if value is None:
+		return value
+	if value.isnumeric():
+		value = float(value)
+		if value.is_integer():
+			value = int(value)
+		return value
+	if value == 'True':
+		value = True
+	elif value == 'False':
+		value = False
+	return value
+
+
+def parseString(item: str):
+	key, value = item.split('=')
+	value = convertString(value)
+	return f'_{key}', value
+
+
+def strToDict(string: str, cls: type) -> type:
+	conf = [parseString(a) for a in [(y.strip(' ')) for y in string.split(',')]]
+	for item in conf:
+		setattr(cls, *item)
+	return cls
+
+
+def toCamelCase(string, titleCase: bool = False) -> str:
+	string = (string.lower() if string.isupper() else string)
+	for char in ['-', ' ', '.', '_']:
+		string.replace(char, '')
+	return string[0].upper() if titleCase else string[0].lower() + string[1:]
+
+
+def PropertiesFromConfig(cls):
+	possibleNames = [cls.__name__.lower(), toCamelCase(cls.__name__), cls.__name__]
+	if hasattr(cls, '_type') and cls._type is not None and not isinstance(cls._type, str):
+		possibleTypes = [cls._type.__name__.lower(), toCamelCase(cls._type.__name__), cls._type.__name__]
+		for classType in possibleTypes:
+			try:
+				cls = strToDict(properties[classType], cls)
+				break
+			except KeyError:
+				pass
+		else:
+			log.debug(f'{cls.__name__} has no type defined')
+
+	for name in possibleNames:
+		try:
+			cls = strToDict(properties[name], cls)
+			break
+		except KeyError:
+			pass
+	return cls
+
+
+defaults = {f'_{property}': convertString(value) for property, value in _config['UnitDefaults'].items()}
+
+
 class Meta(type):
 	def __new__(cls, name, bases, dct):
-
-		def toCamelCase(string, titleCase: bool = False) -> str:
-			string = (string.lower() if string.isupper() else string)
-			for char in ['-', ' ', '.', '_']:
-				string.replace(char, '')
-			return string[0].upper() if titleCase else string[0].lower() + string[1:]
-
-		def strToDict(string: str, cls: type) -> type:
-			def parseString(item: str):
-				key, value = item.split('=')
-				# expectedTypes = {'max': int, 'precision': int, 'unitSpacer': stringToBool, 'shorten': stringToBool, 'thousandsSeparator': stringToBool, 'cardinal': stringToBool, 'degrees': stringToBool}
-				if value.isnumeric():
-					value = float(value)
-					if value.is_integer():
-						value = int(value)
-				if value == 'True':
-					value = True
-				elif value == 'False':
-					value = False
-				return f'_{key}', value
-
-			conf = [parseString(a) for a in [(y.strip(' ')) for y in string.split(',')]]
-			for item in conf:
-				setattr(cls, *item)
-
-			return cls
-
-		def PropertiesFromConfig(cls):
-			possibleNames = [cls.__name__.lower(), toCamelCase(cls.__name__), cls.__name__]
-			if hasattr(cls, '_type') and cls._type is not None and not isinstance(cls._type, str):
-				possibleTypes = [cls._type.__name__.lower(), toCamelCase(cls._type.__name__), cls._type.__name__]
-				for classType in possibleTypes:
-					try:
-						cls = strToDict(properties[classType], cls)
-						break
-					except KeyError:
-						pass
-				else:
-					log.debug(f'{cls.__name__} has no type defined')
-
-			for name in possibleNames:
-				try:
-					cls = strToDict(properties[name], cls)
-					break
-				except KeyError:
-					pass
-			return cls
-
 		x = super().__new__(cls, name, bases, dct)
+		for prop in defaults.items():
+			setattr(x, *prop)
 		x = PropertiesFromConfig(x)
 		return x
 
@@ -75,10 +90,11 @@ class SmartFloat(float, metaclass=Meta):
 	_decorator: str = ''
 	_unitSpacer = True
 	_title: str = ''
-	_scale = 1
+	_exp: int = 1
+	_slide: bool = True
 	_showUnit: bool = True
 	_shorten: bool = True
-	_thousandsSeparator = False
+	_kSeparator = False
 	_combineUnitAndSuffix: bool = False
 	_subscriptionKey: str = None
 	_sizeHint: str = None
@@ -102,7 +118,7 @@ class SmartFloat(float, metaclass=Meta):
 		# if isinstance(value, SmartFloat):
 		# 	self._title = value._title if value._title is not None else self._title
 		value = self.noneToNan(value)
-		self._scale, decimal = list(len(n) for n in str(float(value)).split('.'))
+		self._exp, decimal = list(len(n) for n in str(float(value)).split('.'))
 		self._precision = min(self._precision, decimal)
 		float.__init__(value)
 
@@ -129,7 +145,7 @@ class SmartFloat(float, metaclass=Meta):
 		# Allow at least on level of precision if
 		# Removed 1 if not decimal and c else decimal
 		decimal = min(self._precision, intAllowedPrecision, decimal)
-		formatStr = f"{{:{',' if self._thousandsSeparator else ''}.{decimal}f}}"
+		formatStr = f"{{:{',' if self._kSeparator else ''}.{decimal}f}}"
 		valueString = formatStr.format(10 ** max(newScale - 1, 0) if hintString else valueFloat)
 		needsSpacer = self._unitSpacer and (forceUnit and self._unitSpacer and not hintString) or c
 		spacer = " " if needsSpacer else ""
@@ -138,6 +154,9 @@ class SmartFloat(float, metaclass=Meta):
 
 	def __str__(self):
 		return self._string()
+
+	def __repr__(self):
+		return self._string(forceUnit=True)
 
 	def __bool__(self):
 		return super().__bool__() or bool(self.unit)

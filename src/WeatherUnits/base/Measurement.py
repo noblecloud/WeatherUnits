@@ -121,7 +121,7 @@ class Measurement(SmartFloat):
 
 
 class DerivedMeasurement(Measurement):
-	_type = 'derived'
+	_type: type = 'derived'
 	_numerator: Measurement
 	_denominator: Measurement
 
