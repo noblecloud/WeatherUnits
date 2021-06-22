@@ -7,6 +7,8 @@ from . import SmartFloat
 
 __all__ = ['Measurement', 'DerivedMeasurement']
 
+log = logging.getLogger('WeatherUnits')
+
 
 class Measurement(SmartFloat):
 	_type: type = None
@@ -67,7 +69,7 @@ class Measurement(SmartFloat):
 	def transform(self, other):
 		nonTransferred = ['_unit', '_suffix', '_scale']
 		if self.type != other.type:
-			logging.warning(f'{self.withUnit} and {other.withUnit} are not identical types, this may cause issues')
+			log.warning(f'{self.withUnit} and {other.withUnit} are not identical types, this may cause issues')
 		other.__dict__.update({key:value for key, value in self.__dict__.items() if key not in nonTransferred and value is not None})
 		if other._updateFunction:
 			other._updateFunction(other)
@@ -146,7 +148,7 @@ class DerivedMeasurement(Measurement):
 			new.title = self.title
 			return new
 		except KeyError:
-			logging.error('Measurement {} was unable to localize from {}'.format(self.name, self.unit))
+			log.error('Measurement {} was unable to localize from {}'.format(self.name, self.unit))
 			return self
 
 	@property
