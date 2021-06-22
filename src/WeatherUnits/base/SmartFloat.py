@@ -128,12 +128,12 @@ class SmartFloat(float, metaclass=Meta):
 
 		# Allow at least on level of precision if
 		# Removed 1 if not decimal and c else decimal
-		decimal = min(self._precision, intAllowedPrecision)
+		decimal = min(self._precision, intAllowedPrecision, decimal)
 		formatStr = f"{{:{',' if self._thousandsSeparator else ''}.{decimal}f}}"
 		valueString = formatStr.format(10 ** max(newScale - 1, 0) if hintString else valueFloat)
-		needsSpacer = self._unitSpacer or (forceUnit and self._unitSpacer) or c
+		needsSpacer = self._unitSpacer and (forceUnit and self._unitSpacer and not hintString) or c
 		spacer = " " if needsSpacer else ""
-		unit = self._unit if self._showUnit or forceUnit else ''
+		unit = self._unit if self._showUnit and forceUnit else ''
 		return f'{valueString}{suffix}{self._decorator}{spacer}{unit}'
 
 	def __str__(self):
