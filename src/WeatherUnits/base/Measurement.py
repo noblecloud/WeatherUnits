@@ -67,7 +67,9 @@ class Measurement(SmartFloat):
 			return other
 
 	def transform(self, other):
-		nonTransferred = ['_unit', '_suffix', '_scale']
+		if isinstance(other, type) and issubclass(other, Measurement):
+			other = other(self)
+		nonTransferred = ['_unit', '_suffix', '_scale', '_denominator', '_numerator']
 		if self.type != other.type:
 			log.warning(f'{self.withUnit} and {other.withUnit} are not identical types, this may cause issues')
 		other.__dict__.update({key:value for key, value in self.__dict__.items() if key not in nonTransferred and value is not None})
