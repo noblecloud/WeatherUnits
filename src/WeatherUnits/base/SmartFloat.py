@@ -3,7 +3,7 @@ from typing import Union
 
 from math import nan
 
-from ..config import config as _config
+from ..config import config as _config, Config
 
 log = logging.getLogger('SmartFloat')
 
@@ -82,22 +82,22 @@ class Meta(type):
 
 
 class SmartFloat(float, metaclass=Meta):
-	_config = _config
-	_precision: int = 1
-	_max: int = 3
-	_unit: str = ''
-	_suffix: str = ''
-	_decorator: str = ''
-	_unitSpacer = True
-	_title: str = ''
-	_exp: int = 1
-	_slide: bool = True
-	_showUnit: bool = True
-	_shorten: bool = True
-	_kSeparator = False
-	_combineUnitAndSuffix: bool = False
-	_subscriptionKey: str = None
-	_sizeHint: str = None
+	_config: Config
+	_precision: int
+	_max: int
+	_unit: str
+	_suffix: str
+	_decorator: str
+	_unitSpacer: bool
+	_title: str
+	_exp: int
+	_slide: bool
+	_showUnit: bool
+	_shorten: bool
+	_kSeparator: bool
+	_combineUnitAndSuffix: bool
+	_subscriptionKey: str
+	_sizeHint: str
 
 	@classmethod
 	def noneToNan(cls, value):

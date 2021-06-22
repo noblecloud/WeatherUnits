@@ -14,11 +14,12 @@ class Config(ConfigParser):
 	locale = locale.getlocale()[0]
 
 	def __init__(self, *args, path: str = None, locale: str = None, **kwargs):
+		self.optionxform = str
 		if locale is not None:
 			self.locale = locale
 		if path is None:
 			path = 'us.ini' if self.locale.lower().endswith('us') else 'si.ini'
-		super(Config, self).__init__(*args, **kwargs, allow_no_value=False)
+		super(Config, self).__init__(*args, **kwargs, allow_no_value=True)
 		with importlib.resources.path(__package__, path) as path:
 			self.path = path
 		self.read(path)
@@ -49,7 +50,7 @@ class Config(ConfigParser):
 		try:
 			return timezone(self['Location']['timezone'])
 		except Exception as e:
-			logging.error('Unable load timezone from config\n', e)
+			log.error('Unable load timezone from config\n', e)
 
 	@property
 	def loc(self):
