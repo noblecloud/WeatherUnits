@@ -1,7 +1,6 @@
 import logging
 from typing import Callable, Optional
 
-from .SmartFloat import Meta
 from .. import errors
 from . import SmartFloat
 
@@ -146,7 +145,11 @@ class DerivedMeasurement(Measurement):
 			n, d = self._config['Units'][self.type.__name__.lower()].split('/')
 			n = 'inch' if n == 'in' else n
 			d = self.d.unit if d == '*' else d
-			new = newClass(getattr(self._numerator, n), getattr(self._denominator, d))
+
+			name = f'{self.__class__.__name__.split(" ")[0]}'
+			cls = type(name, (self._type,), {key: value for key, value in self.__class__.__dict__.items()})
+			cls._type = self.__class__._type
+			new = cls(getattr(self._numerator, n), getattr(self._denominator, d))
 			new.title = self.title
 			return new
 		except KeyError:
