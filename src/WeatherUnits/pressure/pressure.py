@@ -47,6 +47,71 @@ class Pressure(_MeasurementSystem):
 		mmHg = 1 / 0.00750062
 		inHg = 1 / 0.00029530
 
+	@property
+	def pascal(self):
+		return Pascal(self)
+	p = pascal
+
+	@property
+	def decapascal(self):
+		return Decapascal(self)
+	dPa = decapascal
+
+	@property
+	def hectopascal(self):
+		return Hectopascal(self)
+	hPa = hectopascal
+
+	@property
+	def kilopascal(self):
+		return Kilopascal(self)
+	kPa = kilopascal
+
+	@property
+	def megapascal(self):
+		return Megapascal(self)
+
+	@property
+	def gigapascal(self):
+		return Gigapascal(self)
+	gPa = gigapascal
+
+	@property
+	def bar(self):
+		return Bar(self)
+
+	@property
+	def millimeterOfMercury(self):
+		return MillimeterOfMercury(self)
+	mmHg = millimeterOfMercury
+
+	@property
+	def inchOfMercury(self):
+		return InchOfMercury(self)
+	inHg = inchOfMercury
+
+	@property
+	def atmosphere(self):
+		return Atmosphere(self)
+	atm = atmosphere
+
+	@property
+	def technicalAtmosphere(self):
+		return TechnicalAtmosphere(self)
+	at = technicalAtmosphere
+
+	@property
+	def poundsPerSquareInch(self):
+		return PoundsPerSquareInch(self)
+	psi = poundsPerSquareInch
+
+	@property
+	def millibar(self):
+		return Millibar(self)
+
+	mbar = millibar = mBar
+
+
 
 @Tiny
 @BaseUnit
@@ -83,11 +148,11 @@ class Bar(Pascal, SystemVariant):
 	_unit = 'bar'
 
 
-class mmHg(Pascal, SystemVariant):
+class MillimeterOfMercury(Pascal, SystemVariant):
 	_unit = "mmHg"
 
 
-class inHg(Pascal, SystemVariant):
+class InchOfMercury(Pascal, SystemVariant):
 	_unit = 'inHg'
 
 
@@ -104,7 +169,7 @@ class PoundsPerSquareInch(Pascal, SystemVariant):
 
 
 @synonym
-class mBar(Hectopascal):
+class Millibar(Hectopascal):
 	_unit = 'mBar'
 	_max = 4
 
