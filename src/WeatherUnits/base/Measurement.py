@@ -41,7 +41,10 @@ class Measurement(SmartFloat):
 
 	@property
 	def convertible(self):
-		return self._type.__name__.lower() in self._config['Units']
+		try:
+			return self._type.__name__.lower() in self._config['Units']
+		except AttributeError:
+			return False
 
 	@property
 	def str(self):
