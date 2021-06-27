@@ -12,20 +12,18 @@ __all__ = ['Pressure']
 class Pressure(_MeasurementSystem):
 	Pascal: type
 	Decapascal: type
-	Hectopascals: type
+	Hectopascal: type
 	Kilopascal: type
 	Gigapascal: type
 	Atmosphere: type
 	TechnicalAtmosphere: type
 	PoundsPerSquareInch: type
-	mmHg: type
-	inHg: type
+	MillimeterOfMercury: type
+	InchOfMercury: type
 	Bar: type
-	kPa: type
-	mbar: type
-	mBar: type
-	hPa: type
-	psi: type
+	Kilopascal: type
+	Millibar: type
+	PoundsPerSquareInch: type
 
 	class Trend(Enum):
 		Falling = -1
@@ -40,12 +38,12 @@ class Pressure(_MeasurementSystem):
 		Megapascal = 1000
 		Gigapascal = 1000
 		Base = 'Pascal'
-		Bar = 1 / 1000
+		Bar = 1000.
 		Atmosphere = 101325.
 		TechnicalAtmosphere = 98066.5
 		PoundsPerSquareInch = 6894.757293168
-		mmHg = 1 / 0.00750062
-		inHg = 1 / 0.00029530
+		MillimeterOfMercury = 1 / 0.00750062
+		InchOfMercury = 1 / 0.00029530
 
 	@property
 	def pascal(self):
@@ -178,10 +176,14 @@ class Millibar(Hectopascal):
 
 Pressure.Pascal = Pascal
 Pressure.Decapascal = Decapascal
-Pressure.Hectopascals = Hectopascal
+Pressure.Hectopascal = Hectopascal
 Pressure.Kilopascal = Kilopascal
 Pressure.Gigapascal = Gigapascal
 Pressure.Atmosphere = Atmosphere
-Pressure.TechnicalAtmosphere = TechnicalAtmosphere
+Pressure.Bar = Bar
+Pressure.Millibar = Millibar
+Pressure.InchOfMercury = InchOfMercury
+Pressure.MillimeterOfMercury = MillimeterOfMercury
+Pressure.Atmosphere = Atmosphere
 Pressure.TechnicalAtmosphere = TechnicalAtmosphere
 Pressure.PoundsPerSquareInch = PoundsPerSquareInch
