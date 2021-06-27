@@ -19,12 +19,11 @@ class MeasurementSystem(Measurement):
 			raise errors.Unit.NoBaseUnitDefined(cls)
 		system = issubclass(cls, MeasurementSystem) and issubclass(value.__class__, MeasurementSystem)
 		siblings, cousins = [cls._baseUnit == value._baseUnit, cls._type == value._type] if system else (False, False)
-		variant = issubclass(cls, SystemVariant) and issubclass(value.__class__, SystemVariant)
-
+		variant = issubclass(cls, SystemVariant) or issubclass(value.__class__, SystemVariant)
 		# If values are siblings change to sibling class with changeScale()
 		if siblings:
 			# If both are variants convert value to baseUnit first
-			value = value._baseUnit(value) if variant else value
+			value = value._baseUnit(value) if variant and not cls == cls._baseUnit else value
 			return cls(value.__class__.changeScale(value, cls._Scale[cls.__name__]))
 
 		# If values are cousins initiate with values base sibling causing a recursive call to __new__

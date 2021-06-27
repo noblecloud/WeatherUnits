@@ -3,11 +3,11 @@ from typing import Union
 
 from math import nan
 
-from ..config import config as _config, Config
+from ..config import config, Config
 
 log = logging.getLogger('SmartFloat')
 
-properties = _config['UnitProperties']
+properties = config['UnitProperties']
 
 __all__ = ['SmartFloat']
 
@@ -69,16 +69,17 @@ def PropertiesFromConfig(cls):
 	return cls
 
 
-defaults = {f'_{property}': convertString(value) for property, value in _config['UnitDefaults'].items()}
+defaults = {f'_{prop}': convertString(value) for prop, value in config['UnitDefaults'].items()}
 
 
 class Meta(type):
 	def __new__(cls, name, bases, dct):
-		x = super().__new__(cls, name, bases, dct)
-		for prop in defaults.items():
-			setattr(x, *prop)
-		x = PropertiesFromConfig(x)
-		return x
+		cls = super().__new__(cls, name, bases, dct)
+		for prop in {key: value for key, value in defaults.items() if key not in dct.keys()}.items():
+			setattr(cls, *prop)
+		cls = PropertiesFromConfig(cls)
+		cls._config = config
+		return cls
 
 
 class SmartFloat(float, metaclass=Meta):
@@ -126,7 +127,7 @@ class SmartFloat(float, metaclass=Meta):
 		if self._shorten:
 			c, valueFloat = 0, float(self)
 			numberLength = len(str(int(valueFloat)))
-			while numberLength > 3 and numberLength > self._max:
+			while numberLength > 3 and numberLength >= self._max:
 				c += 1
 				valueFloat /= 1000
 				numberLength = len(str(int(valueFloat)))
@@ -147,7 +148,7 @@ class SmartFloat(float, metaclass=Meta):
 		decimal = min(self._precision, intAllowedPrecision, decimal)
 		formatStr = f"{{:{',' if self._kSeparator else ''}.{decimal}f}}"
 		valueString = formatStr.format(10 ** max(newScale - 1, 0) if hintString else valueFloat)
-		needsSpacer = self._unitSpacer and (forceUnit and self._unitSpacer and not hintString) or c
+		needsSpacer = (self._unitSpacer and self._showUnit) and (forceUnit and self._unitSpacer and not hintString) or c
 		spacer = " " if needsSpacer else ""
 		unit = self._unit if self._showUnit and forceUnit else ''
 		return f'{valueString}{suffix}{self._decorator}{spacer}{unit}'

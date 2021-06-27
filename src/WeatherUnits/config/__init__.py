@@ -10,11 +10,16 @@ log = logging.getLogger('WeatherUnitsConfig')
 l = locale.getlocale()
 
 
+class ConfigKey(str):
+	def __new__(cls, string: str):
+		return "".join(string.split())
+
+
 class Config(ConfigParser):
 	locale = locale.getlocale()[0]
 
 	def __init__(self, *args, path: str = None, locale: str = None, **kwargs):
-		self.optionxform = str
+		self.optionxform = ConfigKey
 		if locale is not None:
 			self.locale = locale
 		if path is None:

@@ -33,6 +33,11 @@ def NoSpaceBeforeUnit(cls):
 	return cls
 
 
+def LoadConfig(cls):
+	cls._config = _config
+	return cls
+
+
 def strToDict(string: str, cls: type) -> type:
 
 	def parseString(item: str):
