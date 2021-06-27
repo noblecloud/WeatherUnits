@@ -13,16 +13,20 @@ class Measurement(SmartFloat):
 	_type: type = None
 	_updateFunction: Optional[Callable] = None
 
-	def __new__(cls, value):
+	def __new__(cls, value, title: str = None, subscriptionKey: str = None):
 		return SmartFloat.__new__(cls, value)
 
-	def __init__(self, value, title: str = None):
+	def __init__(self, value, title: str = None, subscriptionKey: str = None):
 		if isinstance(value, Measurement):
-			if title is not None:
+			if value._subscriptionKey and not subscriptionKey:
+				self._subscriptionKey = value._subscriptionKey
+			if value._title and not title:
 				self._title = title
-			else:
-				self._title = value.title
-			SmartFloat.__init__(self, value)
+		if title:
+			self._title = title
+		if subscriptionKey:
+			self._subscriptionKey = subscriptionKey
+
 		SmartFloat.__init__(self, value)
 
 	@property
@@ -128,14 +132,14 @@ class DerivedMeasurement(Measurement):
 	_numerator: Measurement
 	_denominator: Measurement
 
-	def __new__(cls, numerator, denominator):
+	def __new__(cls, numerator, denominator, *args, **kwargs):
 		value = float(numerator) / float(denominator)
-		return Measurement.__new__(cls, value)
+		return Measurement.__new__(cls, value, *args, **kwargs)
 
-	def __init__(self, numerator, denominator):
+	def __init__(self, numerator, denominator, *args, **kwargs):
 		self._numerator = numerator
 		self._denominator = denominator
-		Measurement.__init__(self, float(self._numerator) / float(self._denominator))
+		Measurement.__init__(self, float(self._numerator) / float(self._denominator), *args, **kwargs)
 
 	# TODO: Implement into child classes
 	def _getUnit(self) -> tuple[str, str]:

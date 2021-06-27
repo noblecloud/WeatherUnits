@@ -12,7 +12,7 @@ class MeasurementSystem(Measurement):
 	_unitSystem: type = None
 	_Scale: _utils.ScaleMeta = None
 
-	def __new__(cls, value):
+	def __new__(cls, value, *args, **kwargs):
 		value: Union[int, float, MeasurementSystem, SystemVariant]
 		if isinstance(value, MeasurementSystem) and (not cls._baseUnit or not value.__class__._baseUnit):
 			'''For this to work each unit class must have a _baseUnit defined for each scale'''
@@ -35,7 +35,7 @@ class MeasurementSystem(Measurement):
 			raise errors.Conversion.BadConversion(cls.__name__, value.__class__.__name__)
 
 		else:
-			return Measurement.__new__(cls, value)
+			return Measurement.__new__(cls, value, *args, **kwargs)
 
 	def changeScale(self, newUnit: _utils.ScaleMeta) -> Optional[float]:
 		if self._Scale:
