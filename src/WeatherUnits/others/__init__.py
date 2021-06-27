@@ -38,7 +38,7 @@ class Direction(Measurement):
 
 	@property
 	def cardinal(self):
-		return self._dirsAbbrv if self._shorten else self._dirsFull[round(self / 22.5) % 16]
+		return self._dirsAbbrv[round(self / 22.5) % 16] if self._shorten else self._dirsFull[round(self / 22.5) % 16]
 
 	@property
 	def decorator(self):

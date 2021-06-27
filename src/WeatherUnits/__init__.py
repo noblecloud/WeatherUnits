@@ -9,9 +9,10 @@ from . import time
 from . import pressure
 from .derived import *
 from .others import *
+from .various import *
 
 Temperature = temperature.Temperature
-Length =length.Length
+Length = length.Length
 Mass = mass.Mass
 Time = time.Time
 Pressure = pressure.Pressure

@@ -9,7 +9,6 @@ __all__ = ['Time']
 @UnitSystem
 @NamedType
 class Time(_MS):
-
 	Millisecond: type
 	Second: type
 	Minute: type
@@ -87,10 +86,10 @@ class Time(_MS):
 			return self.min
 		elif self._hour() < 24:
 			return self.hour
-		elif self._day() < 7:
-			return self.week
-		elif self._month() > 1:
-			return self.month
+		# elif self._day() < 7:
+		# 	return self.week
+		# elif self._month() > 1:
+		# 	return self.month
 		elif self._year() > 1:
 			return self.year
 		return self
@@ -139,7 +138,6 @@ class Time(_MS):
 	def millennia(self):
 		return Millennia(self)
 
-
 	## abbreviations
 	y = year
 	d = day
@@ -179,13 +177,13 @@ class Day(Time):
 class Week(Time, SystemVariant):
 	# TODO: Change over to new method
 	_unit = 'wk'
-	_multiplier = 1/604800
+	_multiplier = 1 / 604800
 
 
 class Month(Time, SystemVariant):
 	# TODO: Change over to new method
 	_unit = 'mth'
-	_multiplier = 1/2592000
+	_multiplier = 1 / 2592000
 
 
 class Year(Time):
