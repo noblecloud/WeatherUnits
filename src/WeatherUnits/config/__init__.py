@@ -1,12 +1,15 @@
 import logging
 import os.path
 from configparser import ConfigParser
-import importlib.resources
+from importlib import resources
+
 from pytz import timezone
 import locale
 
+from utils import PropertiesFromConfig
 
 log = logging.getLogger('WeatherUnitsConfig')
+log.setLevel(logging.DEBUG)
 l = locale.getlocale()
 
 
@@ -16,6 +19,7 @@ class ConfigKey(str):
 
 
 class Config(ConfigParser):
+	configuredUnits: dict[str, list[type]] = {}
 	locale = locale.getlocale()[0]
 
 	def __init__(self, *args, path: str = None, locale: str = None, **kwargs):
@@ -24,28 +28,37 @@ class Config(ConfigParser):
 			self.locale = locale
 		if path is None:
 			path = 'us.ini' if self.locale.lower().endswith('us') else 'si.ini'
-		super(Config, self).__init__(*args, **kwargs, allow_no_value=True)
-		with importlib.resources.path(__package__, path) as path:
+		super(Config, self).__init__(allow_no_value=True)
+		with resources.path(__package__, path) as path:
 			self.path = path
-		self.read(path)
+		self.read(path, reloadModules=False)
+		log.info(f'Loaded {path}')
 
-	def read(self, *args, **kwargs):
+	@property
+	def customConfig(self):
+		return self._customConfig
+
+	def read(self, *args, reloadModules: bool = True, **kwargs):
 		if args or kwargs:
 			for arg in args:
 				if os.path.isfile(arg):
 					self.path = arg
-					super().read(*args, **kwargs)
+					log.info(f'Loaded {arg}')
+					super().read(arg, **kwargs)
 					break
 				else:
 					log.error(f'{os.path.abspath(os.getcwd())}/{arg} is not a file')
 			else:
 				log.error(f'Unable to find config file')
 		else:
-			super().read(self.path)
+			log.info(f'Loaded {self.path}')
+		for k, v in self.configuredUnits.copy().items():
+			PropertiesFromConfig(v, self)
+		print(args)
 
-	def update(self):
-		# TODO: Add change indicator
-		self.read()
+	# def update(self):
+	# 	# TODO: Add change indicator
+	# 	self.read()
 
 	def __getattr__(self, item):
 		return self[item]
