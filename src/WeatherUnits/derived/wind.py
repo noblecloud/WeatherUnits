@@ -8,17 +8,18 @@ __all__ = ['Wind']
 
 
 @NamedType
-class Wind(Speed):
+class Wind(DistanceOverTime):
+	_numerator: Length
+	_denominator: Time
 
 	# TODO: Add support for setting both speed and direction
 	__direction: Direction = None
 
-
-	# def __init__(self, speed: Speed = None, direction: Direction = None):
+	# def __init__(self, speed: DistanceOverTime = None, direction: Direction = None):
 	# 	if direction is not None:
 	# 		self.__direction = direction
 	# 	if
-	# 	super(Wind, self).__init__(Speed)
+	# 	super(Wind, self).__init__(DistanceOverTime)
 
 	@property
 	def direction(self):

@@ -6,4 +6,4 @@ from .density import *
 
 __all__ = ['Volume', 'DistanceOverTime', 'Precipitation', 'Density']
 
-Speed.Wind = Wind
+DistanceOverTime.Wind = Wind

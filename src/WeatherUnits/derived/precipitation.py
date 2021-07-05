@@ -9,7 +9,7 @@ __all__ = ['Precipitation']
 
 
 @NamedType
-class Precipitation(Speed):
+class Precipitation(DistanceOverTime):
 	_numerator: Length
 	_denominator: Time
 	Daily: type

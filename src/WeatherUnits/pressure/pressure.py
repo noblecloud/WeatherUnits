@@ -1,15 +1,13 @@
-from ..base import NamedType, synonym
-from ..base import MeasurementSystem as _MeasurementSystem
+from ..base import NamedType, Synonym
+from ..base import ScalingMeasurement
 from ..base import BaseUnit, Huge, Large, Medium, Small, SystemVariant, Tiny, UnitSystem
-from ..utils import ScaleMeta as _ScaleMeta
+from ..base.ScalingMeasurement import Scale
 from enum import Enum
-
-__all__ = ['Pressure']
 
 
 @NamedType
 @UnitSystem
-class Pressure(_MeasurementSystem):
+class Pressure(ScalingMeasurement):
 	Pascal: type
 	Decapascal: type
 	Hectopascal: type
@@ -30,7 +28,7 @@ class Pressure(_MeasurementSystem):
 		Steady = 0
 		Rising = 1
 
-	class _Scale(_ScaleMeta):
+	class _Scale(Scale):
 		Pascal = 1
 		Decapascal = 10
 		Hectopascal = 10
@@ -48,22 +46,18 @@ class Pressure(_MeasurementSystem):
 	@property
 	def pascal(self):
 		return Pascal(self)
-	p = pascal
 
 	@property
 	def decapascal(self):
 		return Decapascal(self)
-	dPa = decapascal
 
 	@property
 	def hectopascal(self):
 		return Hectopascal(self)
-	hPa = hectopascal
 
 	@property
 	def kilopascal(self):
 		return Kilopascal(self)
-	kPa = kilopascal
 
 	@property
 	def megapascal(self):
@@ -72,7 +66,6 @@ class Pressure(_MeasurementSystem):
 	@property
 	def gigapascal(self):
 		return Gigapascal(self)
-	gPa = gigapascal
 
 	@property
 	def bar(self):
@@ -81,34 +74,26 @@ class Pressure(_MeasurementSystem):
 	@property
 	def millimeterOfMercury(self):
 		return MillimeterOfMercury(self)
-	mmHg = millimeterOfMercury
 
 	@property
 	def inchOfMercury(self):
 		return InchOfMercury(self)
-	inHg = inchOfMercury
 
 	@property
 	def atmosphere(self):
 		return Atmosphere(self)
-	atm = atmosphere
 
 	@property
 	def technicalAtmosphere(self):
 		return TechnicalAtmosphere(self)
-	at = technicalAtmosphere
 
 	@property
 	def poundsPerSquareInch(self):
 		return PoundsPerSquareInch(self)
-	psi = poundsPerSquareInch
 
 	@property
 	def millibar(self):
 		return Millibar(self)
-
-	mbar = mBar = millibar
-
 
 
 @Tiny
@@ -166,12 +151,10 @@ class PoundsPerSquareInch(Pascal, SystemVariant):
 	_unit = 'psi'
 
 
-@synonym
+@Synonym
 class Millibar(Hectopascal):
 	_unit = 'mBar'
 	_max = 4
-
-
 
 
 Pressure.Pascal = Pascal
@@ -187,3 +170,14 @@ Pressure.MillimeterOfMercury = MillimeterOfMercury
 Pressure.Atmosphere = Atmosphere
 Pressure.TechnicalAtmosphere = TechnicalAtmosphere
 Pressure.PoundsPerSquareInch = PoundsPerSquareInch
+Pressure.mbar = Pressure.mBar = Pressure.millibar
+Pressure.psi = Pressure.poundsPerSquareInch
+Pressure.at = Pressure.technicalAtmosphere
+Pressure.atm = Pressure.atmosphere
+Pressure.inHg = Pressure.inchOfMercury
+Pressure.mmHg = Pressure.millimeterOfMercury
+Pressure.gPa = Pressure.gigapascal
+Pressure.kPa = Pressure.kilopascal
+Pressure.hPa = Pressure.hectopascal
+Pressure.p = Pressure.pascal
+Pressure.dPa = Pressure.decapascal
