@@ -122,20 +122,20 @@ similar units with a single private function sharing the name of the desired uni
 ```python
 from WeatherUnits.base import Measurement, NamedType
 
-@NamedType  # Unit types are defined with this decorator
-class Temperature(Measurement):  # For static unit types, the class inherits Measurement
+@NamedType  # Unit types are defined with this decorator.
+class Temperature(Measurement):  # For static unit types, the class inherits Measurement.
 
-    # Shared unit properties are defined here or in a provided config file
+    # Shared unit properties are defined here or in a provided config file.
     _decorator = 'º'
 
-    # Properties for converting units are defined in the main parent class
+    # Properties for converting units are defined in the main parent class.
     @property
     def fahrenheit(self):
         # Unless all the subunits are defined in the same file, importing the desired
-        # class locally is currently necessary
+        # class locally is currently necessary.
         return Fahrenheit(self._fahrenheit())
     
-    # Unit abbreviations are defined somewhere below the converting property
+    # Unit abbreviations are defined somewhere below the converting property.
     f = fahrenheit
 
     @property
@@ -145,16 +145,17 @@ class Temperature(Measurement):  # For static unit types, the class inherits Mea
 
 class Fahrenheit(Temperature):
     # Individual unit strings are defined as protected class variables 
-    # for each unit or within a config file 
+    # for each unit or within a config file.
     _unit = 'f'
     
-    # This method is what is called to convert Fahrenheit to Celsius
+    # This method is what is called to convert Fahrenheit to Celsius.
     def _celsius(self):
-        # Since Measurement is a float subclass, math can be done on self
+        # Since Measurement is a float subclass, math can be done on self.
         return (self - 32) / 1.8
     
     def _fahrenheit(self):
-        # Currently, a function needs to be defined for even converting to the same unit to prevent errors
+        # Currently, a function needs to be defined for even converting to the 
+        # same unit to prevent errors.
         return self
 
 class Celsius(Temperature):
@@ -189,27 +190,29 @@ have an SI basis, so this can be done fairly often.  However, it is sometimes ne
 
 ```python
 
-from WeatherUnits.base import NamedType, Synonym, ScalingMeasurement, Scale, BaseUnit, SystemVariant, UnitSystem
+from WeatherUnits.base import NamedType, Synonym, ScalingMeasurement
+from WeatherUnits.base import Scale, BaseUnit, SystemVariant, UnitSystem
 
 @NamedType
 @UnitSystem
 class Pressure(ScalingMeasurement):
 
-    # The scale for the unit system is defined with by a class named _Scale inheriting 
+    # The scale for the unit system is defined with by a class named _Scale inheriting.
     class _Scale(Scale):
-        # Every unit is named here starting with the smallest unit and assigned a scaling multiplier.
-        # Scaling multipliers here must be an integer
+        # Every unit is named here starting with the smallest unit and assigned a 
+        # scaling multiplier.  Scaling multipliers here must be an integer.
         Pascal = 1
         Decapascal = 10
         Hectopascal = 10
         
-        # A base unit is also defined denoted by Base = 'The Sting name of the base unit class'.
-        # Base value must be a string
+        # A base unit is also defined denoted by Base = class.__name__.
+        # Base value must be a string.
         Base = 'Pascal'
         
         # System variants are units that fall outside of the normal scale
-        # The multiplier value for variants must be a float and be relative to the base unit
-        # For example, 1 Bar is 1000 Pascals and 1 MillimeterOfMercury is 1/0.00750062 or 133.3 Pascals
+        # The multiplier value for variants must be a float and be relative 
+        # to the base unit.  For example, 1 Bar is 1000 Pascals and 
+        # 1 MillimeterOfMercury is 1/0.00750062 or 133.3 Pascals.
         Bar = 1000.
         Atmosphere = 101325.
         PoundsPerSquareInch = 6894.757293168
@@ -271,13 +274,14 @@ class Imperial(Length):
         Mile = 1760
         Base = 'Foot'
 
-    # Since the multipliers are defined in _Scale, changeScale() uses one parameter to change 
-    # the scale within the same system   
+    # Since the multipliers are defined in _Scale, changeScale() uses one 
+    # parameter to change the scale within the same system.
     def _foot(self):
         return self.changeScale(self._Scale.Foot)
 
-    # This function is called to convert from Imperial to Metric.  Once its converted to
-    # Metric, changeScale() is called within the Metric class to get to the final unit
+    # This function is called to convert from Imperial to Metric.  Once its
+    # converted to Metric, changeScale() is called within the Metric class 
+    # to get to the final unit.
     def _meter(self):
         return self._foot() * 0.3048
 
@@ -303,7 +307,8 @@ class Metric(Length):
     def _meter(self):
         return self.changeScale(self._Scale.Meter)
 
-    # As with the pervious class, this method is called to convert from Metric to Imperial
+    # As with the pervious class, this method is called to convert from Metric 
+    # to Imperial.
     def _foot(self):
         return self._meter() * 3.280839895013123
 
