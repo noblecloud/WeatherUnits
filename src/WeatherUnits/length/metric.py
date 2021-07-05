@@ -1,12 +1,10 @@
-from ..base.Decorators import Large, Medium, Small, Tiny, UnitSystem, BaseUnit
-from ..utils import ScaleMeta as _ScaleMeta
-from . import Length as _Length
-
+from ..base import Scale, UnitSystem, BaseUnit, Large, Medium, Small, Tiny
+from .length import Length
 
 @UnitSystem
-class Metric(_Length):
+class Metric(Length):
 
-	class _Scale(_ScaleMeta):
+	class _Scale(Scale):
 		Millimeter = 1
 		Centimeter = 10
 		Decimeter = 10

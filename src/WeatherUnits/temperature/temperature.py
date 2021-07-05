@@ -1,11 +1,11 @@
-from math import log as _log
+from math import log
 
 from ..base import NamedType
-from ..base import Measurement as _Measurement
+from ..base import Measurement
 
 
 @NamedType
-class Temperature(_Measurement):
+class Temperature(Measurement):
 
 	Celsius: type
 	Fahrenheit: type
@@ -45,15 +45,13 @@ class Temperature(_Measurement):
 		rh = self.normalizeRh(rh)
 
 		a, b = 17.27, 237.7
-		n = ((a * self.c) / (b + self.c)) + _log(rh / 100.0)
-		value = (b * n) / (a - n)
-		return Celsius(round(value, self._precision))[self._unit]
+		n = ((a * self.c) / (b + self.c)) + log(rh / 100.0)
+		value = Celsius((b * n) / (a - n))
+		return self.__class__(value[self._unit])
 
 	def heatIndex(self, rh: float):
 
-		if self._unit == 'c':
-			c = [-8.78469475556, 1.61139411, 2.33854883889, -0.14611605, -0.012308094, -0.0164248277778, 0.002211732, 0.00072546, -0.000003582]
-		elif self._unit == 'f':
+		if self._unit == 'f':
 			c = [-42.379, 2.04901523, 10.14333427, -0.22477541, -0.00683783, -0.05481717, 0.00122874, 0.00085282, -0.00000199]
 		else:
 			c = [-8.78469475556, 1.61139411, 2.33854883889, -0.14611605, -0.012308094, -0.0164248277778, 0.002211732, 0.00072546, -0.000003582]
@@ -67,7 +65,7 @@ class Temperature(_Measurement):
 
 		hi = hi if self._unit != 'k' else hi + 273.15
 
-		return self.__class__(round(hi, self._precision))
+		return self.__class__(hi)
 
 	def windChill(self, wind):
 		if self._unit == 'c':

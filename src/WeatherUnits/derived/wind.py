@@ -1,4 +1,6 @@
-from .speed import Speed
+from ..length import Length
+from ..time import Time
+from .rate import DistanceOverTime
 from ..base import NamedType
 from ..others import Direction
 

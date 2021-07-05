@@ -1,12 +1,10 @@
-from ..base.Decorators import Large, Medium, Small, Tiny
-from ..utils import ScaleMeta as _ScaleMeta
-from ..base.Decorators import UnitSystem, BaseUnit
-from .length import Length as _Length
+from ..base import Scale, UnitSystem, BaseUnit, Large, Medium, Small, Tiny
+from .length import Length
 
 
 @UnitSystem
-class Imperial(_Length):
-	class _Scale(_ScaleMeta):
+class Imperial(Length):
+	class _Scale(Scale):
 		Line = 1
 		Inch = 12
 		Foot = 12

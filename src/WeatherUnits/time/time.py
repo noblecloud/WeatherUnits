@@ -1,14 +1,11 @@
-from ..base import SystemVariant
-from ..base import NamedType, BaseUnit, UnitSystem
-from ..base import MeasurementSystem as _MS
-from ..utils import ScaleMeta as _ScaleMeta
+from ..base import SystemVariant, NamedType, BaseUnit, UnitSystem, ScalingMeasurement, Scale
 
 __all__ = ['Time']
 
 
 @UnitSystem
 @NamedType
-class Time(_MS):
+class Time(ScalingMeasurement):
 	Millisecond: type
 	Second: type
 	Minute: type
@@ -20,7 +17,7 @@ class Time(_MS):
 	Century: type
 	Millennia: type
 
-	class _Scale(_ScaleMeta):
+	class _Scale(Scale):
 		Millisecond = 1
 		Second = 1000
 		Minute = 60

@@ -6,7 +6,7 @@ from importlib import resources
 from pytz import timezone
 import locale
 
-from utils import PropertiesFromConfig
+from ..utils import convertString, PropertiesFromConfig
 
 log = logging.getLogger('WeatherUnitsConfig')
 log.setLevel(logging.DEBUG)

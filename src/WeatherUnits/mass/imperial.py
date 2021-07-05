@@ -1,13 +1,13 @@
-from ..base import Huge, Large, Small, Tiny
-from ..utils import ScaleMeta as _ScaleMeta
-from . import Mass as _Mass
-from ..base import UnitSystem, BaseUnit
+from ..base import Scale, UnitSystem, BaseUnit, Huge, Large, Small, Tiny
+from . import Mass
+
+__all__ = ['Dram', 'Ounce', 'Pound', 'Hundredweight', 'Ton']
 
 
 @UnitSystem
-class Imperial(_Mass):
+class Imperial(Mass):
 
-	class _Scale(_ScaleMeta):
+	class _Scale(Scale):
 		Dram = 1
 		Ounce = 16
 		Pound = 16
@@ -44,18 +44,22 @@ class Imperial(_Mass):
 class Dram(Imperial):
 	_unit = 'dr'
 
+
 @Small
 class Ounce(Imperial):
 	_unit = 'oz'
+
 
 @Small
 @BaseUnit
 class Pound(Imperial):
 	_unit = 'lbs'
 
+
 @Large
 class Hundredweight(Imperial):
 	_unit = 'cwt'
+
 
 @Huge
 class Ton(Imperial):

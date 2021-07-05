@@ -1,8 +1,7 @@
 from enum import Enum
 
-from .speed import Speed
+from .rate import DistanceOverTime
 from ..base.Decorators import NamedType, NamedSubType
-from ..base.Measurement import Measurement
 from ..length import Length
 from ..time import Time
 

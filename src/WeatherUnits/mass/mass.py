@@ -1,10 +1,11 @@
 from ..base import NamedType
-from ..base import MeasurementSystem as _MS
+from ..base import ScalingMeasurement
 
 __all__ = ['Mass']
 
+
 @NamedType
-class Mass(_MS):
+class Mass(ScalingMeasurement):
 	Gram: type
 	Milligram: type
 	Kilogram: type

@@ -25,9 +25,6 @@ class Direction(Measurement):
 	             'South Southeast', 'South', 'South Southwest', 'Southwest', 'West Southwest', 'West',
 	             'West Northwest', 'Northwest', 'North Northwest']
 
-	def __init__(self, *args, **kwargs):
-		super(Direction, self).__init__(*args, **kwargs)
-
 	def _string(self, **kwargs) -> str:
 		if self._cardinal and self._degrees:
 			return f'{self.cardinal} ({super()._string(**kwargs)})'

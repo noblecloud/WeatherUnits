@@ -3,6 +3,7 @@ from typing import Union
 
 from math import nan
 
+from ..utils import PropertiesFromConfig
 from ..config import config, Config
 
 log = logging.getLogger('SmartFloat')

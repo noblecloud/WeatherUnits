@@ -1,4 +1,4 @@
-from src.WeatherUnits.config import config
+from ..config import config
 
 __all__ = ['NamedType', 'NamedSubType', 'UnitSystem', 'BaseUnit', 'Synonym', 'Tiny', 'Small', 'Medium', 'Large', 'Huge']
 

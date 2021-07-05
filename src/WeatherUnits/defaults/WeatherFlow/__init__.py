@@ -1,7 +1,9 @@
-from ... import Direction, Voltage, Strikes, Humidity
+from typing import Union
+
+from ...others import Direction, Voltage, Strikes, Humidity
 from ...others.light import UVI, Lux, RadiantFlux
 from ...time import *
-from ...pressure.pressure import Millibar
+from ...pressure import Millibar
 from ...derived import Wind, Precipitation
 from ...derived.precipitation import Daily as PrecipitationDaily, Hourly as PrecipitationHourly, Minutely as PrecipitationMinutely
 from ...temperature import Celsius

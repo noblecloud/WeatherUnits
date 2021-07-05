@@ -1,9 +1,8 @@
-from ..base.Decorators import NamedType
-from ..base.ScalingMeasurement import MeasurementSystem as _MS
+from ..base import NamedType, ScalingMeasurement
 
 
 @NamedType
-class Length(_MS):
+class Length(ScalingMeasurement):
 	Millimeter: type
 	Centimeter: type
 	Decimeter: type

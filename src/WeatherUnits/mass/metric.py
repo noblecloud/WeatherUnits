@@ -1,16 +1,17 @@
-from ..base import Large, Small, Tiny
-from ..utils import ScaleMeta as _ScaleMeta
-from . import Mass as _Mass
-from ..base import UnitSystem, BaseUnit
+from ..base import Scale, UnitSystem, BaseUnit, Huge, Large, Small, Tiny
+from . import Mass
+
+__all__ = ['Metric', 'Milligram', 'Gram', 'Kilogram', 'Tonne']
 
 
 @UnitSystem
-class Metric(_Mass):
+class Metric(Mass):
 
-	class _Scale(_ScaleMeta):
+	class _Scale(Scale):
 		Milligram = 1
 		Gram = 1000
 		Kilogram = 1000
+		Tonne = 1000
 		Base = 'Gram'
 
 	def _dram(self):
@@ -46,3 +47,8 @@ class Gram(Metric):
 @Large
 class Kilogram(Metric):
 	_unit = 'kg'
+
+
+@Huge
+class Tonne(Metric):
+	_unit = 't'

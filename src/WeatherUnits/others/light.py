@@ -1,9 +1,9 @@
-from ..base import Integer
 from ..base import NamedType
 from ..base import Measurement
 
 
 __all__ = ['Light']
+
 
 @NamedType
 class Light(Measurement):
@@ -13,6 +13,7 @@ class Light(Measurement):
 	RadiantFlux: type
 	Lux: type
 	Brightness: type
+
 
 @NamedType
 class UVI(Light):
