@@ -1,10 +1,8 @@
-import logging
+from src.WeatherUnits.config import config
 
-from ..utils import toCamelCase
-from ..config import config as _config
+__all__ = ['NamedType', 'NamedSubType', 'UnitSystem', 'BaseUnit', 'Synonym', 'Tiny', 'Small', 'Medium', 'Large', 'Huge']
 
-
-properties = _config['UnitProperties']
+properties = config['UnitProperties']
 
 
 def NamedType(cls):
@@ -25,16 +23,6 @@ def UnitSystem(cls):
 def BaseUnit(cls):
 	cls._unitSystem._baseUnit = cls
 	cls._Scale._baseUnit = cls._Scale.Base
-	return cls
-
-
-def NoSpaceBeforeUnit(cls):
-	cls._unitSpacer = False
-	return cls
-
-
-def LoadConfig(cls):
-	cls._config = _config
 	return cls
 
 
@@ -61,56 +49,30 @@ def strToDict(string: str, cls: type) -> type:
 
 
 def Tiny(cls):
+	cls._size = 'tiny'
 	return strToDict(properties['Tiny'], cls)
 
 
 def Small(cls):
+	cls._size = 'small'
 	return strToDict(properties['Small'], cls)
 
 
 def Medium(cls):
+	cls._size = 'medium'
 	return strToDict(properties['Medium'], cls)
 
 
 def Large(cls):
+	cls._size = 'large'
 	return strToDict(properties['Large'], cls)
 
 
 def Huge(cls):
+	cls._size = 'huge'
 	return strToDict(properties['Huge'], cls)
 
 
-def Integer(cls):
-	cls._precision = -1
-	return cls
-
-
-class NoConfigSpecifiedForUnit(Exception):
-	pass
-
-
-def PropertiesFromConfig(cls):
-	possibleNames = [cls.__name__.lower(), toCamelCase(cls.__name__), cls.__name__]
-
-	if hasattr(cls, '_type') and cls._type is not None:
-		possibleTypes = [cls._type.__name__.lower(), toCamelCase(cls._type.__name__), cls._type.__name__]
-		for classType in possibleTypes:
-			try:
-				cls = strToDict(properties[classType], cls)
-				break
-			except KeyError:
-				pass
-		else:
-			logging.warning(f'{cls.__name__} has no type defined')
-	for name in possibleNames:
-		try:
-			cls = strToDict(properties[name], cls)
-			break
-		except KeyError:
-			pass
-	return cls
-
-
-def synonym(cls):
+def Synonym(cls):
 	cls.__name__ = cls.__mro__[1].__name__
 	return cls
