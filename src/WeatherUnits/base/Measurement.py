@@ -86,6 +86,10 @@ class Measurement(SmartFloat):
 
 	def __eq__(self, other):
 		if isinstance(other, SmartFloat):
+			try:
+				other = self.__class__(other)
+			except errors.BadConversion:
+				pass
 			precision = min(self.precision, other.precision)
 			return round(self, precision) == round(other, precision)
 
