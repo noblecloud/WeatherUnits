@@ -8,69 +8,7 @@ from ..config import config, Config
 
 log = logging.getLogger('SmartFloat')
 
-properties = config['UnitProperties']
-
 __all__ = ['SmartFloat']
-
-
-def convertString(value: str) -> Union[int, float, str, bool]:
-	if value is None:
-		return value
-	if value.isnumeric():
-		value = float(value)
-		if value.is_integer():
-			value = int(value)
-		return value
-	if value == 'True':
-		value = True
-	elif value == 'False':
-		value = False
-	return value
-
-
-def parseString(item: str):
-	key, value = item.split('=')
-	value = convertString(value)
-	return f'_{key}', value
-
-
-def strToDict(string: str, cls: type) -> type:
-	conf = [parseString(a) for a in [(y.strip(' ')) for y in string.split(',')]]
-	for item in conf:
-		setattr(cls, *item)
-	return cls
-
-
-def toCamelCase(string, titleCase: bool = False) -> str:
-	string = (string.lower() if string.isupper() else string)
-	for char in ['-', ' ', '.', '_']:
-		string.replace(char, '')
-	return string[0].upper() if titleCase else string[0].lower() + string[1:]
-
-
-def PropertiesFromConfig(cls):
-	possibleNames = [cls.__name__.lower(), toCamelCase(cls.__name__), cls.__name__]
-	if hasattr(cls, '_type') and cls._type is not None and not isinstance(cls._type, str):
-		possibleTypes = [cls._type.__name__.lower(), toCamelCase(cls._type.__name__), cls._type.__name__]
-		for classType in possibleTypes:
-			try:
-				cls = strToDict(properties[classType], cls)
-				break
-			except KeyError:
-				pass
-		else:
-			log.debug(f'{cls.__name__} has no type defined')
-
-	for name in possibleNames:
-		try:
-			cls = strToDict(properties[name], cls)
-			break
-		except KeyError:
-			pass
-	return cls
-
-
-defaults = {f'_{prop}': convertString(value) for prop, value in config['UnitDefaults'].items()}
 
 
 class Meta(type):

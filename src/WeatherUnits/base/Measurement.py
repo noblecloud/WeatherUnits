@@ -2,6 +2,7 @@ import logging
 from typing import Callable, Optional
 
 from .. import errors
+from ..utils import loadUnitLocalization
 from . import SmartFloat
 
 __all__ = ['Measurement', 'DerivedMeasurement']
@@ -33,7 +34,7 @@ class Measurement(SmartFloat):
 	def localize(self):
 		if self.convertible:
 			try:
-				selector = self._config['Units'][self.type.__name__.lower()]
+				selector = loadUnitLocalization(self, self._config)
 				selector = 'inch' if selector == 'in' else selector
 				new = getattr(self, selector)
 				new.title = self.title
@@ -46,7 +47,7 @@ class Measurement(SmartFloat):
 	@property
 	def convertible(self):
 		try:
-			return self._type.__name__.lower() in self._config['Units']
+			return self._type.__name__.lower() in self._config['LocalUnits']
 		except AttributeError:
 			return False
 
