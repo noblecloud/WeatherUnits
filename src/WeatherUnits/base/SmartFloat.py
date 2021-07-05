@@ -1,6 +1,4 @@
 import logging
-from typing import Union
-
 from math import nan
 
 from ..utils import PropertiesFromConfig
@@ -12,11 +10,13 @@ __all__ = ['SmartFloat']
 
 
 class Meta(type):
+	defaults = config.unitDefaults
+
 	def __new__(cls, name, bases, dct):
 		cls = super().__new__(cls, name, bases, dct)
-		for prop in {key: value for key, value in defaults.items() if key not in dct.keys()}.items():
+		for prop in {key: value for key, value in Meta.defaults.items() if key not in dct.keys()}.items():
 			setattr(cls, *prop)
-		cls = PropertiesFromConfig(cls)
+		cls = PropertiesFromConfig(cls, config)
 		cls._config = config
 		return cls
 
@@ -38,6 +38,7 @@ class SmartFloat(float, metaclass=Meta):
 	_combineUnitAndSuffix: bool
 	_subscriptionKey: str
 	_sizeHint: str
+	_forcePrecision: bool
 
 	@classmethod
 	def noneToNan(cls, value):
@@ -62,7 +63,7 @@ class SmartFloat(float, metaclass=Meta):
 		self._precision = min(self._precision, decimal)
 		float.__init__(value)
 
-	def _string(self, hintString: bool = False, forceUnit: bool = False) -> str:
+	def _string(self, hintString: bool = False, forceUnit: bool = None) -> str:
 		if self._shorten:
 			c, valueFloat = 0, float(self)
 			numberLength = len(str(int(valueFloat)))
@@ -84,12 +85,13 @@ class SmartFloat(float, metaclass=Meta):
 
 		# Allow at least on level of precision if
 		# Removed 1 if not decimal and c else decimal
-		decimal = min(self._precision, intAllowedPrecision, decimal)
+		showUnit = self._showUnit if forceUnit is None else forceUnit
+		decimal = max(intAllowedPrecision, self._precision) if self._forcePrecision else min(self._precision, intAllowedPrecision, decimal)
 		formatStr = f"{{:{',' if self._kSeparator else ''}.{decimal}f}}"
 		valueString = formatStr.format(10 ** max(newScale - 1, 0) if hintString else valueFloat)
-		needsSpacer = (self._unitSpacer and self._showUnit) and (forceUnit and self._unitSpacer and not hintString) or c
+		needsSpacer = (self._unitSpacer and showUnit) and (self._unitSpacer and not hintString) or c
 		spacer = " " if needsSpacer else ""
-		unit = self._unit if self._showUnit and forceUnit else ''
+		unit = self.unit if showUnit else ''
 		return f'{valueString}{suffix}{self._decorator}{spacer}{unit}'
 
 	def __str__(self):
@@ -164,10 +166,29 @@ class SmartFloat(float, metaclass=Meta):
 		self._showUnit = value
 
 	@property
-	def sizeHint(self) -> int:
+	def sizeHint(self) -> str:
 		# length = len(string) - (0.5 * (string.count('.') + string.count(','))
-		return self._string(hintString=True).replace('1', '0') if self._sizeHint is None else self._sizeHint
+		showUnit = not self._unitSpacer
+		return self._string(hintString=True, forceUnit=showUnit).replace('1', '0') if self._sizeHint is None else self._sizeHint
 
 	@property
 	def decorator(self):
 		self._decorator
+
+	@property
+	def precision(self):
+		return self._precision
+
+	@precision.setter
+	def precision(self, value):
+		self._precision = value
+
+	@property
+	def max(self):
+		return self._max
+
+	@max.setter
+	def max(self, value):
+		self._max = value
+
+

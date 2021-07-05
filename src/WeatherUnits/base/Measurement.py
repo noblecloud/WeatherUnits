@@ -84,11 +84,16 @@ class Measurement(SmartFloat):
 			other._updateFunction(other)
 		return other
 
+	def __eq__(self, other):
+		if isinstance(other, SmartFloat):
+			precision = min(self.precision, other.precision)
+			return round(self, precision) == round(other, precision)
+
 	def __getitem__(self, item):
 		try:
 			return self.__getattribute__(item)
-		except ValueError:
-			raise errors.Conversion.BadConversion
+		except AttributeError:
+			raise errors.Conversion.UnknownUnit(self, item)
 
 	def __mul__(self, other):
 		other = self._convert(other) if isinstance(other, self.type) else other
@@ -117,6 +122,9 @@ class Measurement(SmartFloat):
 		elif issubclass(other.__class__, Measurement):
 			return DerivedMeasurement(self, other)
 
+		else:
+			value = self / other
+
 		return self.__class__(value)
 
 	## Transform shortcuts ##
@@ -143,14 +151,18 @@ class DerivedMeasurement(Measurement):
 		Measurement.__init__(self, float(self._numerator) / float(self._denominator), *args, **kwargs)
 
 	# TODO: Implement into child classes
-	def _getUnit(self) -> tuple[str, str]:
-		return self._config['Units'][self._type].split('/')
+	def _getUnit(self) -> list[str, str]:
+		return self._config['LocalUnits'][str(self._type)].split('/')
+
+	def _getUnitTypes(self):
+		a = self.__annotations__
+		return a['_numerator'], a['_denominator']
 
 	@property
 	def localize(self):
 		try:
-
-			n, d = self._config['Units'][self.type.__name__.lower()].split('/')
+			# Todo: look into using transform to replace self
+			n, d = loadUnitLocalization(self, self._config).split('/')
 			n = 'inch' if n == 'in' else n
 			d = self.d.unit if d == '*' else d
 
@@ -158,7 +170,7 @@ class DerivedMeasurement(Measurement):
 			cls = type(name, (self._type,), {key: value for key, value in self.__class__.__dict__.items()})
 			cls._type = self.__class__._type
 			new = cls(getattr(self._numerator, n), getattr(self._denominator, d))
-			new.title = self.title
+			new = self.transform(new)
 			return new
 		except KeyError:
 			log.error('Measurement {} was unable to localize from {}'.format(self.name, self.unit))

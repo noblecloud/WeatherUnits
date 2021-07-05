@@ -3,14 +3,11 @@ import os.path
 from configparser import ConfigParser
 from importlib import resources
 
-from pytz import timezone
 import locale
 
 from ..utils import convertString, PropertiesFromConfig
 
 log = logging.getLogger('WeatherUnitsConfig')
-log.setLevel(logging.DEBUG)
-l = locale.getlocale()
 
 
 class ConfigKey(str):
@@ -64,13 +61,6 @@ class Config(ConfigParser):
 		return self[item]
 
 	@property
-	def tz(self):
-		try:
-			return timezone(self['Location']['timezone'])
-		except Exception as e:
-			log.error('Unable load timezone from config\n', e)
-
-	@property
 	def loc(self):
 		return float(self['Location']['lat']), float(self['Location']['lon'])
 
@@ -85,6 +75,10 @@ class Config(ConfigParser):
 	@property
 	def unitProperties(self):
 		return self['UnitProperties']
+
+	@property
+	def unitDefaults(self):
+		return {f'_{prop}': convertString(value) for prop, value in config['UnitDefaults'].items()}
 
 
 config = Config()

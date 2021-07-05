@@ -12,6 +12,13 @@ from ...various import RSSI
 from enum import Flag as _Flag
 
 
+class SmartString:
+
+	def __init__(self, value: Union[int, float, str]):
+		self._value = value
+		super(SmartString, self).__init__(self)
+
+
 class SensorStatus(_Flag):
 	OK = 0b000000000
 	LightningFailed = 0b000000001
@@ -41,48 +48,48 @@ class ResetFlags(_Flag):
 
 
 UDPClasses = {
-		'time':               int,
-		'lullSpeed':          'Wind',
-		'windSpeed':          'Wind',
-		'gustSpeed':          'Wind',
-		'speed':              'Wind',
-		'direction':          Direction,
-		'windDirection':      Direction,
+		'time':                  int,
+		'lullSpeed':             'Wind',
+		'windSpeed':             'Wind',
+		'gustSpeed':             'Wind',
+		'speed':                 'Wind',
+		'direction':             Direction,
+		'windDirection':         Direction,
 
-		'windSampleInterval': Time.Second,
-		'pressure':           Millibar,
-		'temperature':        Celsius,
-		'humidity':           Humidity,
+		'windSampleInterval':    Time.Second,
+		'pressure':              Millibar,
+		'temperature':           Celsius,
+		'humidity':              Humidity,
 
-		'illuminance':        Lux,
-		'uvi':                UVI,
-		'irradiance':         RadiantFlux,
+		'illuminance':           Lux,
+		'uvi':                   UVI,
+		'irradiance':            RadiantFlux,
 
-		'precipitationRate':  'Precipitation',
-		'precipitationDaily': 'PrecipitationDaily',
-		'precipitationType':  Precipitation.Type,
+		'precipitationRate':     'Precipitation',
+		'precipitationDaily':    'PrecipitationDaily',
+		'precipitationType':     Precipitation.Type,
 
-		'distance':           Kilometer,
-		'lightningDistance':  Kilometer,
-		'lightning':          Strikes,
-		'energy':             int,
+		'distance':              Kilometer,
+		'lightningLastDistance': Kilometer,
+		'lightning':             Strikes,
+		'lightningEnergy':       int,
 
-		'battery':            Voltage,
-		'reportInterval':     Time.Minute,
-		'Wind':               (Wind, Meter, Time.Second),
-		'Precipitation':      (Precipitation, Millimeter, Time.Minute),
-		'PrecipitationDaily': (Precipitation, Millimeter, Time.Day),
+		'battery':               Voltage,
+		'reportInterval':        Time.Minute,
+		'Wind':                  (Wind, Meter, Time.Second),
+		'Precipitation':         (Precipitation, Millimeter, Time.Minute),
+		'PrecipitationDaily':    (Precipitation, Millimeter, Time.Day),
 
-		'deviceSerial':       str,
-		'hubSerial':          str,
-		'uptime':             Time.Second,
-		'firmware':           int,
-		'deviceRSSI':         RSSI,
-		'hubRSSI':            RSSI,
-		'sensorStatus':       SensorStatus,
-		'debug':              Debug,
-		'resetFlags':         'resetFlag',
-		'resetFlag':          ResetFlags,
+		'deviceSerial':          str,
+		'hubSerial':             str,
+		'uptime':                Time.Second,
+		'firmware':              int,
+		'deviceRSSI':            RSSI,
+		'hubRSSI':               RSSI,
+		'sensorStatus':          SensorStatus,
+		'debug':                 Debug,
+		'resetFlags':            'resetFlag',
+		'resetFlag':             ResetFlags,
 }
 
 '''
@@ -139,26 +146,26 @@ class UDP:
 	# __slots__ = ['messageTypes', 'Message', 'Wind', 'Event', 'ObservationSet', 'Status', 'Device', 'Hub']
 
 	messageTypes = {
-			'air': 'obs_air',
-			'sky': 'obs_sky',
-			'tempest': 'obs_st',
+			'air':        'obs_air',
+			'sky':        'obs_sky',
+			'tempest':    'obs_st',
 
-			'obs_st':  ['time', 'lullSpeed', 'windSpeed', 'gustSpeed', 'windDirection',
-			            'windSampleInterval', 'pressure', 'temperature', 'humidity',
-			            'illuminance', 'uvi', 'irradiance', 'precipitationRate',
-			            'precipitationType', 'lightningDistance', 'lightning',
-			            'battery', 'reportInterval'],
+			'obs_st':     ['time', 'lullSpeed', 'windSpeed', 'gustSpeed', 'windDirection',
+			               'windSampleInterval', 'pressure', 'temperature', 'humidity',
+			               'illuminance', 'uvi', 'irradiance', 'precipitationRate',
+			               'precipitationType', 'lightningLastDistance', 'lightning',
+			               'battery', 'reportInterval'],
 
-			'obs_sky': ['time', 'illuminance', 'uvi', 'precipitationHourlyRaw', 'lullSpeed',
-			            'windSpeed', 'gustSpeed', 'windDirection', 'battery', 'reportInterval',
-			            'irradiance', 'precipitationDaily', 'precipitationType', 'windSampleInterval'],
+			'obs_sky':    ['time', 'illuminance', 'uvi', 'precipitationHourlyRaw', 'lullSpeed',
+			               'windSpeed', 'gustSpeed', 'windDirection', 'battery', 'reportInterval',
+			               'irradiance', 'precipitationDaily', 'precipitationType', 'windSampleInterval'],
 
-			'obs_air': ['time', 'pressure', 'temperature', 'humidity', 'lightning', 'lightningDistance',
-			            'battery', 'reportInterval'],
+			'obs_air':    ['time', 'pressure', 'temperature', 'humidity', 'lightning', 'lightningLastDistance',
+			               'battery', 'reportInterval'],
 
-			'wind':      'rapid_wind',
-			'rain':      'evt_precip',
-			'lightning': 'evt_strike',
+			'wind':       'rapid_wind',
+			'rain':       'evt_precip',
+			'lightning':  'evt_strike',
 
 			'rapid_wind': ['time', 'speed', 'direction'],
 
@@ -175,5 +182,3 @@ class UDP:
 	Status = {'serial_number': str, 'type': str, 'timestamp': int, 'uptime': Time.Second, 'firmware_revision': int, 'rssi': RSSI}
 	Device = {**Status, 'hub_sn': str, 'voltage': Voltage, 'hub_rssi': RSSI, 'sensor_status': SensorStatus, 'debug': Debug}
 	Hub = {**Status, 'reset_flags': ResetFlags, 'radio_stats': list}
-
-

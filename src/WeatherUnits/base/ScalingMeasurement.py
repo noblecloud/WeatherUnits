@@ -1,3 +1,4 @@
+from enum import Enum, EnumMeta
 from typing import Optional, Union
 
 from .. import errors
