@@ -1,6 +1,7 @@
 from ..base import Scale, UnitSystem, BaseUnit, Large, Medium, Small, Tiny
 from .length import Length
 
+
 @UnitSystem
 class Metric(Length):
 

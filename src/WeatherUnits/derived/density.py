@@ -1,12 +1,12 @@
-from ..mass import Mass as _Mass
+from ..mass import Mass
 from ..base import NamedType
-from ..base.Measurement import DerivedMeasurement as _DerivedMeasurement
-from .volume import Volume as _Volume
+from ..base.Measurement import DerivedMeasurement
+from .volume import Volume
 
 __all__ = ['Density']
 
 
 @NamedType
-class Density(_DerivedMeasurement):
-	_numerator: _Mass
-	_denominator: _Volume
+class Density(DerivedMeasurement):
+	_numerator: Mass
+	_denominator: Volume
