@@ -36,7 +36,7 @@ from WeatherUnits.temperature import Fahrenheit
 import WeatherUnits as wu
 wu.config.read('config.ini')
 ```
-A template config file can be found in src/WeatherUnits/config.  There are three sections in a valid config file
+A template config file can be found in [src/WeatherUnits/config](src/WeatherUnits/config/template.ini).  There are three sections in a valid config file
 1) LocalUnits: This is what defines what units you want to use for localization
 2) UnitDefaults: This section holds the default values that apply to every unit
 3) UnitProperties: Defines properties for individual units or unit systems as a whole
