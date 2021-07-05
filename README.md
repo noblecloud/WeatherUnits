@@ -337,10 +337,10 @@ class DerivedMeasurement(Measurement):
     _numerator: Measurement
     _denominator: Measurement
 
-    def **init**(self, numerator, denominator):
+    def __init__(self, numerator, denominator):
         self._numerator = numerator
         self._denominator = denominator
-        Measurement.**init**(self, numerator / denominator)
+        Measurement.__init__(self, numerator / denominator)
 
 
 @NamedType
@@ -391,9 +391,9 @@ class PrecipitationRate(Precipitation):
 @NamedSubType
 class Daily(Precipitation):
 
-    def **init**(self, numerator: Length, denominator: int = 1, *args, **kwargs):
+    def __init__(self, numerator: Length, denominator: int = 1, *args, **kwargs):
         if isinstance(denominator, int):
             denominator = Time.Day(denominator)
-        Precipitation.**init**(self, numerator, denominator, *args, **kwargs)
+        Precipitation.__init__(self, numerator, denominator, *args, **kwargs)
 
 ```
