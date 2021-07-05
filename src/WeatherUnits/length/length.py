@@ -42,6 +42,12 @@ class Length(ScalingMeasurement):
 	km = kilometer
 
 	@property
+	def line(self):
+		from . import Line
+		return Line(self)
+	ln = line
+
+	@property
 	def inch(self):
 		from . import Inch
 		return Inch(self)
