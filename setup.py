@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
 		name="WeatherUnits",
-		version="0.3.4",
+		version="0.4",
 		license='MIT license',
 		author="noblecloud",
 		author_email="git@noblecloud.io",
@@ -30,6 +30,5 @@ setuptools.setup(
 			'': ['*.ini'],
 		},
 		packages=setuptools.find_packages(where="src"),
-		install_requires=['pytz'],
-		python_requires=">=3.6",
+		python_requires=">=3.7",
 )
