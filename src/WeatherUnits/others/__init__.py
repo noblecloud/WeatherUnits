@@ -70,6 +70,11 @@ class Coverage(Percentage):
 class Angle(Measurement):
 	_precision = 0
 	_decorator = 'º'
+	_shorten = True
+
+
+@NamedType
+class Direction(Angle):
 	_cardinal = True
 	_max = 3
 
