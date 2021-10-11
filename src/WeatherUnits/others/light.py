@@ -24,10 +24,20 @@ class UVI(Light):
 class Irradiance(Light):
 	_unit = 'W/m²'
 
+	@property
+	def lux(self) -> 'Illuminance':
+		"""Peter Michael, September 20, 2019, "A Conversion Guide: Solar Irradiance and Lux Illuminance ", IEEE Dataport, doi: https://dx.doi.org/10.21227/mxr7-p365."""
+		return Illuminance(float(self) * 120)
+
 
 @NamedType
 class Illuminance(Light):
 	_unit = 'lux'
+
+	@property
+	def wpm2(self) -> Irradiance:
+		"""Peter Michael, September 20, 2019, "A Conversion Guide: Solar Irradiance and Lux Illuminance ", IEEE Dataport, doi: https://dx.doi.org/10.21227/mxr7-p365."""
+		return Irradiance(float(self) / 120)
 
 
 RadiantFlux = Irradiance
