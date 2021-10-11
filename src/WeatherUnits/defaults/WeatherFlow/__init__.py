@@ -77,8 +77,8 @@ UDPClasses = {
 		'battery':               Voltage,
 		'reportInterval':        Time.Minute,
 		'Wind':                  (Wind, Meter, Time.Second),
-		'Precipitation':         (Precipitation, Millimeter, Time.Minute),
-		'PrecipitationDaily':    (Precipitation, Millimeter, Time.Day),
+		'Precipitation':         (Precipitation.Hourly, Millimeter, Time.Minute),
+		'PrecipitationDaily':    (Precipitation.Daily, Millimeter, Time.Day),
 
 		'deviceSerial':          str,
 		'hubSerial':             str,

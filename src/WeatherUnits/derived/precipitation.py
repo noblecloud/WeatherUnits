@@ -10,7 +10,7 @@ __all__ = ['Precipitation']
 
 
 @NamedType
-class Precipitation(Measurement):
+class Precipitation(Length):
 
 	class Type(Enum):
 		NONE = 0
@@ -75,8 +75,7 @@ class PrecipitationRate(DistanceOverTime, Precipitation):
 class Daily(PrecipitationRate):
 
 	def __init__(self, numerator: Length, denominator: int = 1, *args, **kwargs):
-		if isinstance(denominator, int):
-			denominator = Time.Day(denominator)
+		denominator = Time.Day(denominator)
 		PrecipitationRate.__init__(self, numerator, denominator, *args, **kwargs)
 
 
@@ -84,8 +83,7 @@ class Daily(PrecipitationRate):
 class Hourly(PrecipitationRate):
 
 	def __init__(self, numerator: Length, denominator: int = 1, *args, **kwargs):
-		if isinstance(denominator, int):
-			denominator = Time.Hour(denominator)
+		denominator = Time.Hour(denominator)
 		PrecipitationRate.__init__(self, numerator, denominator, *args, **kwargs)
 
 
@@ -93,8 +91,7 @@ class Hourly(PrecipitationRate):
 class Minutely(PrecipitationRate):
 
 	def __init__(self, numerator: Length, denominator: int = 1, *args, **kwargs):
-		if isinstance(denominator, int):
-			denominator = Time.Minute(denominator)
+		denominator = Time.Minute(denominator)
 		PrecipitationRate.__init__(self, numerator, denominator, *args, **kwargs)
 
 
