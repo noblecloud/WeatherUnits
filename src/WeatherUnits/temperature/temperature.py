@@ -1,5 +1,8 @@
+from typing import Union
+
 from math import log
 
+from ..others import Humidity
 from ..base import NamedType
 from ..base import Measurement
 
@@ -44,12 +47,25 @@ class Temperature(Measurement):
 		# Keep rh within reasonable ranges
 		rh = self.normalizeRh(rh)
 
-		a, b = 17.27, 237.7
-		n = ((a * self.c) / (b + self.c)) + log(rh / 100.0)
-		value = Celsius((b * n) / (a - n))
-		return self.__class__(value[self._unit])
+		# a, b = 17.27, 237.7
+		# n = ((a * T) / (b + T)) + logRH
+		# value = Celsius((b * n) / (a - n))
+
+		T = float(self.c)
+		logRH = log(rh / 100)
+		A = 243.04
+		B = 17.625
+		value = Celsius(A * (logRH + ((B * T) / (A + T))) / (B - logRH - ((B * T) / (A + T))))
+
+		value = self.__class__(value[self._unit])
+
+		return self.transform(value)
 
 	def heatIndex(self, rh: float):
+		R = self.normalizeRh(rh)
+
+		if 300 > self.kelvin < 318 or R < 13:
+			return self
 
 		if self._unit == 'f':
 			c = [-42.379, 2.04901523, 10.14333427, -0.22477541, -0.00683783, -0.05481717, 0.00122874, 0.00085282, -0.00000199]
@@ -57,36 +73,34 @@ class Temperature(Measurement):
 			c = [-8.78469475556, 1.61139411, 2.33854883889, -0.14611605, -0.012308094, -0.0164248277778, 0.002211732, 0.00072546, -0.000003582]
 
 		T = self if self._unit != 'k' else self.c
-		T2 = T ^ 2
-		R = self.normalizeRh(rh)
-		R2 = R ^ 2
+		T2 = pow(T, 2)
+		R2 = pow(R, 2)
 
 		hi = c[0] + (c[1] * T) + (c[2] * R) + (c[3] * T * R) + (c[4] * T2) + (c[5] * R2) + (c[6] * T2 * R) + (c[7] * T * R2) + (c[8] * T2 * R2)
 
 		hi = hi if self._unit != 'k' else hi + 273.15
 
-		return self.__class__(hi)
+		return self.transform(self.__class__(hi))
 
 	def windChill(self, wind):
 		if self._unit == 'c':
 			v = wind.kmh
-			value = 13.12 + (0.6215 * self) - (11.37 * v ^ 0.16) + (0.3965 * self * v ^ 0.16)
+			value = 13.12 + (0.6215 * self) - (11.37 * pow(v, 0.16)) + (0.3965 * self * pow(v, 0.16))
 		elif self._unit == 'f':
 			v = wind.mih
-			value = 35.74 + (0.6215 * self) - (35.75 * v ^ 0.16) + (0.4275 * self * v ^ 0.16)
+			value = 35.74 + (0.6215 * self) - (35.75 * pow(v, 0.16)) + (0.4275 * self * pow(v, 0.16))
 		else:
 			v = wind.kmh
 			T = self.c
-			value = (13.12 + (0.6215 * T) - (11.37 * v ^ 0.16) + (0.3965 * T * v ^ 0.16)) + 273.15
+			value = (13.12 + (0.6215 * T) - (11.37 * pow(v, 0.16)) + (0.3965 * T * pow(v, 0.16))) + 273.15
 
-		return self.__class__(round(value, self._precision))
+		return self.transform(self.__class__(round(value, self._precision)))
 
 	@staticmethod
-	def normalizeRh(rh):
-		if 1 > rh > 0:
-			rh *= 100
-		rh = min(100, max(rh, 0))
-		return rh
+	def normalizeRh(rh: Union[int, float, Humidity]):
+		if not isinstance(rh, Humidity):
+			rh = Humidity(rh)
+		return int(rh)
 
 	# abbreviations
 	c = celsius
