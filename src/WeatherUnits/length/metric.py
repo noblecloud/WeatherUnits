@@ -16,20 +16,7 @@ class Metric(Length):
 		Base = 'Meter'
 
 	def _foot(self):
-		return self._meter() * 3.280839895013123
-
-	def _millimeter(self):
-		return self.changeScale(self._Scale.Millimeter)
-
-	def _centimeter(self):
-		return self.changeScale(self._Scale.Centimeter)
-
-	def _meter(self):
-		return self.changeScale(self._Scale.Meter)
-
-	def _kilometer(self):
-		return self.changeScale(self._Scale.Kilometer)
-
+		return self.changeScale(self._Scale.Meter) * 3.280839895013123
 
 @Tiny
 class Millimeter(Metric):
