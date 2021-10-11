@@ -1,36 +1,27 @@
 from ..base import Scale, UnitSystem, BaseUnit, Huge, Large, Small, Tiny
 from . import Mass
 
-__all__ = ['Metric', 'Milligram', 'Gram', 'Kilogram', 'Tonne']
+__all__ = ['Metric', 'Microgram', 'Milligram', 'Gram', 'Kilogram', 'Tonne']
 
 
 @UnitSystem
 class Metric(Mass):
 
 	class _Scale(Scale):
-		Milligram = 1
+		Microgram = 1
+		Milligram = 1000
 		Gram = 1000
 		Kilogram = 1000
 		Tonne = 1000
 		Base = 'Gram'
 
-	def _dram(self):
-		return self._ounce() * 16
-
-	def _ounce(self):
-		return self._pound() * 16
-
 	def _pound(self):
-		return self._kilogram() * 2.2046226218
+		return self.changeScale(self._Scale.Kilogram) * 2.2046226218
 
-	def _milligram(self):
-		return self.changeScale(self._Scale.Milligram)
 
-	def _gram(self):
-		return self.changeScale(self._Scale.Gram)
-
-	def _kilogram(self):
-		return self.changeScale(self._Scale.Kilogram)
+@Tiny
+class Microgram(Metric):
+	_unit = 'μg'
 
 
 @Tiny

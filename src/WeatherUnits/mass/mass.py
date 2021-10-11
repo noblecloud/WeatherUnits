@@ -7,6 +7,7 @@ __all__ = ['Mass']
 @NamedType
 class Mass(ScalingMeasurement):
 	Gram: type
+	Microgram: type
 	Milligram: type
 	Kilogram: type
 	Dram: type
@@ -14,6 +15,11 @@ class Mass(ScalingMeasurement):
 	Pound: type
 	Hundredweight: type
 	Ton: type
+
+	@property
+	def microgram(self):
+		from . import Microgram
+		return Microgram(self)
 
 	@property
 	def milligram(self):
@@ -45,6 +51,7 @@ class Mass(ScalingMeasurement):
 		from . import Pound
 		return Pound(self)
 
+	ug = microgram
 	mg = milligram
 	g = gram
 	kg = kilogram

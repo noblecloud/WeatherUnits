@@ -15,29 +15,8 @@ class Imperial(Mass):
 		Ton = 20
 		Base = 'Pound'
 
-	def _dram(self):
-		return self.changeScale(self.scale.Dram)
-
-	def _ounce(self):
-		return self.changeScale(self.scale.Ounce)
-
-	def _pound(self):
-		return self.changeScale(self.scale.Pound)
-
-	def _hundredweight(self):
-		return self.changeScale(self.scale.Hundredweight)
-
-	def _ton(self):
-		return self.changeScale(self.scale.Ton)
-
-	def _milligram(self):
-		return self._ounce() * 0.02834952312
-
 	def _gram(self):
-		return self._ounce() * 28.349523125
-
-	def _kilogram(self):
-		return self._pound() * 0.45359237
+		return self.changeScale(self._Scale.Ounce) * 28.349523125
 
 
 @Tiny

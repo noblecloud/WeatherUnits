@@ -4,6 +4,8 @@ from .imperial import *
 
 __all__ = ['Mass']
 
+Mass.Microgram = Microgram
+Mass.Milligram = Milligram
 Mass.Gram = Gram
 Mass.Milligram = Milligram
 Mass.Kilogram = Kilogram
