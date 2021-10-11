@@ -1,5 +1,6 @@
 import logging
-from typing import Callable, Optional
+from datetime import datetime, timedelta
+from typing import Callable, Optional, Union
 
 from .. import errors
 from ..utils import loadUnitLocalization
@@ -13,20 +14,27 @@ log = logging.getLogger('WeatherUnits')
 class Measurement(SmartFloat):
 	_type: type = None
 	_updateFunction: Optional[Callable] = None
+	_timestamp: datetime
+	_indoor: bool = False
 
-	def __new__(cls, value, title: str = None, subscriptionKey: str = None):
+	def __new__(cls, value, title: str = None, subscriptionKey: str = None, timestamp: datetime = None):
 		return SmartFloat.__new__(cls, value)
 
-	def __init__(self, value, title: str = None, subscriptionKey: str = None):
+	def __init__(self, value, title: str = None, subscriptionKey: str = None, timestamp: datetime = None):
+
 		if isinstance(value, Measurement):
-			if value._subscriptionKey and not subscriptionKey:
+			if value._subscriptionKey and subscriptionKey is None:
 				self._subscriptionKey = value._subscriptionKey
-			if value._title and not title:
-				self._title = title
+			if value._title and title is None:
+				self._title = value._title
+			if value._timestamp and timestamp is None:
+				timestamp = value._timestamp
 		if title:
 			self._title = title
 		if subscriptionKey:
 			self._subscriptionKey = subscriptionKey
+
+		self._timestamp = timestamp
 
 		SmartFloat.__init__(self, value)
 
@@ -60,6 +68,10 @@ class Measurement(SmartFloat):
 		return self._type if self._type is not None else self.__class__.__mro__[0]
 
 	@property
+	def timestamp(self) -> datetime:
+		return self._timestamp
+
+	@property
 	def updateFunction(self):
 		return self._updateFunction
 
@@ -67,19 +79,29 @@ class Measurement(SmartFloat):
 	def updateFunction(self, function: callable):
 		self._updateFunction = function
 
+	@property
+	def indoor(self) -> bool:
+		return self._indoor
+
+	@indoor.setter
+	def indoor(self, value: bool):
+		self._indoor = value
+
 	def _convert(self, other):
 		if isinstance(other, self.type):
+			return self.__class__(other)
+		if isinstance(other, (float, int)):
 			return self.__class__(other)
 		else:
 			return other
 
-	def transform(self, other):
+	def transform(self, other, transformTo: type = None):
 		if isinstance(other, type) and issubclass(other, Measurement):
 			other = other(self)
 		nonTransferred = ['_unit', '_suffix', '_scale', '_denominator', '_numerator']
 		if self.type != other.type:
 			log.warning(f'{self.withUnit} and {other.withUnit} are not identical types, this may cause issues')
-		other.__dict__.update({key:value for key, value in self.__dict__.items() if key not in nonTransferred and value is not None})
+		other.__dict__.update({key: value for key, value in self.__dict__.items() if key not in nonTransferred and value is not None})
 		if other._updateFunction:
 			other._updateFunction(other)
 		return other
@@ -87,7 +109,7 @@ class Measurement(SmartFloat):
 	def __eq__(self, other):
 		if isinstance(other, SmartFloat):
 			try:
-				other = self.__class__(other)
+				other = self._convert(other)
 			except errors.BadConversion:
 				pass
 			precision = min(self.precision, other.precision)
@@ -100,19 +122,28 @@ class Measurement(SmartFloat):
 			raise errors.Conversion.UnknownUnit(self, item)
 
 	def __mul__(self, other):
-		other = self._convert(other) if isinstance(other, self.type) else other
-		return self.__class__(super().__mul__(other))
+		if isinstance(other, self.type):
+			other = self._convert(other)
+		return self.transform(self._convert(super().__mul__(other)))
 
 	def __add__(self, other):
-		other = self._convert(other) if isinstance(other, self.type) else other
-		return self.__class__(super().__add__(other))
+		if isinstance(other, self.type):
+			other = self._convert(other)
+		return self.transform(self._convert(super().__add__(other)))
 
 	def __sub__(self, other):
-		other = self._convert(other) if isinstance(other, self.type) else other
-		return self.__class__(super().__sub__(other))
+		if isinstance(other, self.type):
+			other = self._convert(other)
+		return self.transform(self._convert(super().__sub__(other)))
+
+	def __pow__(self, power, modulo=None):
+		if isinstance(power, self.type):
+			power = self._convert(power)
+		return self.transform(self._convert(super().__pow__(power, modulo)))
 
 	def __truediv__(self, other):
-		other = self._convert(other)
+		if isinstance(other, self.type):
+			other = self._convert(other)
 
 		if isinstance(other, self.type):
 			value = super().__truediv__(self._convert(other))
@@ -129,7 +160,7 @@ class Measurement(SmartFloat):
 		else:
 			value = self / other
 
-		return self.__class__(value)
+		return self.transform(self.__class__(value))
 
 	## Transform shortcuts ##
 
@@ -154,6 +185,32 @@ class DerivedMeasurement(Measurement):
 		self._denominator = denominator
 		Measurement.__init__(self, float(self._numerator) / float(self._denominator), *args, **kwargs)
 
+	def __pow__(self, power, modulo=None):
+		return self.__class__(super(Measurement, self).__pow__(power, modulo), self._denominator)
+
+	def transform(self, other, transformTo: type = None):
+		if isinstance(other, type) and issubclass(other, Measurement):
+			other = other(self)
+		nonTransferred = ['_unit', '_suffix', '_scale', '_denominator', '_numerator']
+		if self.type != other.type:
+			log.warning(f'{self.withUnit} and {other.withUnit} are not identical types, this may cause issues')
+		other.__dict__.update({key: value for key, value in self.__dict__.items() if key not in nonTransferred and value is not None})
+		if other._updateFunction:
+			other._updateFunction(other)
+		return other
+
+	def _convert(self, other):
+		if isinstance(other, (int, float)):
+			return self.__class__(self.n.__class__(other), self.d.__class__(1))
+		if isinstance(other, self.n.type):
+			try:
+				other = other[self.n.unit]
+			except AttributeError:
+				pass
+			return self.__class__(other, self.d)
+		else:
+			return super(DerivedMeasurement, self)._convert(other)
+
 	# TODO: Implement into child classes
 	def _getUnit(self) -> list[str, str]:
 		return self._config['LocalUnits'][str(self._type)].split('/')
@@ -161,6 +218,10 @@ class DerivedMeasurement(Measurement):
 	def _getUnitTypes(self):
 		a = self.__annotations__
 		return a['_numerator'], a['_denominator']
+
+	@property
+	def type(self):
+		return self._getUnitTypes()
 
 	@property
 	def localize(self):
