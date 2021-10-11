@@ -1,5 +1,5 @@
 from .SmartFloat import SmartFloat
-from .Measurement import *
+from .Measurement import Measurement, DerivedMeasurement
 from .ScalingMeasurement import *
 from .Decorators import *
 

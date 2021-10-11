@@ -7,6 +7,7 @@ from . import length
 from . import mass
 from . import time
 from . import pressure
+from .airQuality import *
 from .derived import *
 from .others import *
 from .various import *
