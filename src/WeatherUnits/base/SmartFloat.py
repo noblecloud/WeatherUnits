@@ -1,5 +1,8 @@
 import logging
-from math import nan
+from typing import Union
+
+from math import nan, log as lg, isnan
+from decimal import Decimal
 
 from ..utils import PropertiesFromConfig
 from ..config import config, Config
@@ -59,13 +62,22 @@ class SmartFloat(float, metaclass=Meta):
 		# if isinstance(value, SmartFloat):
 		# 	self._title = value._title if value._title is not None else self._title
 		value = self.noneToNan(value)
-		self._exp, decimal = list(len(n) for n in str(float(value)).split('.'))
-		self._precision = min(self._precision, decimal)
+		self._exp, _ = self.expPrecision(value)
 		float.__init__(value)
 
-	def _string(self, hintString: bool = False, forceUnit: bool = None) -> str:
+	def expPrecision(self, value: float):
+		if value != 0 and not isnan(value):
+			exp = int(lg(abs(value), 10))
+			precision = abs(Decimal(str(abs(value))).as_tuple().exponent)
+		else:
+			exp = 0
+			precision = 0
+
+		return exp, precision
+
+	def _string(self, hintString: bool = False, forceUnit: bool = None, multiplier: Union[int, float] = 1.0) -> str:
 		if self._shorten:
-			c, valueFloat = 0, float(self)
+			c, valueFloat = 0, float(self * multiplier)
 			numberLength = len(str(int(valueFloat)))
 			while numberLength > 3 and numberLength >= self._max:
 				c += 1
@@ -73,23 +85,27 @@ class SmartFloat(float, metaclass=Meta):
 				numberLength = len(str(int(valueFloat)))
 			suffix = ['', 'k', 'm', 'B'][c]
 		else:
-			valueFloat = self
+			valueFloat = float(self) * multiplier
 			c = False
 			suffix = ''
 
 		# TODO: Allow for precision to be overridden if number is scaled.  (10,110 becomes 10.11k instead of 10.1k)
-		newScale, decimal = list(len(n) for n in str(round(valueFloat, self._precision)).strip('0').split('.'))
+		newScale, decimal = self.expPrecision(valueFloat)
+		decimal += 1
 
 		# Max amount of precision that can be displayed while keeping string under max length
 		intAllowedPrecision = max(0, self._max - newScale)
-
+		precision = min(self._precision, abs(Decimal(str(abs(valueFloat))).as_tuple().exponent))
+		if hintString and decimal < precision and decimal < intAllowedPrecision:
+			decimal = 1
 		# Allow at least on level of precision if
 		# Removed 1 if not decimal and c else decimal
+
 		showUnit = self._showUnit if forceUnit is None else forceUnit
-		decimal = max(intAllowedPrecision, self._precision) if self._forcePrecision else min(self._precision, intAllowedPrecision, decimal)
+		decimal = max(intAllowedPrecision, precision) if self._forcePrecision else min(precision, intAllowedPrecision, decimal)
 		formatStr = f"{{:{',' if self._kSeparator else ''}.{decimal}f}}"
 		valueString = formatStr.format(10 ** max(newScale - 1, 0) if hintString else valueFloat)
-		needsSpacer = (self._unitSpacer and showUnit) and (self._unitSpacer and not hintString) or c
+		needsSpacer = (self._unitSpacer and showUnit) and self._unit or c
 		spacer = " " if needsSpacer else ""
 		unit = self.unit if showUnit else ''
 		return f'{valueString}{suffix}{self._decorator}{spacer}{unit}'
