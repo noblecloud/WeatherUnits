@@ -39,7 +39,7 @@ class SmartFloat(float, metaclass=Meta):
 	_shorten: bool
 	_kSeparator: bool
 	_combineUnitAndSuffix: bool
-	_subscriptionKey: str
+	_key: str
 	_sizeHint: str
 	_forcePrecision: bool
 
@@ -160,18 +160,18 @@ class SmartFloat(float, metaclass=Meta):
 		self._title = value
 
 	@property
-	def subscriptionKey(self) -> str:
-		if self._subscriptionKey:
-			return self._subscriptionKey
+	def key(self) -> str:
+		if self._key:
+			return self._key
 		else:
 			t = self.title
 			t = t.lower() if t.isupper() else t
 			t = t.replace(' ', '')
 			return f"{t[0].lower()}{t[1:]}"
 
-	@subscriptionKey.setter
-	def subscriptionKey(self, value: str):
-		self._subscriptionKey = value
+	@key.setter
+	def key(self, value: str):
+		self._key = value
 
 	@property
 	def showUnit(self):

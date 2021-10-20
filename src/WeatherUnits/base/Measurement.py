@@ -17,22 +17,22 @@ class Measurement(SmartFloat):
 	_timestamp: datetime
 	_indoor: bool = False
 
-	def __new__(cls, value, title: str = None, subscriptionKey: str = None, timestamp: datetime = None):
+	def __new__(cls, value, title: str = None, key: str = None, timestamp: datetime = None):
 		return SmartFloat.__new__(cls, value)
 
-	def __init__(self, value, title: str = None, subscriptionKey: str = None, timestamp: datetime = None):
+	def __init__(self, value, title: str = None, key: str = None, timestamp: datetime = None):
 
 		if isinstance(value, Measurement):
-			if value._subscriptionKey and subscriptionKey is None:
-				self._subscriptionKey = value._subscriptionKey
+			if value._key and key is None:
+				self._key = value._key
 			if value._title and title is None:
 				self._title = value._title
 			if value._timestamp and timestamp is None:
 				timestamp = value._timestamp
 		if title:
 			self._title = title
-		if subscriptionKey:
-			self._subscriptionKey = subscriptionKey
+		if key:
+			self._key = key
 
 		self._timestamp = timestamp
 
