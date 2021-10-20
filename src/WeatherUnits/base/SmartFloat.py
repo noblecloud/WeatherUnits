@@ -65,9 +65,10 @@ class SmartFloat(float, metaclass=Meta):
 		self._exp, _ = self.expPrecision(value)
 		float.__init__(value)
 
-	def expPrecision(self, value: float):
+	@staticmethod
+	def expPrecision(value: float):
 		if value != 0 and not isnan(value):
-			exp = int(lg(abs(value), 10))
+			exp = int(lg(abs(value), 10)) + 1
 			precision = abs(Decimal(str(abs(value))).as_tuple().exponent)
 		else:
 			exp = 0
