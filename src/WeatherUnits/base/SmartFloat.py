@@ -76,7 +76,7 @@ class SmartFloat(float, metaclass=Meta):
 
 		return exp, precision
 
-	def _string(self, hintString: bool = False, forceUnit: bool = None, multiplier: Union[int, float] = 1.0) -> str:
+	def _string(self, hintString: bool = False, forceUnit: bool = None, multiplier: Union[int, float] = 1.0, asInt: bool = False) -> str:
 		if self._shorten:
 			c, valueFloat = 0, float(self * multiplier)
 			numberLength = len(str(int(valueFloat)))
@@ -89,6 +89,8 @@ class SmartFloat(float, metaclass=Meta):
 			valueFloat = float(self) * multiplier
 			c = False
 			suffix = ''
+		if isnan(valueFloat):
+			valueFloat = 0.0
 
 		# TODO: Allow for precision to be overridden if number is scaled.  (10,110 becomes 10.11k instead of 10.1k)
 		newScale, decimal = self.expPrecision(valueFloat)
@@ -96,7 +98,7 @@ class SmartFloat(float, metaclass=Meta):
 
 		# Max amount of precision that can be displayed while keeping string under max length
 		intAllowedPrecision = max(0, self._max - newScale)
-		precision = min(self._precision, abs(Decimal(str(abs(valueFloat))).as_tuple().exponent))
+		precision = max(0, min(self._precision, Decimal(str(abs(valueFloat))).as_tuple().exponent))
 		if hintString and decimal < precision and decimal < intAllowedPrecision:
 			decimal = 1
 		# Allow at least on level of precision if
@@ -104,7 +106,7 @@ class SmartFloat(float, metaclass=Meta):
 
 		showUnit = self._showUnit if forceUnit is None else forceUnit
 		decimal = max(intAllowedPrecision, precision) if self._forcePrecision else min(precision, intAllowedPrecision, decimal)
-		formatStr = f"{{:{',' if self._kSeparator else ''}.{decimal}f}}"
+		formatStr = f"{{:{',' if self._kSeparator else ''}.{0 if asInt else decimal}f}}"
 		valueString = formatStr.format(10 ** max(newScale - 1, 0) if hintString else valueFloat)
 		needsSpacer = (self._unitSpacer and showUnit) and self._unit or c
 		spacer = " " if needsSpacer else ""
@@ -149,6 +151,10 @@ class SmartFloat(float, metaclass=Meta):
 		return int(self)
 
 	@property
+	def decoratedInt(self):
+		return self._string(forceUnit=False, asInt=True)
+
+	@property
 	def name(self):
 		return self.__class__.__name__
 
@@ -173,6 +179,10 @@ class SmartFloat(float, metaclass=Meta):
 	@key.setter
 	def key(self, value: str):
 		self._key = value
+
+	@property
+	def category(self):
+		return self.__class__.__name__
 
 	@property
 	def showUnit(self):
@@ -208,4 +218,10 @@ class SmartFloat(float, metaclass=Meta):
 	def max(self, value):
 		self._max = value
 
+	@property
+	def shorten(self):
+		return self._shorten
 
+	@shorten.setter
+	def shorten(self, value):
+		self._shorten = value
