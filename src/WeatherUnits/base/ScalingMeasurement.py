@@ -2,7 +2,7 @@ from enum import Enum, EnumMeta
 from typing import Optional, Union
 
 from .. import errors
-from ..base.Measurement import Measurement
+from ..base.Measurement import Measurement, DerivedMeasurement
 
 __all__ = ['ScalingMeasurement', 'SystemVariant', 'Scale']
 
@@ -125,6 +125,8 @@ class ScalingMeasurement(Measurement):
 	_Scale: Scale = None
 
 	def __new__(cls, value, *args, **kwargs):
+		if isinstance(value, DerivedMeasurement):
+			return value
 		value: Union[int, float, ScalingMeasurement, SystemVariant]
 		if isinstance(value, ScalingMeasurement) and (not cls._baseUnit or not value.__class__._baseUnit):
 			'''For this to work each unit class must have a _baseUnit defined for each scale'''
@@ -157,6 +159,9 @@ class ScalingMeasurement(Measurement):
 				return float(self) / multiplier
 		else:
 			return None
+
+	def toBaseUnit(self) -> Measurement:
+		return self._baseUnit(self.changeScale(self._Scale.Base))
 
 	@property
 	def scale(self):

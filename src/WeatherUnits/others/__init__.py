@@ -76,12 +76,8 @@ class Angle(Measurement):
 @NamedType
 class Direction(Angle):
 	_cardinal = True
+	_decorator = 'º'
 	_max = 3
-
-	_dirsAbbrv = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
-	_dirsFull = ['North', 'North Northeast', 'Northeast', 'East Northeast', 'East', 'East Southeast', 'Southeast',
-	             'South Southeast', 'South', 'South Southwest', 'Southwest', 'West Southwest', 'West',
-	             'West Northwest', 'Northwest', 'North Northwest']
 
 	def _string(self, **kwargs) -> str:
 		if self._cardinal and self._degrees:
@@ -92,21 +88,92 @@ class Direction(Angle):
 			return f'{super()._string(**kwargs)}'
 
 	@property
-	def cardinal(self):
-		if self._max < 3 and self._shorten:
-			return self._dirsAbbrv[round(self / 45) % 8 * 2]
-		if self._shorten:
-			return self._dirsAbbrv[round(self / 22.5) % 16]
-		else:
-			return self._dirsFull[round(self / 22.5) % 16]
+	def cardinal(self) -> 'Cardinal':
+		return Cardinal(self)
 
 	@property
-	def angle(self):
+	def angle(self) -> Angle:
 		return Angle(self)
 
 	@property
-	def decorator(self):
+	def decorator(self) -> str:
 		return self._decorator if not self._cardinal else ''
+
+	@property
+	def decoratedInt(self) -> str:
+		return super()._string(forceUnit=False, asInt=True)
+
+
+class Cardinal:
+	__slots__ = ('__dirsAbbrv', '__dirsFull', '__direction')
+	__dirsAbbrv = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+	__dirsFull = ['North', 'North Northeast', 'Northeast', 'East Northeast', 'East', 'East Southeast', 'Southeast',
+	              'South Southeast', 'South', 'South Southwest', 'Southwest', 'West Southwest', 'West',
+	              'West Northwest', 'Northwest', 'North Northwest']
+	direction: 'Direction'
+
+	def __init__(self, direction: Direction):
+		self.__direction = direction
+
+	def __str__(self):
+		if self.shorten:
+			return self.abbrivated
+		else:
+			return self.full
+
+	@property
+	def direction(self) -> Direction:
+		return self.__direction
+
+	@property
+	def __shortIndex(self):
+		return round(self.direction/45)%8*2
+
+	@property
+	def __longIndex(self):
+		return round(self.direction/22.5)%16
+
+	@property
+	def abbrivated(self):
+		if self.direction.max > 2:
+			return self.threeLetter
+		return self.twoLetter
+
+	@property
+	def shortened(self):
+		if self.direction.max < 5:
+			return self.abbrivated
+		return self.singleWord
+
+	@property
+	def twoLetter(self):
+		return self.__dirsAbbrv[self.__shortIndex]
+
+	@property
+	def threeLetter(self):
+		return self.__dirsAbbrv[self.__longIndex]
+
+	@property
+	def singleWord(self):
+		return self.__dirsFull[self.__shortIndex]
+
+	@property
+	def text(self):
+		if self.direction.max < 7:
+			return self.singleWord
+		return self.full
+
+	@property
+	def full(self):
+		return self.__dirsFull[self.__longIndex]
+
+	@property
+	def shorten(self):
+		return self.direction.shorten
+
+	@shorten.setter
+	def shorten(self, value: bool):
+		self.direction.shorten = value
 
 
 @NamedType

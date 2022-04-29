@@ -16,6 +16,9 @@ class Measurement(SmartFloat):
 	_updateFunction: Optional[Callable] = None
 	_timestamp: datetime
 	_indoor: bool = False
+	_calculated: bool = False
+	_category: str = None
+	_subTypes: ClassVar[Dict[str, Type['Measurement']]]
 
 	def __new__(cls, value, title: str = None, key: str = None, timestamp: datetime = None):
 		return SmartFloat.__new__(cls, value)
@@ -33,10 +36,21 @@ class Measurement(SmartFloat):
 			self._title = title
 		if key:
 			self._key = key
+		self.category = category
 
 		self._timestamp = timestamp
 
 		SmartFloat.__init__(self, value)
+
+	@property
+	def category(self):
+		if self._category is None:
+			return self.__class__.__name__.lower()
+		return self._category
+
+	@category.setter
+	def category(self, value):
+		self._category = value
 
 	@property
 	def localize(self):
@@ -87,6 +101,14 @@ class Measurement(SmartFloat):
 	def indoor(self, value: bool):
 		self._indoor = value
 
+	@property
+	def calculated(self):
+		return self._calculated
+
+	@calculated.setter
+	def calculated(self, value):
+		self._calculated = value
+
 	def _convert(self, other):
 		if isinstance(other, self.type):
 			return self.__class__(other)
@@ -108,12 +130,15 @@ class Measurement(SmartFloat):
 
 	def __eq__(self, other):
 		if isinstance(other, SmartFloat):
-			try:
-				other = self._convert(other)
-			except errors.BadConversion:
-				pass
+			if not self.__class__ == other.__class__:
+				try:
+					other = self._convert(other)
+				except errors.BadConversion:
+					pass
 			precision = min(self.precision, other.precision)
 			return round(self, precision) == round(other, precision)
+		elif isinstance(other, self._acceptedTypes):
+			return self._convert(other) == self
 
 	def __getitem__(self, item):
 		try:
@@ -124,25 +149,49 @@ class Measurement(SmartFloat):
 	def __mul__(self, other):
 		if isinstance(other, self.type):
 			other = self._convert(other)
-		return self.transform(self._convert(super().__mul__(other)))
+		if isinstance(other, self._acceptedTypes):
+			other = self._convert(other)
+		return self._convert(super().__mul__(other))
 
 	def __add__(self, other):
 		if isinstance(other, self.type):
 			other = self._convert(other)
-		return self.transform(self._convert(super().__add__(other)))
+		elif isinstance(other, self._acceptedTypes):
+			other = self._convert(other)
+		return self._convert(super().__add__(other))
+
+	def __radd__(self, other):
+		if isinstance(other, self.type):
+			other = self._convert(other)
+		elif isinstance(other, self._acceptedTypes):
+			other = self._convert(other)
+		return self._convert(super().__radd__(other))
 
 	def __sub__(self, other):
 		if isinstance(other, self.type):
 			other = self._convert(other)
-		return self.transform(self._convert(super().__sub__(other)))
+		elif isinstance(other, self._acceptedTypes):
+			other = self._convert(other)
+		return self._convert(super().__sub__(other))
+
+	def __rsub__(self, other):
+		if isinstance(other, self.type):
+			other = self._convert(other)
+		elif isinstance(other, self._acceptedTypes):
+			other = self._convert(other)
+		return self._convert(super().__rsub__(other))
 
 	def __pow__(self, power, modulo=None):
 		if isinstance(power, self.type):
 			power = self._convert(power)
-		return self.transform(self._convert(super().__pow__(power, modulo)))
+		elif isinstance(power, self._acceptedTypes):
+			power = self._convert(power)
+		return self._convert(super().__pow__(power, modulo))
 
 	def __truediv__(self, other):
 		if isinstance(other, self.type):
+			other = self._convert(other)
+		elif isinstance(other, self._acceptedTypes):
 			other = self._convert(other)
 
 		if isinstance(other, self.type):
@@ -160,7 +209,38 @@ class Measurement(SmartFloat):
 		else:
 			value = self / other
 
-		return self.transform(self.__class__(value))
+		return self._convert(value)
+
+	def __gt__(self, other):
+		if isinstance(other, self.type):
+			other = self._convert(other)
+		elif isinstance(other, self._acceptedTypes):
+			other = self._convert(other)
+		return super().__gt__(other)
+
+	def __lt__(self, other):
+		if isinstance(other, self.type):
+			other = self._convert(other)
+		elif isinstance(other, self._acceptedTypes):
+			other = self._convert(other)
+		return super().__lt__(other)
+
+	def __ge__(self, other):
+		if isinstance(other, self.type):
+			other = self._convert(other)
+		elif isinstance(other, self._acceptedTypes):
+			other = self._convert(other)
+		return super().__ge__(other)
+
+	def __le__(self, other):
+		if isinstance(other, self.type):
+			other = self._convert(other)
+		elif isinstance(other, self._acceptedTypes):
+			other = self._convert(other)
+		return super().__le__(other)
+
+	def __hash__(self):
+		return hash(round(self, max(self._precision, 1)))
 
 	## Transform shortcuts ##
 
@@ -221,7 +301,7 @@ class DerivedMeasurement(Measurement):
 
 	@property
 	def type(self):
-		return self._getUnitTypes()
+		return type(self)[type(self._numerator):type(self._denominator)]
 
 	@property
 	def localize(self):

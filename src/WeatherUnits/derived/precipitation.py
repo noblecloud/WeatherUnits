@@ -1,6 +1,7 @@
+from typing import Union
+
 from enum import Enum
 
-from ..base import Measurement
 from .rate import DistanceOverTime
 from ..base.Decorators import NamedType, NamedSubType
 from ..length import Length
@@ -33,10 +34,6 @@ class PrecipitationRate(DistanceOverTime, Precipitation):
 	Hourly: type
 	Minutely: type
 
-	def __new__(cls, numerator, denominator: int = 1, *args, **kwargs):
-		value = float(numerator) / float(denominator)
-		return DistanceOverTime.__new__(cls, numerator, denominator, *args, **kwargs)
-
 	def __init__(self, numerator: Length, denominator: int = 1, *args, **kwargs):
 		if isinstance(denominator, int):
 			denominator = Time.Hour(denominator)
@@ -44,11 +41,11 @@ class PrecipitationRate(DistanceOverTime, Precipitation):
 
 	@property
 	def fth(self):
-		return PrecipitationRate(self._numerator.foot, self._denominator.hour)
+		return Hourly(self._numerator.foot, self._denominator.hour)
 
 	@property
 	def inh(self):
-		return PrecipitationRate(self._numerator.inch, self._denominator.hour)
+		return Hourly(self._numerator.inch, self._denominator.hour)
 
 	@property
 	def ins(self):
@@ -56,7 +53,7 @@ class PrecipitationRate(DistanceOverTime, Precipitation):
 
 	@property
 	def mmh(self):
-		return PrecipitationRate(self._numerator.millimeter, self._denominator.hour)
+		return Hourly(self._numerator.millimeter, self._denominator.hour)
 
 	@property
 	def mms(self):
@@ -64,11 +61,27 @@ class PrecipitationRate(DistanceOverTime, Precipitation):
 
 	@property
 	def cmh(self):
-		return PrecipitationRate(self._numerator.centimeter, self._denominator.hour)
+		return Hourly(self._numerator.centimeter, self._denominator.hour)
 
 	@property
 	def mh(self):
-		return PrecipitationRate(self._numerator.meter, self._denominator.hour)
+		return Hourly(self._numerator.meter, self._denominator.hour)
+
+	@property
+	def daily(self):
+		return Daily(self._numerator, self._denominator)
+
+	@property
+	def hourly(self):
+		return Hourly(self._numerator, self._denominator)
+
+	@property
+	def minutely(self):
+		return Minutely(self._numerator, self._denominator)
+
+	@property
+	def secondly(self):
+		return PrecipitationRate(self._numerator, self._denominator)
 
 
 @NamedSubType

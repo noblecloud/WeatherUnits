@@ -5,8 +5,8 @@ from ..base.ScalingMeasurement import Scale
 from enum import Enum
 
 
-@NamedType
 @UnitSystem
+@NamedType
 class Pressure(ScalingMeasurement):
 	Pascal: type
 	Decapascal: type

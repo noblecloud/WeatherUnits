@@ -52,13 +52,15 @@ class Temperature(Measurement):
 		# value = Celsius((b * n) / (a - n))
 
 		T = float(self.c)
-		logRH = log(rh / 100)
+		logRH = log(rh/100)
 		A = 243.04
 		B = 17.625
-		value = Celsius(A * (logRH + ((B * T) / (A + T))) / (B - logRH - ((B * T) / (A + T))))
+		value = Celsius(A*(logRH + ((B*T)/(A + T)))/(B - logRH - ((B*T)/(A + T))))
 
 		value = self.__class__(value[self._unit])
-
+		value = self.transform(value)
+		value.title = 'Dewpoint'
+		value.calculated = True
 		return self.transform(value)
 
 	def heatIndex(self, rh: float):
@@ -76,25 +78,30 @@ class Temperature(Measurement):
 		T2 = pow(T, 2)
 		R2 = pow(R, 2)
 
-		hi = c[0] + (c[1] * T) + (c[2] * R) + (c[3] * T * R) + (c[4] * T2) + (c[5] * R2) + (c[6] * T2 * R) + (c[7] * T * R2) + (c[8] * T2 * R2)
+		hi = c[0] + (c[1]*T) + (c[2]*R) + (c[3]*T*R) + (c[4]*T2) + (c[5]*R2) + (c[6]*T2*R) + (c[7]*T*R2) + (c[8]*T2*R2)
 
 		hi = hi if self._unit != 'k' else hi + 273.15
-
-		return self.transform(self.__class__(hi))
+		value = self.transform(self.__class__(hi))
+		value.title = 'Heat Index'
+		value.calculated = True
+		return value
 
 	def windChill(self, wind):
-		if self._unit == 'c':
-			v = wind.kmh
-			value = 13.12 + (0.6215 * self) - (11.37 * pow(v, 0.16)) + (0.3965 * self * pow(v, 0.16))
-		elif self._unit == 'f':
-			v = wind.mih
-			value = 35.74 + (0.6215 * self) - (35.75 * pow(v, 0.16)) + (0.4275 * self * pow(v, 0.16))
+		if wind.mph < 3:
+			return type(self)(self)
+		if self._unit == 'f':
+			w = float(wind.mih)
+			t = float(self)
+			value = 35.74 + (0.6215*t) - (35.75*pow(w, 0.16)) + (0.4275*t*pow(w, 0.16))
 		else:
-			v = wind.kmh
-			T = self.c
-			value = (13.12 + (0.6215 * T) - (11.37 * pow(v, 0.16)) + (0.3965 * T * pow(v, 0.16))) + 273.15
+			w = float(wind.kmh)
+			t = float(self.c)
+			value = 13.12 + (0.6215*t) - (11.37*pow(w, 0.16)) + (0.3965*t*pow(w, 0.16))
 
-		return self.transform(self.__class__(round(value, self._precision)))
+		value = self.transform(self.__class__(round(value, self._precision)))
+		value.title = 'Wind Chill'
+		value.calculated = True
+		return value
 
 	@staticmethod
 	def normalizeRh(rh: Union[int, float, Humidity]):

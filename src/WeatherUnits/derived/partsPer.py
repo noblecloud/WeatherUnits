@@ -7,8 +7,8 @@ from ..base.ScalingMeasurement import Scale
 __all__ = ['PartsPer']
 
 
-@NamedType
 @UnitSystem
+@NamedType
 class PartsPer(ScalingMeasurement):
 
 	_precision = 0

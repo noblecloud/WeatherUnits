@@ -42,6 +42,22 @@ class SmartFloat(float, metaclass=Meta):
 	_key: str
 	_sizeHint: str
 	_forcePrecision: bool
+	_acceptedTypes: tuple = (float, int, Decimal)
+
+	# @classmethod
+	# def registerSubType(cls, subType):
+	# 	if cls.isGenericType:
+	# 		cls._subTypes[subType.__name__] = subType
+
+	def __init_subclass__(cls, **kwargs):
+		cls._acceptedTypes = (*kwargs.get('acceptedTypes', ()), *cls._acceptedTypes, cls)
+
+		for prop in {key: value for key, value in config.unitDefaults.items() if key not in cls.__dict__.keys()}.items():
+			setattr(cls, *prop)
+		setPropertiesFromConfig(cls, config)
+		cls._config = config
+
+	# cls.__parent_class__.registerSubType(cls)
 
 	@classmethod
 	def noneToNan(cls, value):
@@ -55,26 +71,14 @@ class SmartFloat(float, metaclass=Meta):
 		return value
 
 	def __new__(cls, value):
-		value = cls.noneToNan(value)
 		return float.__new__(cls, value)
 
 	def __init__(self, value):
-		# if isinstance(value, SmartFloat):
-		# 	self._title = value._title if value._title is not None else self._title
-		value = self.noneToNan(value)
-		self._exp, _ = self.expPrecision(value)
 		float.__init__(value)
 
 	@staticmethod
 	def expPrecision(value: float):
-		if value != 0 and not isnan(value):
-			exp = int(lg(abs(value), 10)) + 1
-			precision = abs(Decimal(str(abs(value))).as_tuple().exponent)
-		else:
-			exp = 0
-			precision = 0
-
-		return exp, precision
+		return [len(i) for i in str(abs(float(value))).split('.')]
 
 	def _string(self, hintString: bool = False, forceUnit: bool = None, multiplier: Union[int, float] = 1.0, asInt: bool = False) -> str:
 		if self._shorten:
@@ -93,21 +97,22 @@ class SmartFloat(float, metaclass=Meta):
 			valueFloat = 0.0
 
 		# TODO: Allow for precision to be overridden if number is scaled.  (10,110 becomes 10.11k instead of 10.1k)
-		newScale, decimal = self.expPrecision(valueFloat)
-		decimal += 1
+		integerLength, floatingPointLength = self.expPrecision(valueFloat)
+		if floatingPointLength == 1 and valueFloat.is_integer():
+			floatingPointLength = 0
 
 		# Max amount of precision that can be displayed while keeping string under max length
-		intAllowedPrecision = max(0, self._max - newScale)
-		precision = max(0, min(self._precision, Decimal(str(abs(valueFloat))).as_tuple().exponent))
-		if hintString and decimal < precision and decimal < intAllowedPrecision:
-			decimal = 1
+		intAllowedPrecision = max(0, self._max - integerLength)
+		precision = min(self._precision, integerLength)
+		if hintString and floatingPointLength < precision and floatingPointLength < intAllowedPrecision:
+			floatingPointLength = 1
 		# Allow at least on level of precision if
 		# Removed 1 if not decimal and c else decimal
 
 		showUnit = self._showUnit if forceUnit is None else forceUnit
-		decimal = max(intAllowedPrecision, precision) if self._forcePrecision else min(precision, intAllowedPrecision, decimal)
-		formatStr = f"{{:{',' if self._kSeparator else ''}.{0 if asInt else decimal}f}}"
-		valueString = formatStr.format(10 ** max(newScale - 1, 0) if hintString else valueFloat)
+		floatingPointLength = max(intAllowedPrecision, precision) if self._forcePrecision else min(precision, intAllowedPrecision, floatingPointLength)
+		formatStr = f"{{:{',' if self._kSeparator else ''}.{0 if asInt else floatingPointLength}f}}"
+		valueString = formatStr.format(10 ** max(integerLength - 1, 0) if hintString else valueFloat)
 		needsSpacer = (self._unitSpacer and showUnit) and self._unit or c
 		spacer = " " if needsSpacer else ""
 		unit = self.unit if showUnit else ''
@@ -121,6 +126,12 @@ class SmartFloat(float, metaclass=Meta):
 
 	def __bool__(self):
 		return super().__bool__() or bool(self.unit)
+
+	def __float__(self) -> float:
+		return super().__float__()
+
+	def __hash__(self):
+		return hash(round(self, max(self._precision, 1)))
 
 	@property
 	def valueUnset(self) -> bool:
@@ -225,3 +236,11 @@ class SmartFloat(float, metaclass=Meta):
 	@shorten.setter
 	def shorten(self, value):
 		self._shorten = value
+
+	@property
+	def unitSpacer(self):
+		return self._unitSpacer
+
+	@unitSpacer.setter
+	def unitSpacer(self, value):
+		self._unitSpacer = value

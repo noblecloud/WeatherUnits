@@ -1,4 +1,6 @@
-from ..base import SystemVariant, NamedType, BaseUnit, UnitSystem, ScalingMeasurement, Scale
+from datetime import timedelta
+
+from ..base import NamedType, BaseUnit, UnitSystem, ScalingMeasurement, Scale
 
 __all__ = ['Time']
 
@@ -12,14 +14,17 @@ class Time(ScalingMeasurement):
 	Hour: type
 	Day: type
 	Week: type
+	Month: type
 	Year: type
 	Decade: type
 	Century: type
 	Millennia: type
 
+	_acceptedTypes = (timedelta,)
+
 	class _Scale(Scale):
-		Millisecond = 1
-		Second = 1000
+		Millisecond = 1/1000
+		Second = 1
 		Minute = 60
 		Hour = 60
 		Day = 24
@@ -28,8 +33,15 @@ class Time(ScalingMeasurement):
 		Century = 10
 		Millennia = 10
 		Base = 'Second'
+		Week = 7.0*Day*Hour*Minute*Second
+		Month = 30.436875*Day*Hour*Minute*Second
 
 	_format = '{:2.2f}'
+
+	def _convert(self, other):
+		if isinstance(other, timedelta):
+			other = Second(other.total_seconds())
+		return super()._convert(other)
 
 	def _millisecond(self):
 		return self.changeScale(self.scale.Millisecond)
@@ -77,17 +89,19 @@ class Time(ScalingMeasurement):
 
 	@property
 	def autoAny(self):
-		if self._second() < 60:
+		if abs(self._second()) < 60:
 			return self.s
-		elif self._minute() < 60:
+		elif abs(self._minute()) < 60:
 			return self.min
-		elif self._hour() < 24:
+		elif abs(self._hour()) < 24:
 			return self.hour
-		# elif self._day() < 7:
-		# 	return self.week
-		# elif self._month() > 1:
-		# 	return self.month
-		elif self._year() > 1:
+		elif abs(self._day()) < 2:
+			return self.day
+		elif abs(self._day()) < 7:
+			return self.week
+		elif abs(self._day()) < 30:
+			return self.month
+		elif abs(self._year()) > 1:
 			return self.year
 		return self
 
@@ -113,11 +127,11 @@ class Time(ScalingMeasurement):
 
 	@property
 	def week(self):
-		return Time.Week(self._day() / 7)
+		return Week(self)
 
 	@property
 	def month(self):
-		return Time.Month(self._day() / 30)
+		return Month(self)
 
 	@property
 	def year(self):
@@ -171,16 +185,12 @@ class Day(Time):
 	_unit = 'd'
 
 
-class Week(Time, SystemVariant):
-	# TODO: Change over to new method
+class Week(Time):
 	_unit = 'wk'
-	_multiplier = 1 / 604800
 
 
-class Month(Time, SystemVariant):
-	# TODO: Change over to new method
+class Month(Time):
 	_unit = 'mth'
-	_multiplier = 1 / 2592000
 
 
 class Year(Time):
@@ -205,6 +215,7 @@ Time.Minute = Minute
 Time.Hour = Hour
 Time.Day = Day
 Time.Week = Week
+Time.Month = Month
 Time.Year = Year
 Time.Decade = Decade
 Time.Century = Century

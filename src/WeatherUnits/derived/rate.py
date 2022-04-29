@@ -12,6 +12,16 @@ class DistanceOverTime(DerivedMeasurement):
 	_numerator: Length
 	_denominator: Time
 
+	def __new__(cls, numerator: Length, denominator: Time = 1):
+		if isinstance(denominator, _td):
+			denominator = Time.Second(denominator.total_seconds())
+		return super().__new__(cls, numerator, denominator)
+
+	def __init__(self, numerator: Length, denominator: Time = 1):
+		if isinstance(denominator, _td):
+			denominator = Time.Second(denominator.total_seconds())
+		super().__init__(numerator, denominator)
+
 	@property
 	def fts(self):
 		return DistanceOverTime(self._numerator.ft, self._denominator.s)

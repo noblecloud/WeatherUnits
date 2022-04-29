@@ -27,7 +27,33 @@ class Wind(DistanceOverTime):
 
 	@direction.setter
 	def direction(self, value):
-		if isinstance(value, Direction):
-			self.__direction |= value
-		else:
-			self.__direction = value
+		if not isinstance(value, Direction) and isinstance(value, (float, int)):
+			value = Direction(value)
+		self.__direction = value
+
+
+@NamedSubType
+class PerSecond(Wind):
+	_denominator: Time.Second
+
+	def __init__(self, numerator: Length, denominator: Union[Time, int, float] = 1, *args, **kwargs):
+		denominator = Time.Second(denominator)
+		Wind.__init__(self, numerator, denominator, *args, **kwargs)
+
+
+@NamedSubType
+class PerMinute(Wind):
+	_denominator: Time.Minute
+
+	def __init__(self, numerator: Length, denominator: Union[Time, int, float] = 1, *args, **kwargs):
+		denominator = Time.Minute(denominator)
+		Wind.__init__(self, numerator, denominator, *args, **kwargs)
+
+
+@NamedSubType
+class PerHour(Wind):
+	_denominator: Time.Hour
+
+	def __init__(self, numerator: Length, denominator: Union[Time, int, float] = 1, *args, **kwargs):
+		denominator = Time.Hour(denominator)
+		Wind.__init__(self, numerator, denominator, *args, **kwargs)
