@@ -1,15 +1,12 @@
 import logging
 from functools import lru_cache
-from typing import Hashable, Type, Union, TYPE_CHECKING
-
-if TYPE_CHECKING:
-	from base.Measurement import Measurement
+from typing import Hashable, Type, Union
 
 log = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=64)
-def loadUnitLocalization(measurement: Type[Measurement], config):
+def loadUnitLocalization(measurement: Type['Measurement'], config):
 	if not isinstance(measurement, type):
 		measurement = measurement.__class__
 	name = measurement.__name__

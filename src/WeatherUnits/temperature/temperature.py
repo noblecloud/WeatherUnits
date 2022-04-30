@@ -1,13 +1,10 @@
-from typing import Union, TYPE_CHECKING
+from typing import Union
 
 from math import log
 
 from ..others import Humidity
 from ..base import NamedType
 from ..base import Measurement
-
-if TYPE_CHECKING:
-	from ..derived.wind import Wind
 
 
 @NamedType
@@ -88,7 +85,7 @@ class Temperature(Measurement):
 		value.calculated = True
 		return value
 
-	def windChill(self, wind: Wind):
+	def windChill(self, wind: 'Wind'):
 		if wind.mph < 3:
 			return type(self)(self)
 		if self._unit == 'f':

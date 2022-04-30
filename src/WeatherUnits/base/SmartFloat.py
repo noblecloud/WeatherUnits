@@ -1,5 +1,5 @@
 import logging
-from typing import ClassVar, Optional, Set, Type, Union, TYPE_CHECKING
+from typing import ClassVar, Optional, Set, Type, Union
 
 from math import nan, isnan
 from decimal import Decimal
@@ -10,9 +10,6 @@ from ..config import config, Config
 log = logging.getLogger('SmartFloat')
 
 __all__ = ['SmartFloat']
-
-if TYPE_CHECKING:
-	from .Measurement import Measurement, DerivedMeasurement
 
 
 class Meta(type):
@@ -44,7 +41,7 @@ class Meta(type):
 
 	@property
 	def subTypes(cls):
-		subs: Set[Type[Measurement]] = set()
+		subs: Set[Type['Measurement']] = set()
 		if cls.isGenericType:
 			for sub in cls.__subclasses__():
 				if sub.isGenericType:
@@ -55,9 +52,9 @@ class Meta(type):
 		return list(subs)
 
 	@property
-	def fixedUnits(cls) -> tuple[Optional[Type[Measurement]], Optional[Type[Measurement]]]:
-		n: Type[Measurement] = cls.__annotations__.get('_numerator', None)
-		d: Type[Measurement] = cls.__annotations__.get('_denominator', None)
+	def fixedUnits(cls) -> tuple[Optional[Type['Measurement']], Optional[Type['Measurement']]]:
+		n: Type['Measurement'] = cls.__annotations__.get('_numerator', None)
+		d: Type['Measurement'] = cls.__annotations__.get('_denominator', None)
 		if n is not None:
 			n = None if n.isGenericType else n
 		if d is not None:
@@ -66,7 +63,7 @@ class Meta(type):
 
 	def __repr__(cls):
 		if cls.isCompound:
-			cls: DerivedMeasurement
+			cls: 'DerivedMeasurement'
 			if ((cls.numeratorClass.isGenericType or cls.__parent_class__.numeratorClass.isGenericType)
 				and (cls.denominatorClass.isGenericType or cls.__parent_class__.denominatorClass.isGenericType)):
 				return f'{cls.__name__}[{repr(cls.numeratorClass)}/{repr(cls.denominatorClass)}]'
