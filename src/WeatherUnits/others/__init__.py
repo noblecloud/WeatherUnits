@@ -27,7 +27,7 @@ class Percentage(Measurement):
 			value = min(cls._maxValue, max(value, cls._minValue))
 
 		return super(Percentage, cls).__new__(cls, value, *args, **kwargs)
-	
+
 	def _string(self, *args, **kwargs):
 		kwargs['multiplier'] = 100
 		return super(Percentage, self)._string(*args, **kwargs)
@@ -105,12 +105,13 @@ class Direction(Angle):
 
 
 class Cardinal:
-	__slots__ = ('__dirsAbbrv', '__dirsFull', '__direction')
+	__slots__ = '__direction'
 	__dirsAbbrv = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
 	__dirsFull = ['North', 'North Northeast', 'Northeast', 'East Northeast', 'East', 'East Southeast', 'Southeast',
-	              'South Southeast', 'South', 'South Southwest', 'Southwest', 'West Southwest', 'West',
-	              'West Northwest', 'Northwest', 'North Northwest']
-	direction: 'Direction'
+		'South Southeast', 'South', 'South Southwest', 'Southwest', 'West Southwest', 'West',
+		'West Northwest', 'Northwest', 'North Northwest']
+	__direction: Direction
+	direction: Direction
 
 	def __init__(self, direction: Direction):
 		self.__direction = direction

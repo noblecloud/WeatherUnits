@@ -9,7 +9,6 @@ from ..base import Measurement
 
 @NamedType
 class Temperature(Measurement):
-
 	Celsius: type
 	Fahrenheit: type
 	Kelvin: type
@@ -86,7 +85,7 @@ class Temperature(Measurement):
 		value.calculated = True
 		return value
 
-	def windChill(self, wind):
+	def windChill(self, wind: 'Wind'):
 		if wind.mph < 3:
 			return type(self)(self)
 		if self._unit == 'f':

@@ -1,4 +1,5 @@
 from ..config import config
+from .. import UnitSystems
 
 __all__ = ['NamedType', 'NamedSubType', 'UnitSystem', 'BaseUnit', 'Synonym', 'Tiny', 'Small', 'Medium', 'Large', 'Huge']
 
@@ -7,16 +8,31 @@ properties = config['UnitProperties']
 
 def NamedType(cls):
 	cls._type = cls
+	cls._subTypes = {}
+	cls.__isNamedType = True
 	return cls
 
 
 def NamedSubType(cls):
+	parentCls = cls.__mro__[1]
+	if hasattr(parentCls, 'genSubTypeName'):
+		cls.__name__ = parentCls.genSubTypeName(cls)
+	if not hasattr(parentCls, '_subTypes'):
+		parentCls._subTypes = {}
 	cls._subType = cls
+	cls._siblingTypes = parentCls._subTypes
 	return cls
 
 
 def UnitSystem(cls):
 	cls._unitSystem = cls
+	system = cls.__name__.lower()
+	unit = cls._type.__name__.lower()
+	if system not in UnitSystems:
+		UnitSystems[system] = {}
+	if system != unit:
+		cls.__name__ = f'{cls._type.__name__}({cls.__name__})'
+	UnitSystems[system][unit] = cls
 	return cls
 
 

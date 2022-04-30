@@ -12,13 +12,6 @@ from ...various import RSSI
 from enum import Flag as _Flag
 
 
-class SmartString:
-
-	def __init__(self, value: Union[int, float, str]):
-		self._value = value
-		super(SmartString, self).__init__(self)
-
-
 class SensorStatus(_Flag):
 	OK = 0b000000000
 	LightningFailed = 0b000000001
