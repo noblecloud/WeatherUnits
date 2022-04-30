@@ -3,6 +3,7 @@ from ..time import Time
 from ..base.Measurement import DerivedMeasurement
 from ..base.Decorators import NamedType
 
+from datetime import timedelta as _td
 
 __all__ = ['DistanceOverTime']
 

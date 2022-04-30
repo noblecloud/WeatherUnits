@@ -1,35 +1,43 @@
-import logging
 import os.path
-from configparser import ConfigParser
 from importlib import resources
 
 import locale
+import logging
+from configparser import ConfigParser, SectionProxy
+from pathlib import Path
 
-from ..utils import convertString, PropertiesFromConfig
+from ..utils import convertString, setPropertiesFromConfig
 
 log = logging.getLogger('WeatherUnitsConfig')
-
-
-class ConfigKey(str):
-	def __new__(cls, string: str):
-		return "".join(string.split())
 
 
 class Config(ConfigParser):
 	configuredUnits: dict[str, list[type]] = {}
 	locale = locale.getlocale()[0]
+	__localUnits: SectionProxy
 
 	def __init__(self, *args, path: str = None, locale: str = None, **kwargs):
-		self.optionxform = ConfigKey
+		self.optionxform = str
+		self.__localUnits = None
+		path = path or os.environ.get('WU_CONFIG_PATH')
+		super(Config, self).__init__(allow_no_value=True)
+
 		if locale is not None:
 			self.locale = locale
 		if path is None:
 			path = 'us.ini' if self.locale.lower().endswith('us') else 'si.ini'
-		super(Config, self).__init__(allow_no_value=True)
-		with resources.path(__package__, path) as path:
+			with resources.path(__package__, path) as path:
+				self.path = path
+		else:
+			if isinstance(path, str):
+				path = Path(path)
 			self.path = path
+
 		self.read(path, reloadModules=False)
 		log.info(f'Loaded {path}')
+
+	def __hash__(self):
+		return hash(self.path)
 
 	@property
 	def customConfig(self):
@@ -50,12 +58,7 @@ class Config(ConfigParser):
 		else:
 			log.info(f'Loaded {self.path}')
 		for k, v in self.configuredUnits.copy().items():
-			PropertiesFromConfig(v, self)
-		print(args)
-
-	# def update(self):
-	# 	# TODO: Add change indicator
-	# 	self.read()
+			setPropertiesFromConfig(v, self)
 
 	def __getattr__(self, item):
 		return self[item]
@@ -79,6 +82,17 @@ class Config(ConfigParser):
 	@property
 	def unitDefaults(self):
 		return {f'_{prop}': convertString(value) for prop, value in config['UnitDefaults'].items()}
+
+	@property
+	def localUnits(self) -> SectionProxy:
+		if self.__localUnits is None:
+			if 'LocalUnits' in self:
+				self.__localUnits = self['LocalUnits']
+			elif 'Units' in self:
+				self.__localUnits = self['Units']
+			else:
+				raise AttributeError(f'No local units defined in the config {self.path}')
+		return self.__localUnits
 
 
 config = Config()

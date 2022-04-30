@@ -1,9 +1,10 @@
+from functools import lru_cache
 import logging
-from datetime import datetime, timedelta
-from typing import Callable, Optional, Union
+from datetime import datetime
+from typing import Callable, ClassVar, Dict, List, Optional, Type
 
 from .. import errors
-from ..utils import loadUnitLocalization
+from ..utils import HashSlice, loadUnitLocalization
 from . import SmartFloat
 
 __all__ = ['Measurement', 'DerivedMeasurement']
@@ -12,6 +13,7 @@ log = logging.getLogger('WeatherUnits')
 
 
 class Measurement(SmartFloat):
+	_derived = False
 	_type: type = None
 	_updateFunction: Optional[Callable] = None
 	_timestamp: datetime
@@ -20,16 +22,23 @@ class Measurement(SmartFloat):
 	_category: str = None
 	_subTypes: ClassVar[Dict[str, Type['Measurement']]]
 
-	def __new__(cls, value, title: str = None, key: str = None, timestamp: datetime = None):
+	def __new__(cls, value, title: str = None, key: str = None, timestamp: datetime = None, **kwargs):
 		return SmartFloat.__new__(cls, value)
 
-	def __init__(self, value, title: str = None, key: str = None, timestamp: datetime = None):
+	def __class_getitem__(cls, item):
+		if (underItem := f'_{item}') in cls.__annotations__:
+			return cls.__annotations__[underItem]
+		if item in cls.__dict__:
+			return cls.__dict__[item]
+		if issubclass(item, Measurement):
+			parentType = cls._type
+			name = f'{parentType.__name__}[{item.__name__}]'
+			newCls = type(name, (item, cls,), {})
+			return newCls
+		raise TypeError(f'{cls.__name__} does not support {item}')
 
+	def __init__(self, value, title: str = None, key: str = None, timestamp: datetime = None, category: str = None):
 		if isinstance(value, Measurement):
-			if value._key and key is None:
-				self._key = value._key
-			if value._title and title is None:
-				self._title = value._title
 			if value._timestamp and timestamp is None:
 				timestamp = value._timestamp
 		if title:
@@ -56,7 +65,7 @@ class Measurement(SmartFloat):
 	def localize(self):
 		if self.convertible:
 			try:
-				selector = loadUnitLocalization(self, self._config)
+				selector = loadUnitLocalization(type(self), self._config)
 				selector = 'inch' if selector == 'in' else selector
 				new = getattr(self, selector)
 				new.title = self.title
@@ -69,7 +78,7 @@ class Measurement(SmartFloat):
 	@property
 	def convertible(self):
 		try:
-			return self._type.__name__.lower() in self._config['LocalUnits']
+			return self._type.__name__.lower() in self._config.localUnits
 		except AttributeError:
 			return False
 
@@ -252,18 +261,116 @@ class Measurement(SmartFloat):
 
 
 class DerivedMeasurement(Measurement):
-	_type: type = 'derived'
+	_derived = True
+	_type: Type[Measurement] = Measurement
 	_numerator: Measurement
 	_denominator: Measurement
+	numeratorClass: Type[Measurement]
+	denominatorClass: Type[Measurement]
 
-	def __new__(cls, numerator, denominator, *args, **kwargs):
-		value = float(numerator) / float(denominator)
+	def __new__(cls, numerator: Measurement, denominator: Measurement = 1, *args, **kwargs):
+		if not cls.numeratorClass.isGenericType:
+			numerator = cls.numeratorClass(numerator)
+		if not cls.denominatorClass.isGenericType:
+			denominator = cls.denominatorClass(denominator)
+		value = float(numerator)/float(denominator)
+
+		if isinstance(numerator, cls.numeratorClass) and isinstance(denominator, cls.denominatorClass):
+			if cls.isGenericType:
+				cls = cls[type(numerator):type(denominator)]
+		elif items := [i for i in cls._subTypes if i['denominatorClass'] is type(denominator)]:
+			if len(items) == 1:
+				cls = items[0]
+			else:
+				items = [i for i in items if i['numeratorClass'] is type(numerator)]
+				if len(items) == 1:
+					cls = items[0]
+				else:
+					raise TypeError(f'{cls.__name__} does not support {numerator.__class__.__name__} as numerator')
+		elif cls.isGenericType:
+			cls = cls[type(numerator):type(denominator)]
 		return Measurement.__new__(cls, value, *args, **kwargs)
 
-	def __init__(self, numerator, denominator, *args, **kwargs):
-		self._numerator = numerator
-		self._denominator = denominator
-		Measurement.__init__(self, float(self._numerator) / float(self._denominator), *args, **kwargs)
+	def __init_subclass__(cls, **kwargs):
+		super().__init_subclass__(**kwargs)
+		if 'numeratorClass' not in cls.__dict__:
+			cls.numeratorClass = cls.__annotations__.get('_numerator', getattr(cls.__mro__[1], 'numeratorClass', cls.__mro__[1].__annotations__.get('_numerator', Measurement)))
+		if 'denominatorClass' not in cls.__dict__:
+			cls.denominatorClass = cls.__annotations__.get('_denominator', getattr(cls.__mro__[1], 'denominatorClass', cls.__mro__[1].__annotations__.get('_denominator', Measurement)))
+
+	def __class_getitem__(cls, item):
+		return cls.__getSlice__(cls, HashSlice(item))
+
+	@lru_cache(maxsize=32)
+	def __getSlice__(cls, item: HashSlice):
+		fixedN, fixedD = cls.fixedUnits
+		if (underItem := f'_{item}') in cls.__annotations__:
+			return cls.__annotations__[underItem]
+		if item in cls.__dict__:
+			return cls.__dict__[item]
+		if item.isSlice:
+			sliceNType, sliceDType = fixedN or item.start, fixedD or item.stop
+			nType, dType = cls.numeratorClass, cls.denominatorClass
+			if sliceNType is not None and not isinstance(sliceNType, type):
+				sliceNType = type(sliceNType)
+			if sliceDType is not None and not isinstance(sliceDType, type):
+				sliceDType = type(sliceDType)
+			parentType = cls._type
+			sameDType = {i for i in parentType.subTypes if i.denominatorClass is sliceDType}
+			sameNType = {i for i in parentType.subTypes if i.numeratorClass is sliceNType}
+
+			if exactMatch := sameDType & sameNType:
+				return exactMatch.pop()
+
+			if sameDType and (generics := {i for i in sameDType if i.numeratorClass.isGenericType}):
+				if len(generics) == 1:
+					generic = generics.pop()
+					if not dType.isGenericType:
+						return generic[sliceNType or nType]
+					if generic.denominatorClass is sliceDType:
+						return generic[sliceNType or nType]
+			if sameNType and (generics := {i for i in sameNType if i.denominatorClass.isGenericType}):
+				if len(generics) == 1:
+					generic = generics.pop()
+					if not nType.isGenericType:
+						return generic[sliceDType or dType]
+					if generic.numeratorClass is sliceNType:
+						return generic[sliceDType or dType]
+
+			name = f'{parentType.__name__}[{item.start.__name__}/{item.stop.__name__}]'
+			return type(name, (parentType,), {'numeratorClass': sliceNType, 'denominatorClass': sliceDType})
+		parentType = cls._subType
+		item = item.start
+		if issubclass(item, cls.numeratorClass):
+			if not cls.denominatorClass.isGenericType:
+				name = f'{cls.__name__}'
+				newCls = type(name, (cls,), {'numeratorClass': item, 'denominatorClass': cls.denominatorClass})
+				return newCls
+			print(f'{cls.__name__} does not support {item.__name__} as numerator')
+
+		elif issubclass(item, cls.denominatorClass):
+			if not cls.numeratorClass.isGenericType:
+				name = f'{cls.__name__}[{item.__name__}]'
+				newCls = type(name, (cls,), {'denominatorClass': item})
+				return newCls
+			print(f'{cls.__name__} does not support {item.__name__} as denominator')
+		return parentType[item]
+
+	def __init__(self, numerator, denominator=None, *args, **kwargs):
+		if isinstance(numerator, DerivedMeasurement) and denominator is None:
+			self._numerator = numerator.numerator
+			self._denominator = numerator.denominator
+		elif denominator is None:
+			self._numerator = numerator
+			self._denominator = self.denominatorClass(1)
+		else:
+			self._numerator = numerator
+			self._denominator = denominator
+		if not isinstance(self._numerator, self.numeratorClass):
+			self._numerator = self.numeratorClass(self._numerator)
+		if not isinstance(self._denominator, self.denominatorClass):
+			self._denominator = self.denominatorClass(self._denominator)
+		Measurement.__init__(self, float(self._numerator)/float(self._denominator), *args, **kwargs)
 
 	def __pow__(self, power, modulo=None):
 		return self.__class__(super(Measurement, self).__pow__(power, modulo), self._denominator)
@@ -292,12 +399,11 @@ class DerivedMeasurement(Measurement):
 			return super(DerivedMeasurement, self)._convert(other)
 
 	# TODO: Implement into child classes
-	def _getUnit(self) -> list[str, str]:
+	def _getUnit(self) -> List[str]:
 		return self._config['LocalUnits'][str(self._type)].split('/')
 
 	def _getUnitTypes(self):
-		a = self.__annotations__
-		return a['_numerator'], a['_denominator']
+		return self._numerator.type, self._denominator.type
 
 	@property
 	def type(self):
@@ -306,17 +412,30 @@ class DerivedMeasurement(Measurement):
 	@property
 	def localize(self):
 		try:
-			# Todo: look into using transform to replace self
-			n, d = loadUnitLocalization(self, self._config).split('/')
+			n, d = loadUnitLocalization(type(self), self._config).split('/')
 			n = 'inch' if n == 'in' else n
-			d = self.d.unit if d == '*' else d
 
-			name = f'{self.__class__.__name__.split(" ")[0]}'
-			cls = type(name, (self._type,), {key: value for key, value in self.__class__.__dict__.items()})
-			cls._type = self.__class__._type
-			new = cls(getattr(self._numerator, n), getattr(self._denominator, d))
-			new = self.transform(new)
-			return new
+			fixedN, fixedD = type(self).fixedUnits
+			if n == '*' and fixedN:
+				n = fixedN
+			if d == '*' and fixedD:
+				d = fixedD
+
+			if isinstance(n, type):
+				n = n._unit
+			if isinstance(d, type):
+				d = d._unit
+
+			n = getattr(self._numerator, n)
+			d = getattr(self._denominator, d)
+
+			t = getattr(self, '_subType', self._type)
+			tFN, tFD = t.fixedUnits
+			if (tFN is not None and tFN != n) or (tFD is not None and tFD != d):
+				t = t.__parent_class__
+
+			newCls = t[type(n):type(d)]
+			return newCls(n, d)
 		except KeyError:
 			log.error('Measurement {} was unable to localize from {}'.format(self.name, self.unit))
 			return self

@@ -1,7 +1,9 @@
+from typing import Union
+
 from ..length import Length
 from ..time import Time
 from .rate import DistanceOverTime
-from ..base import NamedType
+from ..base import NamedType, NamedSubType
 from ..others import Direction
 
 __all__ = ['Wind']

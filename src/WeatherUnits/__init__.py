@@ -1,3 +1,8 @@
+from datetime import timedelta
+from typing import Any, Dict, Iterable, List, SupportsIndex, Type, Union
+
+UnitSystems: Dict[str, Dict[str, Type]] = {}
+
 from . import errors
 from .config import config
 from . import utils

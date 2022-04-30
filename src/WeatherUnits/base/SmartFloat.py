@@ -1,30 +1,88 @@
 import logging
-from typing import Union
+from typing import ClassVar, Optional, Set, Type, Union, TYPE_CHECKING
 
-from math import nan, log as lg, isnan
+from math import nan, isnan
 from decimal import Decimal
 
-from ..utils import PropertiesFromConfig
+from ..utils import setPropertiesFromConfig
 from ..config import config, Config
 
 log = logging.getLogger('SmartFloat')
 
 __all__ = ['SmartFloat']
 
+if TYPE_CHECKING:
+	from .Measurement import Measurement, DerivedMeasurement
+
 
 class Meta(type):
-	defaults = config.unitDefaults
+	_compound: ClassVar[bool]
 
-	def __new__(cls, name, bases, dct):
-		cls = super().__new__(cls, name, bases, dct)
-		for prop in {key: value for key, value in Meta.defaults.items() if key not in dct.keys()}.items():
-			setattr(cls, *prop)
-		cls = PropertiesFromConfig(cls, config)
-		cls._config = config
-		return cls
+	# def __new__(cls, name, bases, dct):
+
+	@property
+	def isGenericType(cls):
+		if '__isNamedType' in cls.__dict__:
+			return cls.__dict__['__isNamedType']
+		if '_unitSystem' in cls.__dict__:
+			return cls.__dict__['_unitSystem'] is cls
+		return False
+
+	@property
+	def isCompound(cls) -> bool:
+		if not hasattr(cls, '_derived'):
+			cls._compound = getattr(cls.__parent_class__, 'isCompound', None)
+		return cls._compound
+
+	@property
+	def isScaling(cls) -> bool:
+		return hasattr(cls, '_Scale')
+
+	@property
+	def __parent_class__(cls):
+		return cls.__mro__[1]
+
+	@property
+	def subTypes(cls):
+		subs: Set[Type[Measurement]] = set()
+		if cls.isGenericType:
+			for sub in cls.__subclasses__():
+				if sub.isGenericType:
+					subs.update(sub.subTypes)
+				elif sub.isCompound == cls.isCompound:
+					subs.add(sub)
+		subs.discard(cls)
+		return list(subs)
+
+	@property
+	def fixedUnits(cls) -> tuple[Optional[Type[Measurement]], Optional[Type[Measurement]]]:
+		n: Type[Measurement] = cls.__annotations__.get('_numerator', None)
+		d: Type[Measurement] = cls.__annotations__.get('_denominator', None)
+		if n is not None:
+			n = None if n.isGenericType else n
+		if d is not None:
+			d = None if d.isGenericType else d
+		return n, d
+
+	def __repr__(cls):
+		if cls.isCompound:
+			cls: DerivedMeasurement
+			if ((cls.numeratorClass.isGenericType or cls.__parent_class__.numeratorClass.isGenericType)
+				and (cls.denominatorClass.isGenericType or cls.__parent_class__.denominatorClass.isGenericType)):
+				return f'{cls.__name__}[{repr(cls.numeratorClass)}/{repr(cls.denominatorClass)}]'
+			elif cls.numeratorClass.isGenericType or cls.__parent_class__.numeratorClass.isGenericType:
+				return f'{cls.__name__}[{repr(cls.numeratorClass)}]'
+			elif cls.denominatorClass.isGenericType or cls.__parent_class__.denominatorClass.isGenericType:
+				return f'{cls.__name__}[{repr(cls.denominatorClass)}]'
+			else:
+				return f'{cls.__name__}'
+		if cls.isGenericType:
+			return f'<{cls.__name__}>'
+		return cls.__name__
 
 
 class SmartFloat(float, metaclass=Meta):
+
 	_config: Config
 	_precision: int
 	_max: int
@@ -44,11 +102,6 @@ class SmartFloat(float, metaclass=Meta):
 	_forcePrecision: bool
 	_acceptedTypes: tuple = (float, int, Decimal)
 
-	# @classmethod
-	# def registerSubType(cls, subType):
-	# 	if cls.isGenericType:
-	# 		cls._subTypes[subType.__name__] = subType
-
 	def __init_subclass__(cls, **kwargs):
 		cls._acceptedTypes = (*kwargs.get('acceptedTypes', ()), *cls._acceptedTypes, cls)
 
@@ -56,8 +109,6 @@ class SmartFloat(float, metaclass=Meta):
 			setattr(cls, *prop)
 		setPropertiesFromConfig(cls, config)
 		cls._config = config
-
-	# cls.__parent_class__.registerSubType(cls)
 
 	@classmethod
 	def noneToNan(cls, value):
@@ -77,8 +128,9 @@ class SmartFloat(float, metaclass=Meta):
 		float.__init__(value)
 
 	@staticmethod
-	def expPrecision(value: float):
-		return [len(i) for i in str(abs(float(value))).split('.')]
+	def intFloatLength(value: float) -> tuple[int, int]:
+		d, f = [len(i) for i in str(abs(float(value))).split('.')]
+		return d, f
 
 	def _string(self, hintString: bool = False, forceUnit: bool = None, multiplier: Union[int, float] = 1.0, asInt: bool = False) -> str:
 		if self._shorten:
@@ -97,7 +149,7 @@ class SmartFloat(float, metaclass=Meta):
 			valueFloat = 0.0
 
 		# TODO: Allow for precision to be overridden if number is scaled.  (10,110 becomes 10.11k instead of 10.1k)
-		integerLength, floatingPointLength = self.expPrecision(valueFloat)
+		integerLength, floatingPointLength = self.intFloatLength(valueFloat)
 		if floatingPointLength == 1 and valueFloat.is_integer():
 			floatingPointLength = 0
 
@@ -211,7 +263,7 @@ class SmartFloat(float, metaclass=Meta):
 
 	@property
 	def decorator(self):
-		self._decorator
+		return self._decorator
 
 	@property
 	def precision(self):

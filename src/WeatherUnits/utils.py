@@ -1,19 +1,25 @@
 import logging
-from typing import Union
+from functools import lru_cache
+from typing import Hashable, Type, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+	from base.Measurement import Measurement
 
 log = logging.getLogger(__name__)
 
 
-def loadUnitLocalization(measurement, config):
-	possibleNames = [measurement.__class__.__name__.lower(), toCamelCase(measurement.__class__.__name__), measurement.__class__.__name__]
+@lru_cache(maxsize=64)
+def loadUnitLocalization(measurement: Type[Measurement], config):
+	if not isinstance(measurement, type):
+		measurement = measurement.__class__
+	name = measurement.__name__
+	possibleNames = [name.lower(), toCamelCase(name), name]
 
-	if hasattr(measurement.__class__, '_type') and measurement.__class__._type is not None:
-		possibleTypes = [measurement.__class__._type.__name__.lower(), toCamelCase(measurement.__class__._type.__name__), measurement.__class__._type.__name__]
-		for classType in possibleTypes:
-			try:
-				return config['LocalUnits'][classType]
-			except KeyError:
-				pass
+	if hasattr(measurement, '_type') and measurement._type is not None:
+		possibleTypes = [measurement._type.__name__.lower(), toCamelCase(measurement._type.__name__), measurement._type.__name__]
+		for classType in {*possibleNames, *possibleTypes}:
+			if classType in config.localUnits:
+				return config.localUnits[classType]
 		else:
 			log.warning(f'{measurement._type.__name__} has no type defined')
 
@@ -24,21 +30,6 @@ def toCamelCase(string, titleCase: bool = False) -> str:
 		string.replace(char, '')
 	return string[0].upper() if titleCase else string[0].lower() + string[1:]
 
-
-'''https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python'''
-
-
-def levenshtein(seq1, seq2):
-	oneago = None
-	thisrow = range(1, len(seq2) + 1) + [0]
-	for x in range(len(seq1)):
-		twoago, oneago, thisrow = oneago, thisrow, [0] * len(seq2) + [x + 1]
-		for y in range(len(seq2)):
-			delcost = oneago[y] + 1
-			addcost = thisrow[y - 1] + 1
-			subcost = oneago[y - 1] + (seq1[x] != seq2[y])
-			thisrow[y] = min(delcost, addcost, subcost)
-	return thisrow[len(seq2) - 1]
 
 
 def convertString(value: str) -> Union[int, float, str, bool]:
@@ -69,7 +60,14 @@ def strToDict(string: str, cls: type) -> type:
 	return cls
 
 
-def PropertiesFromConfig(cls, config):
+def setPropertiesFromConfig(cls, config) -> None:
+	"""
+	Modifies the class in place to add the properties defined in the config.
+	:param cls: Class to modify
+	:type cls: Type[Measurement]
+	:param config: Config to use
+	:type config: Config
+	"""
 	possibleNames = [cls.__name__.lower(), cls._unit, toCamelCase(cls.__name__), cls.__name__]
 	if hasattr(cls, '_type') and cls._type is not None and not isinstance(cls._type, str):
 		possibleTypes = [cls._type.__name__.lower(), toCamelCase(cls._type.__name__), cls._type.__name__]
@@ -90,4 +88,49 @@ def PropertiesFromConfig(cls, config):
 			break
 		except KeyError:
 			pass
-	return cls
+
+
+class HashSlice:
+	__slots__ = ('start', 'stop', 'step')
+	start: Union[Hashable, type]
+	stop: Union[Hashable, type]
+	step: Union[Hashable, type]
+
+	def __init__(self, start: Union[Hashable, slice], stop: Hashable = None, step: Hashable = None):
+		if isinstance(start, (slice, HashSlice)):
+			stop = start.stop
+			step = start.step
+			start = start.start
+		self.start = start
+		self.stop = stop
+		self.step = step
+
+	def __iter__(self) -> iter:
+		return iter((self.start, self.stop, self.step))
+
+	def __repr__(self) -> str:
+		return f"HashSlice[{self.start or ''}:{self.stop or ''}:{self.step or ''}]"
+
+	def __str__(self) -> str:
+		return f"[{self.start or ''}:{self.stop or ''}:{self.step or ''}]"
+
+	def __eq__(self, other: object) -> bool:
+		if hasattr(other, 'start') and hasattr(other, 'stop') and hasattr(other, 'step'):
+			return self.start == other.start and self.stop == other.stop and self.step == other.step
+		if self.stop is None and self.step is None:
+			return self.start == other
+		return False
+
+	def __hash__(self) -> int:
+		values = [self.start, self.stop, self.step]
+		if self.step is None:
+			values.pop()
+		if self.stop is None and self.step is None:
+			values.pop()
+		if len(values) == 1:
+			return hash(values[0])
+		return hash(tuple(values))
+
+	@property
+	def isSlice(self) -> bool:
+		return self.stop is not None
