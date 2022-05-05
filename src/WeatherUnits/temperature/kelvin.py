@@ -1,7 +1,10 @@
+from math import inf
+
 from . import Temperature
 
 
 class Kelvin(Temperature):
+	_limits = (0, inf)
 	_unit = 'k'
 
 	def _kelvin(self):

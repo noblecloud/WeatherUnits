@@ -1,5 +1,40 @@
-[build-system]
-requires = [
-    "setuptools>=42",
+[tool.poetry]
+name = "WeatherUnits"
+version = "0.5.2"
+description = "Easy conversion for common weather units"
+authors = ["Bryan Neal Garrison <git@noblecloud.io>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/noblecloud/WeatherUnits"
+keywords = ["weather", "units", "temperature", "conversion", "converter"]
+classifiers = [
+	"Programming Language :: Python :: 3.9",
+	"License :: OSI Approved :: MIT License",
+	"Operating System :: OS Independent",
+	"Natural Language :: English",
+	"Development Status :: 4 - Beta",
+	"Topic :: Utilities",
+	"Topic :: Scientific/Engineering :: Atmospheric Science",
+	"Topic :: Scientific/Engineering :: Physics",
+	"Topic :: Software Development :: Libraries :: Python Modules",
+	"Topic :: Software Development :: Libraries",
+	"Intended Audience :: Developers",
+	"Intended Audience :: Science/Research",
+	"Intended Audience :: Education",
 ]
-build-backend = "setuptools.build_meta"
+include = ["*.ini"]
+packages = [
+	{ include = "WeatherUnits", from = "src" }
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/noblecloud/WeatherUnits/issues"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,3 +1,5 @@
+from math import inf
+
 from functools import lru_cache
 import logging
 from datetime import datetime
@@ -23,6 +25,7 @@ class Measurement(SmartFloat):
 	_subTypes: ClassVar[Dict[str, Type['Measurement']]]
 
 	def __new__(cls, value, title: str = None, key: str = None, timestamp: datetime = None, **kwargs):
+		value = sorted((*cls.limits, float(value)))[1]
 		return SmartFloat.__new__(cls, value)
 
 	def __class_getitem__(cls, item):
@@ -304,8 +307,8 @@ class DerivedMeasurement(Measurement):
 	@lru_cache(maxsize=32)
 	def __getSlice__(cls, item: HashSlice):
 		fixedN, fixedD = cls.fixedUnits
-		if (underItem := f'_{item}') in cls.__annotations__:
-			return cls.__annotations__[underItem]
+		# if (underItem := f'_{item}') in cls.__annotations__:
+		# 	return cls.__annotations__[underItem]
 		if item in cls.__dict__:
 			return cls.__dict__[item]
 		if item.isSlice:

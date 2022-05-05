@@ -1,7 +1,10 @@
+from math import inf
+
 from . import Temperature
 
 
 class Fahrenheit(Temperature):
+	_limits = (-459.6699, inf)
 	_unit = 'f'
 
 	def _celsius(self, delta: bool = False):

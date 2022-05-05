@@ -1,7 +1,10 @@
+from math import inf
+
 from . import Temperature
 
 
 class Celsius(Temperature):
+	_limits = (-273.15, inf)
 	_unit = 'c'
 
 	def _celsius(self, delta: bool = False):
