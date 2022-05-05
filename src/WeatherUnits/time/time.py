@@ -1,3 +1,5 @@
+from math import inf
+
 from datetime import timedelta
 
 from ..base import NamedType, BaseUnit, UnitSystem, ScalingMeasurement, Scale
@@ -8,6 +10,7 @@ __all__ = ['Time']
 @UnitSystem
 @NamedType
 class Time(ScalingMeasurement):
+	_limits = -inf, inf
 	Millisecond: type
 	Second: type
 	Minute: type

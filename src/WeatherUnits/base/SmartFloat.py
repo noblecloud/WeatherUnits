@@ -1,7 +1,7 @@
 import logging
 from typing import ClassVar, Optional, Set, Type, Union
 
-from math import nan, isnan
+from math import nan, isnan, inf
 from decimal import Decimal
 
 from ..utils import setPropertiesFromConfig
@@ -13,7 +13,7 @@ __all__ = ['SmartFloat']
 
 
 class Meta(type):
-	_compound: ClassVar[bool]
+	_derived: ClassVar[bool]
 
 	# def __new__(cls, name, bases, dct):
 
@@ -26,10 +26,10 @@ class Meta(type):
 		return False
 
 	@property
-	def isCompound(cls) -> bool:
+	def isDerived(cls) -> bool:
 		if not hasattr(cls, '_derived'):
-			cls._compound = getattr(cls.__parent_class__, 'isCompound', None)
-		return cls._compound
+			cls._derived = getattr(cls.__parent_class__, 'isDerived', None)
+		return cls._derived
 
 	@property
 	def isScaling(cls) -> bool:
@@ -46,7 +46,7 @@ class Meta(type):
 			for sub in cls.__subclasses__():
 				if sub.isGenericType:
 					subs.update(sub.subTypes)
-				elif sub.isCompound == cls.isCompound:
+				elif sub.isDerived == cls.isDerived:
 					subs.add(sub)
 		subs.discard(cls)
 		return list(subs)
@@ -61,8 +61,14 @@ class Meta(type):
 			d = None if d.isGenericType else d
 		return n, d
 
+	@property
+	def limits(cls) -> tuple[Optional[float], Optional[float]]:
+		if cls.isDerived:
+			return cls.numeratorClass.limits
+		return getattr(cls, '_limits', None) or getattr(cls.__parent_class__, 'limits', (0, inf))
+
 	def __repr__(cls):
-		if cls.isCompound:
+		if cls.isDerived:
 			cls: 'DerivedMeasurement'
 			if ((cls.numeratorClass.isGenericType or cls.__parent_class__.numeratorClass.isGenericType)
 				and (cls.denominatorClass.isGenericType or cls.__parent_class__.denominatorClass.isGenericType)):
@@ -79,7 +85,7 @@ class Meta(type):
 
 
 class SmartFloat(float, metaclass=Meta):
-
+	_limits = 0, inf
 	_config: Config
 	_precision: int
 	_max: int
