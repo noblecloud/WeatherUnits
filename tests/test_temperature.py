@@ -64,6 +64,3 @@ class TestTemperature(TestCase):
 	def test_dewpoint(self):
 		self.assertEqual(self.cDewpoint, self.cRoom.dewpoint(65))
 		self.assertEqual(self.fDewpoint, self.fRoom.dewpoint(65))
-
-	def test_hash(self):
-		self.assertEqual(hash(self.cLow), hash(self.cLow))

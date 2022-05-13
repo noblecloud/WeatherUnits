@@ -42,7 +42,7 @@ class PerSecond(Wind):
 		denominator = Time.Second(denominator)
 		Wind.__init__(self, numerator, denominator, *args, **kwargs)
 
-n
+
 @NamedSubType
 class PerMinute(Wind):
 	_denominator: Time.Minute
