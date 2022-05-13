@@ -2,7 +2,7 @@
 name = "WeatherUnits"
 version = "0.5.2"
 description = "Easy conversion for common weather units"
-authors = ["Bryan Neal Garrison <git@noblecloud.io>"]
+authors = ["noblecloud <git@noblecloud.io>"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/noblecloud/WeatherUnits"
