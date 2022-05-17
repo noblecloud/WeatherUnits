@@ -108,7 +108,7 @@ class SmartFloat(float, metaclass=Meta):
 	def __init_subclass__(cls, **kwargs):
 		cls._acceptedTypes = (*kwargs.get('acceptedTypes', ()), *cls._acceptedTypes, cls)
 
-		for prop in {key: value for key, value in config.unitDefaults.items() if key not in cls.__dict__.keys()}.items():
+		for prop in {key: value for key, value in config.unitDefaults.items() if not hasattr(cls, key)}.items():
 			setattr(cls, *prop)
 		setPropertiesFromConfig(cls, config)
 		cls._config = config
