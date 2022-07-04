@@ -2,8 +2,7 @@ from fractions import Fraction
 from functools import cached_property
 from typing import Optional, Tuple, Mapping
 
-from ..base.Decorators import UnitType
-from ..base import Dimensionless, NonPlural, Measurement, Quantity, FiniteField
+from ..base import Dimensionless, NonPlural, Measurement, Quantity, FiniteField, UnitType
 from ..utils import getFrom
 from . import light
 
@@ -240,3 +239,13 @@ class Voltage(Measurement):
 
 class LightningStrike(Quantity, altName='Strike'):
 	...
+
+
+Percentage.Humidity = Humidity
+Percentage.Probability = Probability
+Percentage.Coverage = Coverage
+Percentage.BatteryPercentage = BatteryPercentage
+
+Angle.Direction = Direction
+Direction.Cardinal = Cardinal
+Angle.Cardinal = Cardinal

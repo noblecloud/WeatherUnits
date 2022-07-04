@@ -1,6 +1,7 @@
 from typing import Union
 from math import log
 
+from ..others import Humidity
 from ..base.Decorators import UnitType
 from ..base import Measurement, Dimension
 
@@ -108,7 +109,6 @@ class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 
 	@staticmethod
 	def normalizeRh(rh: Union[int, float, 'Humidity']):
-		from others import Humidity
 		if not isinstance(rh, Humidity):
 			rh = Humidity(rh)
 		return int(rh)
