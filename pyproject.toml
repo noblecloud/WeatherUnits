@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "WeatherUnits"
-version = "0.5.3"
+version = "0.6.0"
 description = "Easy conversion for common weather units"
 authors = ["noblecloud <git@noblecloud.io>"]
 license = "MIT"
@@ -32,8 +32,6 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
-
-[tool.poetry.dev-dependencies]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

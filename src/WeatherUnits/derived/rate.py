@@ -1,24 +1,20 @@
-from ..length import Length
-from ..time import Time
-from ..base.Measurement import DerivedMeasurement
-from ..base.Decorators import NamedType
-
 from datetime import timedelta as _td
 
 __all__ = ['DistanceOverTime']
 
+from ..base.Decorators import UnitType
+from . import Length, Time, DerivedMeasurement
 
-@NamedType
-class DistanceOverTime(DerivedMeasurement):
-	_numerator: Length
-	_denominator: Time
 
-	def __new__(cls, numerator: Length, denominator: Time = 1):
+@UnitType
+class DistanceOverTime(DerivedMeasurement, numerator=Length, denominator=Time):
+
+	def __new__(cls, numerator: Length, denominator: Time = None):
 		if isinstance(denominator, _td):
 			denominator = Time.Second(denominator.total_seconds())
 		return super().__new__(cls, numerator, denominator)
 
-	def __init__(self, numerator: Length, denominator: Time = 1):
+	def __init__(self, numerator: Length, denominator: Time = None):
 		if isinstance(denominator, _td):
 			denominator = Time.Second(denominator.total_seconds())
 		super().__init__(numerator, denominator)
@@ -29,8 +25,7 @@ class DistanceOverTime(DerivedMeasurement):
 
 	@property
 	def mih(self):
-		converted = DistanceOverTime(self._numerator.mi, self._denominator.hr)
-		converted._suffix = 'mph'
+		converted = MilesPerHour(self._numerator.mi, self._denominator.hr)
 		return converted
 
 	@property
@@ -55,3 +50,31 @@ class DistanceOverTime(DerivedMeasurement):
 
 	mph = mih
 	fps = fts
+
+
+class PerSecond(DistanceOverTime, numerator=Length, denominator=Time.Second):
+	...
+
+
+class PerMinute(DistanceOverTime, numerator=Length, denominator=Time.Minute):
+	...
+
+
+class PerHour(DistanceOverTime, numerator=Length, denominator=Time.Hour):
+	...
+
+
+class MilesPerHour(PerHour, numerator=Length.Mile, unit='mph'):
+	...
+
+
+class MetersPerSecond(PerSecond, numerator=Length.Meter):
+	...
+
+
+DistanceOverTime.PerSecond = PerSecond
+DistanceOverTime.PerMinute = PerMinute
+DistanceOverTime.PerHour = PerHour
+DistanceOverTime.MilesPerHour = MilesPerHour
+DistanceOverTime.MetersPerSecond = MetersPerSecond
+DistanceOverTime.MetersPerHour = MetersPerSecond

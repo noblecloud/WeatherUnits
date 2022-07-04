@@ -1,63 +1,83 @@
-from datetime import timedelta
-from typing import Any, Dict, Iterable, List, SupportsIndex, Type, Union
+from typing import Type, overload, Tuple
 
-UnitSystems: Dict[str, Dict[str, Type]] = {}
-
-from . import errors
 from .config import config
-from . import utils
+
 from . import base
-from . import temperature
-from . import length
-from . import mass
-from . import time
-from . import pressure
-from .airQuality import *
-from .derived import *
+
+SmartFloat = base.SmartFloat
+Measurement = base.Measurement
+ScalingMeasurement = base.ScalingMeasurement
+Dimension = base.Dimension
+Dimensionless = base.Dimensionless
+NonPlural = base.NonPlural
+DerivedMeasurement = base.DerivedMeasurement
+Index = base.Index
+Quantity = base.Quantity
+SystemVariant = base.SystemVariant
+FiniteField = base.FiniteField
+
+from .temperature import Temperature
+from .length import Length
+from .mass import Mass
+from .time_ import Time
+from .pressure import Pressure
 from .others import *
-from .various import *
+from . import airQuality as AirQuality
+from . import digital as Digital
+from . import derived
 
-Temperature = temperature.Temperature
-Length = length.Length
-Mass = mass.Mass
-Time = time.Time
-Pressure = pressure.Pressure
+Rate = derived.DistanceOverTime
+Wind = derived.Wind
+Precipitation = derived.Precipitation
+Other = others
+Light = others.Light
+PartsPer = derived.PartsPer
+Volume = derived.Volume
+Density = derived.Density
+PartsPer = derived.PartsPer
 
 
-class Trend(List[Measurement]):
+@overload
+def auto(value: int | float | int, unit: str) -> Measurement: ...
 
-	def __init__(self, value: Union[Measurement, List[Measurement], Type[Measurement]] = None, max: Union[int, Time, timedelta] = None):
-		if isinstance(value, Measurement):
-			value = [value]
-		if isinstance(value, list):
-			pass
-		elif isinstance(value, type):
-			value = [value(0)]
-		metadata = value[0]
-		self.title = metadata.title
-		self.key = metadata.key
-		self.category = metadata.category
-		self._valueClass = type(metadata)
-		self.max = max
-		self.insertValue(value)
-		super(Trend, self).__init__()
 
-	def insertValue(self, value: Any):
-		if isinstance(value, self._valueClass):
-			self.append(value)
-		elif isinstance(value, Iterable):
-			for v in value:
-				self.insertValue(v)
-		else:
-			raise TypeError("Value must be a list of Measurement or a Measurement")
-		while self.listIsTooLong():
-			self.pop(0)
+@overload
+def auto(value: str) -> Measurement: ...
 
-	def listIsTooLong(self):
-		if isinstance(self.max, int):
-			return len(self) > self.max
-		elif isinstance(self.max, Time):
-			max = timedelta(seconds=self.max.seconds)
-		start = self[0].timestamp
-		end = self[-1].timestamp
-		return end - start > self.max
+
+@overload
+def auto(unit: str) -> Type[Measurement] | Tuple[Type[Measurement], ...]: ...
+
+
+def auto(*args) -> Measurement | Type[Measurement] | Tuple[Type[Measurement], ...]:
+	match args:
+		case [int(value) | float(value) | str(value), str(unit)]:
+			measurement = float(value)
+			unit = Measurement.__findUnitClass__(unit)
+			cls = tuple(Measurement.__findUnitClass__(u) for u in unit)
+
+			if len(cls) == 1:
+				return cls[0](measurement)
+			raise NotImplementedError('Multi-Unit values are not supported yet')
+
+		case [str(value)]:
+			number = base.FormatSpec.number.search(value)
+			if number is not None:
+				number = number.groupdict()['number']
+
+			unit = DerivedMeasurement.__parse_unit__(value.replace(number, ''))
+			cls = tuple(Measurement.__findUnitClass__(u) for u in unit)
+
+			if len(cls) == 1:
+				return cls[0](float(number))
+			raise NotImplementedError('Multi-Unit values are not supported yet')
+
+		case [str(unit)]:
+			unit = DerivedMeasurement.__parse_unit__(unit)
+			cls = tuple(Measurement.__findUnitClass__(u) for u in unit)
+			return cls
+		case _:
+			raise ValueError
+
+
+__all__ = ['auto', 'Measurement', 'Temperature', 'Length', 'Mass', 'Time', 'Pressure', 'Other', 'Light', 'PartsPer', 'Volume', 'Density', 'PartsPer', 'Rate', 'Wind', 'Precipitation', 'AirQuality', 'Voltage', 'Digital', 'config']

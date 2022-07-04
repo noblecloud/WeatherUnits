@@ -1,15 +1,16 @@
-from math import inf
-
 from datetime import timedelta
 
-from ..base import NamedType, BaseUnit, UnitSystem, ScalingMeasurement, Scale
+from math import inf
 
 __all__ = ['Time']
 
+from ..base.Decorators import UnitType
+from ..base import Dimension, both
+from ..base import ScalingMeasurement, Scale
 
-@UnitSystem
-@NamedType
-class Time(ScalingMeasurement):
+
+@UnitType
+class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', baseUnit='Second'):
 	_limits = -inf, inf
 	Millisecond: type
 	Second: type
@@ -38,8 +39,6 @@ class Time(ScalingMeasurement):
 		Base = 'Second'
 		Week = 7.0*Day*Hour*Minute*Second
 		Month = 30.436875*Day*Hour*Minute*Second
-
-	_format = '{:2.2f}'
 
 	def _convert(self, other):
 		if isinstance(other, timedelta):
@@ -166,18 +165,15 @@ class Time(ScalingMeasurement):
 
 class Millisecond(Time):
 	_unit = 'ms'
-	_format = '{:4.0f}'
 
 
-@BaseUnit
-class Second(Time):
+class Second(Time, alias='sec'):
 	_unit = 's'
-	_format = '{:2.1f}'
 
 
 class Minute(Time):
+	_precision = 1
 	_unit = 'min'
-	_format = '{:2.1f}'
 
 
 class Hour(Time):

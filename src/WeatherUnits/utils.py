@@ -1,24 +1,33 @@
 import logging
+import re
+from difflib import get_close_matches, SequenceMatcher
 from functools import lru_cache
-from typing import Hashable, Type, Union
+from inspect import getsource, getfile, getmodule
+from itertools import product
+from types import FunctionType
+from typing import Hashable, Type, Union, Final, Any, Mapping, Callable, Set, Tuple, Optional, NamedTuple
 
 log = logging.getLogger(__name__)
 
+numeric = re.compile(r'^[-+]?[0-9]*\.?[0-9]+$')
 
-@lru_cache(maxsize=64)
+
+@lru_cache(maxsize=128)
 def loadUnitLocalization(measurement: Type['Measurement'], config):
 	if not isinstance(measurement, type):
-		measurement = measurement.__class__
-	name = measurement.__name__
-	possibleNames = [name.lower(), toCamelCase(name), name]
+		measurement = type(measurement)
+	unitName = measurement.type.name.lower()
+	unitType = measurement.Generic.name.lower()
+	match = get_close_matches(unitName, config.localUnits.keys(), n=1, cutoff=0.85) or get_close_matches(unitType, config.localUnits.keys(), n=1, cutoff=0.8)
+	return config.localUnits[match[0]] if match else None
 
-	if hasattr(measurement, '_type') and measurement._type is not None:
-		possibleTypes = [measurement._type.__name__.lower(), toCamelCase(measurement._type.__name__), measurement._type.__name__]
-		for classType in {*possibleNames, *possibleTypes}:
-			if classType in config.localUnits:
-				return config.localUnits[classType]
-		else:
-			log.warning(f'{measurement._type.__name__} has no type defined')
+
+# possibleTypes = (unitName.lower(), toCamelCase(unitName), unitName)
+# for classType in {*possibleNames, *possibleTypes}:
+# 	if classType in config.localUnits:
+# 		return config.localUnits[classType]
+# else:
+# 	log.warning(f'{measurement._type.__name__} has no type defined')
 
 
 def toCamelCase(string, titleCase: bool = False) -> str:
@@ -26,7 +35,6 @@ def toCamelCase(string, titleCase: bool = False) -> str:
 	for char in ['-', ' ', '.', '_']:
 		string.replace(char, '')
 	return string[0].upper() if titleCase else string[0].lower() + string[1:]
-
 
 
 def convertString(value: str) -> Union[int, float, str, bool]:
@@ -42,6 +50,33 @@ def convertString(value: str) -> Union[int, float, str, bool]:
 	elif value == 'False':
 		value = False
 	return value
+
+
+ScoredMatch = NamedTuple('Match', [('ratio', 'float'), ('value', 'str')])
+
+scored_get_close_matches: FunctionType
+sourceFile = getfile(get_close_matches)
+get_close_matches_code = getsource(get_close_matches)
+get_close_matches_code = get_close_matches_code.replace('def get_close_matches', 'def scored_get_close_matches')
+get_close_matches_code = get_close_matches_code.replace('return [x for score, x in result]', 'return tuple(ScoredMatch(k, v) for (k, v) in result)')
+exec(compile(get_close_matches_code, sourceFile, 'exec'), {**getmodule(get_close_matches, sourceFile).__dict__, **locals()}, globals())
+
+
+def best_match(word, possibilities, cutoff=0) -> Optional[str]:
+	"""
+	Returns the best guess at a match to the word.
+	"""
+	guesses = get_close_matches(word, possibilities, n=1, cutoff=cutoff)
+	return guesses[0] if guesses else None
+
+
+class CaseInsensitiveKey(str):
+
+	def __hash__(self):
+		return hash(self.lower())
+
+	def __eq__(self, other):
+		return self.lower() == other.lower()
 
 
 def parseString(item: str):
@@ -87,6 +122,34 @@ def setPropertiesFromConfig(cls, config) -> None:
 			pass
 
 
+def getPropertiesFromConfig(name: str, cls: dict, config) -> dict:
+	"""
+	Modifies the class in place to add the properties defined in the config.
+	:param config: Config to use
+	:type config: Config
+	"""
+	possibleNames = [name.__name__.lower(), cls.get('_unit'), toCamelCase(cls.__name__), name]
+	# if hasattr(cls, '_type') and cls._type is not None and not isinstance(cls._type, str):
+	# 	possibleTypes = [cls._type.__name__.lower(), toCamelCase(cls._type.__name__), cls._type.__name__]
+	# 	for classType in possibleTypes:
+	# 		try:
+	# 			cls = strToDict(config.unitProperties[classType], cls)
+	# 			config.configuredUnits[cls.__name__] = cls
+	# 			break
+	# 		except KeyError:
+	# 			pass
+	# 	else:
+	# 		log.debug(f'{cls.__name__} has no type defined')
+	result = {}
+	for name in possibleNames:
+		try:
+			cls = strToDict(config.unitProperties[name], cls)
+			config.configuredUnits[name] = cls
+			break
+		except KeyError:
+			pass
+
+
 class HashSlice:
 	__slots__ = ('start', 'stop', 'step')
 	start: Union[Hashable, type]
@@ -98,6 +161,16 @@ class HashSlice:
 			stop = start.stop
 			step = start.step
 			start = start.start
+		elif isinstance(start, tuple) and stop is None and step is None:
+			tupleLength = len(start)
+			if tupleLength == 1:
+				start = start[0]
+			elif tupleLength == 2:
+				start, stop = start
+			elif tupleLength == 3:
+				start, stop, step = start
+			else:
+				raise ValueError(f'Invalid start tuple length: {tupleLength}')
 		self.start = start
 		self.stop = stop
 		self.step = step
@@ -131,3 +204,139 @@ class HashSlice:
 	@property
 	def isSlice(self) -> bool:
 		return self.stop is not None
+
+
+def modifyCase(string: str, titleCase: bool = True, joiner: str = '') -> str:
+	if string.isupper():
+		return string
+	stringParts = re.findall(r'((?=[A-Z\_]?)[A-Z]?[A-Za-z][a-z]+)', string) or []
+	if titleCase and stringParts:
+		return joiner.join(i.title() for i in stringParts)
+	return joiner.join(stringParts)
+
+
+@lru_cache(maxsize=1024)
+def pluralize(word: str) -> str:
+	if re.search('[sxz]$', word):
+		if len(word) <= 2:
+			return word
+		return re.sub('$', 'es', word)
+	elif re.search('[^aeioudgkprt]h$', word):
+		return re.sub('$', 'es', word)
+	elif re.search('[aeiou]y$', word):
+		return re.sub('y$', 'ies', word)
+	else:
+		return f'{word}s'
+
+
+class Infix:
+	def __init__(self, function=lambda x, y: x if x is not None else y):
+		self.function = function
+
+	def __ror__(self, other):
+		return Infix(lambda x, self=self, other=other: self.function(other, x))
+
+	def __or__(self, other):
+		return self.function(other)
+
+	def __rlshift__(self, other):
+		return Infix(lambda x, self=self, other=other: self.function(other, x))
+
+	def __rshift__(self, other):
+		return self.function(other)
+
+	def __call__(self, value1, value2):
+		return self.function(value1, value2)
+
+	def __rmatmul__(self, other):
+		return Infix(lambda x, self=self, other=other: self.function(other, x))
+
+	def __matmul__(self, other):
+		return self.function(other)
+
+
+class _Empty:
+
+	def __bool__(self) -> bool:
+		return True
+
+	def __str__(self) -> str:
+		return ''
+
+	def __repr__(self) -> str:
+		return ''
+
+	def __iter__(self) -> iter:
+		return iter(())
+
+	def __getitem__(self, item: object) -> object:
+		return self
+
+	def __getattr__(self, item):
+		return self
+
+	def __call__(self, *args, **kwargs):
+		return self
+
+	def __len__(self) -> int:
+		return 0
+
+	def __contains__(self, item: object) -> bool:
+		return False
+
+	def __int__(self) -> int:
+		return 0
+
+	def __float__(self) -> float:
+		return 0.0
+
+
+NotNone: Final = Infix()
+empty: Final = _Empty()
+UnsetKwarg: Final = object()
+Unset: Final = object()
+
+
+def getFrom(
+	key: Hashable | str | Tuple[Hashable | str, ...],
+	*objs: Mapping | object,
+	default: Any = UnsetKwarg,
+	expectedType: type | Tuple[type, ...] = object,
+	factory: Callable[[Any], Any] = lambda x: x,
+	ignore: Set[Any] = None,
+	findAll: bool = False,
+	pop: bool = False,
+):
+	"""
+	Returns the first acceptable attr or value from a list of objects
+	:param objs: The mapping or object to search.
+	:type objs: Mapping | object
+	:param key: The keys to search for.
+	:type key: Hashable | str
+	:param default: The default value to return if the key is not found.
+	:type default: Any
+	:return: The value of the key in the mapping or the default value.
+	:rtype: Any
+	"""
+	if ignore is None:
+		ignore = set()
+	if not isinstance(key, tuple):
+		key = (key,)
+	if findAll:
+		found = []
+	for obj, subKey in product(objs, key):
+		if isinstance(obj, Mapping):
+			value = obj.get(subKey, default)
+		else:
+			value = getattr(obj, subKey, default)
+		if value is not UnsetKwarg and value not in ignore and isinstance(value, expectedType):
+			if pop and (_pop := getattr(obj, 'pop', None)) is not None:
+				_pop(subKey)
+			if not findAll:
+				return factory(value)
+			found.append(factory(value))
+	if findAll:
+		return found
+	elif default is UnsetKwarg:
+		raise KeyError(key)
+	return default

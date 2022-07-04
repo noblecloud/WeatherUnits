@@ -1,8 +1,4 @@
-from .SmartFloat import SmartFloat
-from .Measurement import Measurement, DerivedMeasurement
-from .ScalingMeasurement import *
-from .Decorators import *
-
-unitFixes = {'mi/hr': 'mph'}
-
-
+from . import Decorators
+from ._SmartFloat import *
+from ._Measurement import *
+from ._ScalingMeasurement import *

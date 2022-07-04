@@ -1,16 +1,12 @@
-from ..base import NamedType, Synonym
-from ..base import ScalingMeasurement
-from ..base import BaseUnit, UnitSystem
-from ..base.ScalingMeasurement import Scale
-
+from ..base.Decorators import UnitType
+from ..base import Scale
+from . import ScalingMeasurement
 
 __all__ = ['PartsPer']
 
 
-@UnitSystem
-@NamedType
-class PartsPer(ScalingMeasurement):
-
+@UnitType
+class PartsPer(ScalingMeasurement, baseClass='Hundred'):
 	_precision = 0
 
 	class _Scale(Scale):
@@ -57,7 +53,6 @@ class PartsPer(ScalingMeasurement):
 	ppt = trillion
 
 
-@BaseUnit
 class Hundred(PartsPer):
 	_precision = 2
 	_max = 3

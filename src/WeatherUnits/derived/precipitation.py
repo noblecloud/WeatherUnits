@@ -1,18 +1,12 @@
-from typing import Union
-
 from enum import Enum
 
-from .rate import DistanceOverTime
-from ..base.Decorators import NamedType, NamedSubType
-from ..length import Length
-from ..time import Time
+from ..base.Decorators import UnitType
+from . import Length, Time, DistanceOverTime
 
 __all__ = ['Precipitation']
 
 
-@NamedType
-class Precipitation(Length):
-
+class Precipitation:
 	class Type(Enum):
 		NONE = 0
 		Rain = 1
@@ -20,21 +14,14 @@ class Precipitation(Length):
 		Sleet = 3
 		Snow = 4
 
-	def __new__(cls, value: Length, *args, **kwargs):
-		value = value.__class__(value, *args, **kwargs)
-		value.__dict__.update(Precipitation.__dict__)
-		return value
 
-
-@NamedType
-class PrecipitationRate(DistanceOverTime, Precipitation):
-	_numerator: Length
-	_denominator: Time
+@UnitType
+class PrecipitationRate(DistanceOverTime, Precipitation, limit=(0.0, None)):
 	Daily: type
 	Hourly: type
 	Minutely: type
 
-	def __init__(self, numerator: Length, denominator: int = 1, *args, **kwargs):
+	def __init__(self, numerator: Length, denominator: int = None, *args, **kwargs):
 		if isinstance(denominator, int):
 			denominator = Time.Hour(denominator)
 		DistanceOverTime.__init__(self, numerator, denominator, *args, **kwargs)
@@ -81,39 +68,19 @@ class PrecipitationRate(DistanceOverTime, Precipitation):
 
 	@property
 	def secondly(self):
-		return PrecipitationRate(self._numerator, self._denominator)
+		return Secondly(self.numerator, self.denominator)
 
 
-@NamedSubType
-class Daily(PrecipitationRate):
-	_denominator: Time.Day
-
-	def __init__(self, numerator: Length, denominator: Union[Time, int, float] = 1, *args, **kwargs):
-		PrecipitationRate.__init__(self, numerator, denominator, *args, **kwargs)
+class Daily(PrecipitationRate, denominator=Time.Day): ...
 
 
-@NamedSubType
-class Hourly(PrecipitationRate):
-	_denominator: Time.Hour
-
-	def __init__(self, numerator: Length, denominator: Union[Time, int, float] = 1, *args, **kwargs):
-		PrecipitationRate.__init__(self, numerator, denominator, *args, **kwargs)
+class Hourly(PrecipitationRate, denominator=Time.Hour): ...
 
 
-@NamedSubType
-class Minutely(PrecipitationRate):
-	_denominator: Time.Minute
-
-	def __init__(self, numerator: Length, denominator: Union[Time, int, float] = 1, *args, **kwargs):
-		PrecipitationRate.__init__(self, numerator, denominator, *args, **kwargs)
+class Minutely(PrecipitationRate, denominator=Time.Minute): ...
 
 
-@NamedSubType
-class Secondly(PrecipitationRate):
-	_denominator: Time.Second
-
-	def __init__(self, numerator: Length, denominator: Union[Time, int, float] = 1, *args, **kwargs):
-		PrecipitationRate.__init__(self, numerator, denominator, *args, **kwargs)
+class Secondly(PrecipitationRate, denominator=Time.Second): ...
 
 
 Precipitation.Rate = PrecipitationRate

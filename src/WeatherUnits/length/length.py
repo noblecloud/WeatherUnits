@@ -1,8 +1,7 @@
-from ..base import NamedType, ScalingMeasurement
+from ..base import Dimension
 
 
-@NamedType
-class Length(ScalingMeasurement):
+class Length(metaclass=Dimension, symbol='L'):
 	Millimeter: type
 	Centimeter: type
 	Decimeter: type

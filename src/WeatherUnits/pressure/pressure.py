@@ -1,13 +1,11 @@
-from ..base import NamedType, Synonym
-from ..base import ScalingMeasurement
-from ..base import BaseUnit, Huge, Large, Medium, Small, SystemVariant, Tiny, UnitSystem
-from ..base.ScalingMeasurement import Scale
 from enum import Enum
 
+from ..base.Decorators import UnitType, Tiny, Small, Medium, Large, Huge, Synonym
+from ..base import both, Scale, ScalingMeasurement, SystemVariant
 
-@UnitSystem
-@NamedType
-class Pressure(ScalingMeasurement):
+
+@UnitType
+class Pressure(ScalingMeasurement, baseUnit='Pascal', system=both):
 	Pascal: type
 	Decapascal: type
 	Hectopascal: type
@@ -97,7 +95,6 @@ class Pressure(ScalingMeasurement):
 
 
 @Tiny
-@BaseUnit
 class Pascal(Pressure):
 	_unit = 'Pa'
 
@@ -127,27 +124,27 @@ class Gigapascal(Pressure):
 	_unit = 'GPa'
 
 
-class Bar(Pascal, SystemVariant):
+class Bar(Pascal):
 	_unit = 'bar'
 
 
-class MillimeterOfMercury(Pascal, SystemVariant):
+class MillimeterOfMercury(Pascal):
 	_unit = "mmHg"
 
 
-class InchOfMercury(Pascal, SystemVariant):
+class InchOfMercury(Pascal):
 	_unit = 'inHg'
 
 
-class Atmosphere(Pascal, SystemVariant):
+class Atmosphere(Pascal):
 	_unit = 'atm'
 
 
-class TechnicalAtmosphere(Pascal, SystemVariant):
+class TechnicalAtmosphere(Pascal):
 	_unit = 'at'
 
 
-class PoundsPerSquareInch(Pascal, SystemVariant):
+class PoundsPerSquareInch(Pascal):
 	_unit = 'psi'
 
 

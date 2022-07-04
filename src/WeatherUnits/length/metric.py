@@ -1,10 +1,10 @@
-from ..base import Scale, UnitSystem, BaseUnit, Large, Medium, Small, Tiny
+from ..base.Decorators import Tiny, Small, Medium, Large
+from ..base import Scale, ScalingMeasurement
+from ..base import metric
 from .length import Length
 
 
-@UnitSystem
-class Metric(Length):
-
+class MetricLength(ScalingMeasurement, Length, system=metric, baseUnit='Meter'):
 	class _Scale(Scale):
 		Millimeter = 1
 		Centimeter = 10
@@ -18,37 +18,37 @@ class Metric(Length):
 	def _foot(self):
 		return self.changeScale(self._Scale.Meter) * 3.280839895013123
 
+
 @Tiny
-class Millimeter(Metric):
+class Millimeter(MetricLength):
 	_unit = 'mm'
 
 
 @Small
-class Centimeter(Metric):
+class Centimeter(MetricLength):
 	_unit = 'cm'
 
 
 @Small
-class Decimeter(Metric):
+class Decimeter(MetricLength):
 	_unit = 'dm'
 
 
 @Medium
-@BaseUnit
-class Meter(Metric):
+class Meter(MetricLength):
 	_unit = 'm'
 
 
 @Medium
-class Decameter(Metric):
+class Decameter(MetricLength):
 	_unit = 'dam'
 
 
 @Large
-class Hectometer(Metric):
+class Hectometer(MetricLength):
 	_unit = 'hm'
 
 
 @Large
-class Kilometer(Metric):
+class Kilometer(MetricLength):
 	_unit = 'km'

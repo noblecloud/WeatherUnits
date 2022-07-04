@@ -1,93 +1,100 @@
 from fractions import Fraction
-from typing import Optional
+from functools import cached_property
+from typing import Optional, Tuple, Mapping
 
-from ..base import NamedType
-from ..base import Measurement
+from ..base.Decorators import UnitType
+from ..base import Dimensionless, NonPlural, Measurement, Quantity, FiniteField
+from ..utils import getFrom
 from . import light
 
 Light = light.Light
 
-__all__ = ['Light', 'Angle', 'Direction', 'Humidity', 'Voltage', 'Strikes', 'Probability', 'Coverage', 'Percentage']
+__all__ = ['Light', 'Angle', 'Direction', 'Humidity', 'Voltage', 'LightningStrike', 'Probability', 'Coverage', 'Percentage']
 
 
-class Percentage(Measurement):
-	_unit = ''
+@UnitType
+class Percentage(Dimensionless, NonPlural):
 	_decorator = '%'
-	_maxValue = 1.0
-	_minValue = 0.0
+	_max = 3
+	_precision = 2
 
-	def __new__(cls, value, isPercentage: bool = None, limits: bool = True, *args, **kwargs):
+	def __new__(cls, value, isPercentage: bool = None, *args, **kwargs):
 		if isPercentage is None:
-			if value > cls._maxValue:
+			if value > cls._limits[1] or isinstance(value, int) and value != 1:
 				value /= 100
 		elif isPercentage:
 			value /= 100
 
-		if limits:
-			value = min(cls._maxValue, max(value, cls._minValue))
-
 		return super(Percentage, cls).__new__(cls, value, *args, **kwargs)
 
-	def _string(self, *args, **kwargs):
-		kwargs['multiplier'] = 100
-		return super(Percentage, self)._string(*args, **kwargs)
+	def __format__(self, format_spec: str) -> str:
+		return super().__format__(format_spec)
 
 	def __int__(self) -> int:
-		return int(float(self) * 100)
+		return int(float(self)*100)
 
-	def fromFloat(self, value: float) -> 'Percentage':
-		return Percentage(value, isPercentage=False, limits=False)
+	# @property
+	# def defaultFormatParams(self):
+	# 	sup = super().defaultFormatParams
+	# 	sup['type'] = '%'
+	# 	return sup
+
+	@classmethod
+	def fromFloat(cls, value: float) -> 'Percentage':
+		return cls(value, isPercentage=False, limits=False)
+
+	@property
+	def formatValue(self) -> float:
+		return float(self)*100
 
 
-@NamedType
-class Humidity(Percentage):
+class Humidity(Percentage, limits=(0.0, 1.0)):
 	_decorator = '%'
+	_id = '%h'
 
 
-@NamedType
-class Probability(Measurement):
+class Probability(Percentage, limits=(0.0, 1.0)):
 	_decorator = '%'
+	_id = '%p'
 	_fraction: Optional[Fraction]
 	_denominatorLimit: int = 10
 
-	def __init__(self, *args, **kwargs):
-		self._fraction: Optional[Fraction] = None
-		super(Probability, self).__init__(*args, **kwargs)
-
 	@property
 	def fraction(self) -> Fraction:
-		if self._fraction is None:
+		if (fraction := getattr(self, '_fraction', None)) is None:
 			self._fraction = Fraction(self).limit_denominator(self._denominatorLimit)
-		return self._fraction
+		return fraction
 
 
-@NamedType
-class Coverage(Percentage):
+class Coverage(Percentage, limits=(0.0, 1.0)):
 	_decorator = '%'
+	_id = '%c'
 
 
-@NamedType
-class Angle(Measurement):
+class BatteryPercentage(Percentage, limits=(0.0, 1.0)):
+	_voltageLimits: Optional[Tuple[float, float]]
+	_decorator = '%'
+	_id = '%bat'
+
+	def __init__(self, value, voltageLimits: Optional[Tuple[float, float]] = None, *args, **kwargs):
+		self._voltageLimits = voltageLimits
+		super(BatteryPercentage, self).__init__(value, *args, **kwargs)
+
+
+@UnitType
+class Angle(Dimensionless):
 	_precision = 0
 	_decorator = 'º'
 	_shorten = True
 
 
-@NamedType
-class Direction(Angle):
+class Direction(Angle, FiniteField, limits=(0, 360)):
 	_cardinal = True
 	_decorator = 'º'
+	_id = '°d'
 	_max = 3
 
-	def _string(self, **kwargs) -> str:
-		if self._cardinal and self._degrees:
-			return f'{self.cardinal} ({super()._string(**kwargs)})'
-		if self._cardinal:
-			return f'{self.cardinal}'
-		else:
-			return f'{super()._string(**kwargs)}'
-
-	@property
+	@cached_property
 	def cardinal(self) -> 'Cardinal':
 		return Cardinal(self)
 
@@ -96,12 +103,51 @@ class Direction(Angle):
 		return Angle(self)
 
 	@property
-	def decorator(self) -> str:
-		return self._decorator if not self._cardinal else ''
-
-	@property
 	def decoratedInt(self) -> str:
 		return super()._string(forceUnit=False, asInt=True)
+
+	@property
+	def __cardinalFormat(self):
+		return '{value}'
+
+	@property
+	def __valueFormat(self):
+		return "{value}{decorator}"
+
+	@property
+	def defaultFormat(self) -> str:
+		if self._cardinal:
+			return self.__cardinalFormat
+		return self.__valueFormat
+
+	@property
+	def defaultFormatParams(self):
+		return {
+			'cardinal':     self._cardinal if self._cardinal else False,
+			'showCardinal': self._cardinal,
+			**super().defaultFormatParams
+		}
+
+	@property
+	def properties(self):
+		measurement = super().properties
+		return {'cardinal': self.cardinal, 'showCardinal': self._cardinal, **measurement, }
+
+	def __repr_value__(self) -> str:
+		return f'{self: cardinal: False}'
+
+	def __format_value__(self, params: Mapping) -> str:
+		showCardinal = getFrom(('showCardinal', 'cardinal'), *params.maps, default=self._cardinal, expectedType=(bool, str))
+		if showCardinal:
+			return self.cardinal.__format_value__(params)
+		return super().__format_value__(params)
+
+	def __format_template__(self, params: Mapping) -> str:
+		template = super().__format_template__(params)
+		showCardinal = getFrom(('showCardinal', 'cardinal'), *params.maps, default=self._cardinal, expectedType=(bool, str))
+		if showCardinal and '{cardinal}' not in template:
+			template = template.replace('{decorator}', '')
+		return template
 
 
 class Cardinal:
@@ -121,6 +167,15 @@ class Cardinal:
 			return self.abbrivated
 		else:
 			return self.full
+
+	def __format_value__(self, params: Mapping) -> str:
+		if self.shorten:
+			return self.abbrivated
+		else:
+			return self.full
+
+	def __repr__(self):
+		return f'Cardinal({self!s} {self.direction: cardinal: False})'
 
 	@property
 	def direction(self) -> Direction:
@@ -177,14 +232,11 @@ class Cardinal:
 		self.direction.shorten = value
 
 
-@NamedType
 class Voltage(Measurement):
 	_max = 3
 	_precision = 2
 	_unit = 'v'
 
 
-@NamedType
-class Strikes(Measurement):
-	# TODO: Create discrete number class for this and similar measurements
-	unit = 'strikes'
+class LightningStrike(Quantity, altName='Strike'):
+	...

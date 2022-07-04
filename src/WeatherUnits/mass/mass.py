@@ -1,11 +1,9 @@
-from ..base import NamedType
-from ..base import ScalingMeasurement
+from ..base import Dimension
 
 __all__ = ['Mass']
 
 
-@NamedType
-class Mass(ScalingMeasurement):
+class Mass(metaclass=Dimension, symbol='M'):
 	Gram: type
 	Microgram: type
 	Milligram: type

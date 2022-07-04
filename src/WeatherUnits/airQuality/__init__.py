@@ -2,7 +2,7 @@ from enum import Enum
 
 __all__ = ['PrimaryPollutant', 'HeathConcern', 'AQI', 'PollutionIndex']
 
-from .base import Measurement
+from ..base import Measurement
 
 
 class DescriptiveEnum(Enum):

@@ -1,12 +1,11 @@
-from ..base import Scale, UnitSystem, BaseUnit, Huge, Large, Small, Tiny
-from . import Mass
+from ..base.Decorators import Tiny, Small, Large, Huge
+from ..base import Scale, ScalingMeasurement, Dimension, imperial
+from .mass import Mass
 
 __all__ = ['Dram', 'Ounce', 'Pound', 'Hundredweight', 'Ton']
 
 
-@UnitSystem
-class Imperial(Mass):
-
+class Imperial(ScalingMeasurement, Mass, metaclass=Dimension, system=imperial, baseUnit='Pound'):
 	class _Scale(Scale):
 		Dram = 1
 		Ounce = 16
@@ -30,7 +29,6 @@ class Ounce(Imperial):
 
 
 @Small
-@BaseUnit
 class Pound(Imperial):
 	_unit = 'lbs'
 
@@ -42,4 +40,5 @@ class Hundredweight(Imperial):
 
 @Huge
 class Ton(Imperial):
+	_id = 'tUS'
 	_unit = 't'

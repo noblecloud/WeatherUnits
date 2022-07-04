@@ -1,15 +1,13 @@
 from typing import Union
 
-from ..base.Decorators import NamedType
-from ..base.Measurement import Measurement
-from ..length import Length
+from ..base.Decorators import UnitType
+from . import Measurement, Length
 
 __all__ = ['Volume']
 
 
-@NamedType
+@UnitType
 class Volume(Measurement):
-
 	CubicFoot: type
 	CubicMeter: type
 
@@ -19,22 +17,35 @@ class Volume(Measurement):
 	_unitClass = Length
 	_cube: bool
 
-	def __init__(self, x: Union[Length, int, float], y: Union[Length, int, float] = 0, z: Union[Length, int, float] = 0, cube: bool = True):
-		if cube and not (z and y):
-			x **= 1. / 3.
+	def __init__(self, x: Union[Length, int, float], y: Union[Length, int, float] = None, z: Union[Length, int, float] = None):
+		if isinstance(x, Volume):
+			y = x.y
+			z = x.z
+			x = x.x
+		if not (y and z):
+			x = float(x)
+			x **= 1./3.
 			y = x
 			z = x
-		self._cube = cube
-		self._x: Length = self._unitClass(x)
-		self._y: Length = self._unitClass(y)
-		self._z: Length = self._unitClass(z)
-		float.__init__(x * y * z)
+		self._x = self._unitClass(x)
+		self._y = self._unitClass(y)
+		self._z = self._unitClass(z)
+		float.__init__(x*y*z)
 
-	def __new__(cls, x: Length, y: Length = 1, z: Length = 1, cube: bool = False):
-		if cube and not (z and y):
+	def __new__(cls, x: Length, y: Length = None, z: Length = None):
+		if isinstance(x, Volume):
+			y = x.y
+			z = x.z
+			x = x.x
+		if not (y and z):
+			x = float(x)
+			x **= 1./3.
 			y = x
 			z = x
-		value = x * y * z
+		x = cls._unitClass(x)
+		y = cls._unitClass(y)
+		z = cls._unitClass(z)
+		value = float(x)*float(y)*float(z)
 		return float.__new__(cls, value)
 
 	@property
@@ -59,42 +70,53 @@ class Volume(Measurement):
 		z = self._z * value
 		return x, y, z
 
-
-class CubicMeter(Volume):
-	_x: Length.Meter
-	_y: Length.Meter
-	_z: Length.Meter
-	_unitClass = Length.Meter
+	@property
+	def x(self):
+		return self._x
 
 	@property
-	def ft(self):
-		x = self._x.ft
-		y = self._y.ft
-		z = self._z.ft
-		return CubicFoot(x, y, z)
+	def y(self):
+		return self._y
 
 	@property
-	def m(self):
-		return self
+	def z(self):
+		return self._z
 
-
-class CubicFoot(Volume):
-	_x: Length.Foot
-	_y: Length.Foot
-	_z: Length.Foot
-	_unitClass = Length.Foot
-
-	@property
-	def ft(self):
-		return self
-
-	@property
-	def m(self):
-		x = self._x.m
-		y = self._y.m
-		z = self._z.m
-		return CubicMeter(x, y, z)
-
-
-Volume.CubicMeter = CubicMeter
-Volume.CubicFoot = CubicFoot
+# class CubicMeter(Volume, Length.Meter, unit='m³', aliases=('m3', 'm^3', 'm'), dimension=(Length, Length, Length)):
+# 	_x: Length.Meter
+# 	_y: Length.Meter
+# 	_z: Length.Meter
+# 	_unitClass = Length.Meter
+#
+# 	@property
+# 	def ft(self):
+# 		x = self._x.ft
+# 		y = self._y.ft
+# 		z = self._z.ft
+# 		return CubicFoot(x, y, z)
+#
+# 	@property
+# 	def m(self):
+# 		return self
+#
+#
+# class CubicFoot(Volume, Length.Foot, unit='ft³', aliases=('ft3', 'ft^3', 'ft'), dimension=(Length, Length, Length)):
+# 	_x: Length.Foot
+# 	_y: Length.Foot
+# 	_z: Length.Foot
+# 	_unitClass = Length.Foot
+#
+# 	@property
+# 	def ft(self):
+# 		return self
+#
+# 	@property
+# 	def m(self):
+# 		x = self._x.m
+# 		y = self._y.m
+# 		z = self._z.m
+# 		return CubicMeter(x, y, z)
+#
+#
+# Volume.CubicMeter = CubicMeter
+# Volume.CubicFoot = CubicFoot

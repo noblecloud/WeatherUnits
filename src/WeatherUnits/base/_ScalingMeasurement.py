@@ -1,8 +1,9 @@
+from abc import abstractmethod
 from enum import Enum, EnumMeta
-from typing import Optional, Union
+from typing import Optional, Type
 
 from .. import errors
-from ..base.Measurement import Measurement, DerivedMeasurement
+from . import Measurement, DerivedMeasurement
 
 __all__ = ['ScalingMeasurement', 'SystemVariant', 'Scale']
 
@@ -119,46 +120,75 @@ class Scale(Enum, metaclass=AddressableEnum):
 			return self.index >= int(other)
 
 
+class BaseUnit:
+
+	@abstractmethod
+	def changeSystem(self, system):
+		pass
+
+
 class ScalingMeasurement(Measurement):
-	_baseUnit = None
-	_unitSystem: type = None
+	_baseUnit: Type[Measurement]
 	_Scale: Scale = None
+
+	def __init_subclass__(cls, **kwargs):
+		baseUnit = kwargs.get('baseUnit', None)
+		if baseUnit:
+			cls._baseUnitRef = baseUnit
+			cls._system = cls
+			cls._systemName = kwargs.get('system', 'mixed')
+		else:
+			baseUnitRef = getattr(cls, '_baseUnitRef', None)
+			if baseUnitRef == cls.__name__:
+				cls._system._baseUnit = cls
+		super().__init_subclass__(**kwargs)
 
 	def __new__(cls, value, *args, **kwargs):
 		if isinstance(value, DerivedMeasurement):
 			return value
-		value: Union[int, float, ScalingMeasurement, SystemVariant]
+		valueCls = type(value)
+
+		if not issubclass(valueCls, Measurement) and issubclass(valueCls, (float, int)):
+			value = float(value)
+			return super().__new__(cls, value, *args, **kwargs)
+
 		if isinstance(value, ScalingMeasurement) and (not cls._baseUnit or not value.__class__._baseUnit):
 			'''For this to work each unit class must have a _baseUnit defined for each scale'''
 			raise errors.Unit.NoBaseUnitDefined(cls)
-		system = issubclass(cls, ScalingMeasurement) and issubclass(value.__class__, ScalingMeasurement)
-		siblings, cousins = [cls._baseUnit == value._baseUnit, cls._type == value._type] if system else (False, False)
-		# variant = issubclass(cls, SystemVariant) or issubclass(value.__class__, SystemVariant)
-		# If values are siblings change to sibling class with changeScale()
-		if siblings:
+
+		sameDimension = cls.dimension is valueCls.dimension
+		sameSystem = cls.system is valueCls.system
+		sameUnit = cls.unit is valueCls.unit
+
+		if sameUnit and issubclass(valueCls, cls.type):
+			return Measurement.__new__(cls, float(value), *args, **kwargs)
+
+		if sameSystem and sameDimension:
 			if isinstance(value, ScalingMeasurement) and not isinstance(value, value._baseUnit):
-				value = value.toBaseUnit()
-			return cls(value.__class__.changeScale(value, cls._Scale[cls.__name__]))
+				value = cls.changeScale(value, cls._Scale.Base)
+			if cls is cls._baseUnit:
+				return cls.__new__(cls, value)
+			else:
+				value = cls._baseUnit.changeScale(value, cls._Scale[cls.__name__], cls._Scale.Base)
+			return cls.__new__(cls, value)
 
 		# If values are cousins initiate with values base sibling causing a recursive call to __new__
-		elif cousins:
-			return cls.__new__(cls, cls._baseUnit(value.__getattribute__('_' + cls._baseUnit.__name__.lower())()))
+		elif sameDimension:
+			if not isinstance(value, value._baseUnit):
+				value = value.toBaseUnit()
+			if (converter := getattr(value, f'_{cls._baseUnitRef.lower()}', None)) is not None:
+				value = cls._baseUnit(converter())
+			return cls.__new__(cls, value)
 
-		elif isinstance(value, Measurement):
-			raise errors.Conversion.BadConversion(cls.__name__, value.__class__.__name__)
+		raise errors.Conversion.BadConversion(cls.__name__, value.__class__.__name__)
 
+	def changeScale(self, newUnit: Scale, scale: Scale = None) -> Optional[float]:
+		scale = getattr(self, 'scale', scale)
+		multiplier = scale*newUnit
+		if scale > newUnit:
+			return float(self)*multiplier
 		else:
-			return Measurement.__new__(cls, value, *args, **kwargs)
-
-	def changeScale(self, newUnit: Scale) -> Optional[float]:
-		if self._Scale:
-			multiplier = self.scale * newUnit
-			if self.scale > newUnit:
-				return float(self) * multiplier
-			else:
-				return float(self) / multiplier
-		else:
-			return None
+			return float(self)/multiplier
 
 	def toBaseUnit(self) -> Measurement:
 		return self._baseUnit(self.changeScale(self._Scale.Base))
@@ -166,10 +196,6 @@ class ScalingMeasurement(Measurement):
 	@property
 	def scale(self):
 		return self._Scale[self.name]
-
-	@property
-	def unitSystem(self):
-		return self._unitSystem.__name__
 
 	@property
 	def isSystemVariant(self):

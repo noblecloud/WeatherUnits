@@ -1,9 +1,10 @@
-from ..base import Scale, UnitSystem, BaseUnit, Large, Medium, Small, Tiny
+from ..base.Decorators import Tiny, Small, Medium, Large
+from ..base import Scale, ScalingMeasurement
+from ..base import imperial
 from .length import Length
 
 
-@UnitSystem
-class Imperial(Length):
+class ImperialLength(ScalingMeasurement, Length, system=imperial, baseUnit='Foot'):
 	class _Scale(Scale):
 		Line = 1
 		Inch = 12
@@ -17,28 +18,26 @@ class Imperial(Length):
 
 
 @Tiny
-class Line(Imperial):
+class Line(ImperialLength):
 	_unit = 'ln'
 
 
 @Small
-class Inch(Imperial):
+class Inch(ImperialLength):
 	_unit = 'in'
 
 
 @Medium
-@BaseUnit
-class Foot(Imperial):
+class Foot(ImperialLength, pluralName='Feet'):
 	_unit = 'ft'
 
 
 @Medium
-class Yard(Imperial):
+class Yard(ImperialLength):
 	_unit = 'yd'
 
 
 @Large
-class Mile(Imperial):
+class Mile(ImperialLength):
 	_unit = 'mi'
 	_precision = 1
-

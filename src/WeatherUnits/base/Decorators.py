@@ -1,45 +1,19 @@
-from ..config import config
-from .. import UnitSystems
-
-__all__ = ['NamedType', 'NamedSubType', 'UnitSystem', 'BaseUnit', 'Synonym', 'Tiny', 'Small', 'Medium', 'Large', 'Huge']
-
-properties = config['UnitProperties']
 
 
-def NamedType(cls):
-	cls._type = cls
-	cls._subTypes = {}
-	cls.__isNamedType = True
-	return cls
+__all__ = ['UnitType', 'Synonym', 'Tiny', 'Small', 'Medium', 'Large', 'Huge']
 
 
-def NamedSubType(cls):
-	parentCls = cls.__mro__[1]
-	if hasattr(parentCls, 'genSubTypeName'):
-		cls.__name__ = parentCls.genSubTypeName(cls)
-	if not hasattr(parentCls, '_subTypes'):
-		parentCls._subTypes = {}
-	cls._subType = cls
-	cls._siblingTypes = parentCls._subTypes
-	return cls
+def UnitType(*args, **kwargs):
+	if args:
+		cls = args[0]
+		cls._type = cls
+		return cls
+	else:
+		def wrapper(cls):
+			cls._type = cls
+			return cls
 
-
-def UnitSystem(cls):
-	cls._unitSystem = cls
-	system = cls.__name__.lower()
-	unit = cls._type.__name__.lower()
-	if system not in UnitSystems:
-		UnitSystems[system] = {}
-	if system != unit:
-		cls.__name__ = f'{cls._type.__name__}({cls.__name__})'
-	UnitSystems[system][unit] = cls
-	return cls
-
-
-def BaseUnit(cls):
-	cls._unitSystem._baseUnit = cls
-	cls._Scale._baseUnit = cls._Scale.Base
-	return cls
+		return wrapper
 
 
 def strToDict(string: str, cls: type) -> type:
@@ -66,27 +40,27 @@ def strToDict(string: str, cls: type) -> type:
 
 def Tiny(cls):
 	cls._size = 'tiny'
-	return strToDict(properties['Tiny'], cls)
+	return cls
 
 
 def Small(cls):
 	cls._size = 'small'
-	return strToDict(properties['Small'], cls)
+	return cls
 
 
 def Medium(cls):
 	cls._size = 'medium'
-	return strToDict(properties['Medium'], cls)
+	return cls
 
 
 def Large(cls):
 	cls._size = 'large'
-	return strToDict(properties['Large'], cls)
+	return cls
 
 
 def Huge(cls):
 	cls._size = 'huge'
-	return strToDict(properties['Huge'], cls)
+	return cls
 
 
 def Synonym(cls):

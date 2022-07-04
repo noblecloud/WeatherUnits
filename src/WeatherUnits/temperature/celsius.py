@@ -1,9 +1,12 @@
 from math import inf
 
-from . import Temperature
+from ..base import metric
+from .temperature import Temperature
+
+__all__ = ['Celsius']
 
 
-class Celsius(Temperature):
+class Celsius(Temperature, system=metric):
 	_limits = (-273.15, inf)
 	_unit = 'c'
 
@@ -12,9 +15,9 @@ class Celsius(Temperature):
 
 	def _fahrenheit(self, delta: bool = False):
 		if delta:
-			return self * 1.8
+			return float(self)*1.8
 		else:
-			return (self * 1.8) + 32
+			return (float(self)*1.8) + 32
 
 	def _kelvin(self):
-		return self + 273.15
+		return float(self) + 273.15

@@ -1,19 +1,23 @@
 from typing import Union
-
 from math import log
 
-from ..others import Humidity
-from ..base import NamedType
-from ..base import Measurement
+from ..base.Decorators import UnitType
+from ..base import Measurement, Dimension
 
 
-@NamedType
-class Temperature(Measurement):
+@UnitType
+class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 	Celsius: type
 	Fahrenheit: type
 	Kelvin: type
 
 	_decorator = 'º'
+	_id = 'ºt'
+
+	def __new__(cls, value: float | int | Measurement):
+		if isinstance(value, Temperature) and not isinstance(value, cls):
+			value = value[cls.unit]
+		return super().__new__(cls, value)
 
 	@property
 	def celsius(self):
@@ -63,7 +67,7 @@ class Temperature(Measurement):
 		return self.transform(value)
 
 	def heatIndex(self, rh: float):
-		R = self.normalizeRh(rh)
+		R = float(self.normalizeRh(rh))
 
 		if 300 > self.kelvin < 318 or R < 13:
 			return self
@@ -73,7 +77,7 @@ class Temperature(Measurement):
 		else:
 			c = [-8.78469475556, 1.61139411, 2.33854883889, -0.14611605, -0.012308094, -0.0164248277778, 0.002211732, 0.00072546, -0.000003582]
 
-		T = self if self._unit != 'k' else self.c
+		T = float(self if self._unit != 'k' else self.c)
 		T2 = pow(T, 2)
 		R2 = pow(R, 2)
 
@@ -103,10 +107,16 @@ class Temperature(Measurement):
 		return value
 
 	@staticmethod
-	def normalizeRh(rh: Union[int, float, Humidity]):
+	def normalizeRh(rh: Union[int, float, 'Humidity']):
+		from others import Humidity
 		if not isinstance(rh, Humidity):
 			rh = Humidity(rh)
 		return int(rh)
+
+	def _convert(self, value: Measurement):
+		if isinstance(value, Measurement):
+			return value[self.unit]
+		return value[self.unit]
 
 	# abbreviations
 	c = celsius

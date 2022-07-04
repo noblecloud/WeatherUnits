@@ -1,6 +1,10 @@
+__all__ = ['RSSI']
+
+from ..base.Decorators import UnitType
 from ..base import Measurement
 
 
+@UnitType
 class RSSI(Measurement):
 	_unit = 'dBm'
 	_strings = ['Perfect', 'Great', 'Good', 'Bad', 'None']
