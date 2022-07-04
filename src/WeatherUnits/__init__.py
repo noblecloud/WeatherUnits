@@ -16,12 +16,14 @@ Quantity = base.Quantity
 SystemVariant = base.SystemVariant
 FiniteField = base.FiniteField
 
+from .others import (Light, Angle, Percentage, Voltage,
+                     LightningStrike, Humidity, Direction,
+                     Coverage, Probability)
 from .temperature import Temperature
 from .length import Length
 from .mass import Mass
 from .time_ import Time
 from .pressure import Pressure
-from .others import *
 from . import airQuality as AirQuality
 from . import digital as Digital
 from . import derived
@@ -80,4 +82,6 @@ def auto(*args) -> Measurement | Type[Measurement] | Tuple[Type[Measurement], ..
 			raise ValueError
 
 
-__all__ = ['auto', 'Measurement', 'Temperature', 'Length', 'Mass', 'Time', 'Pressure', 'Other', 'Light', 'PartsPer', 'Volume', 'Density', 'PartsPer', 'Rate', 'Wind', 'Precipitation', 'AirQuality', 'Voltage', 'Digital', 'config']
+__all__ = ['auto', 'Measurement', 'Temperature', 'Length', 'Mass', 'Time', 'Pressure', 'Other', 'Light', 'PartsPer',
+	'Volume', 'Density', 'PartsPer', 'Rate', 'Wind', 'Precipitation', 'AirQuality', 'Voltage', 'Digital', 'config',
+	'Precipitation', 'LightningStrike', 'Angle', 'Percentage', 'Humidity', 'Direction', 'Coverage', 'Probability']
