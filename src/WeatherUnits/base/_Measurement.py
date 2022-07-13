@@ -246,6 +246,9 @@ class Measurement(SmartFloat):
 		other = round(float(other), precision)
 		return selfVal <= other
 
+	def __abs__(self):
+		return type(self)(super().__abs__())
+
 	def __hash__(self):
 		return hash(round(self, max(self._precision, 1)))
 
