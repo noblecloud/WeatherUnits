@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "WeatherUnits"
-version = "0.6.0"
+version = "0.6.1"
 description = "Easy conversion for common weather units"
 authors = ["noblecloud <git@noblecloud.io>"]
 license = "MIT"
