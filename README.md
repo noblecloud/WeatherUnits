@@ -4,17 +4,21 @@ Easily convert typical weather units from one unit to another with automatic loc
 ## Features
 🌈 Effortlessly define or extend your own units
 
-☀️ Change nearly every part of unit display from a config.ini file.  No need for additional code.
+☀️ Change nearly every part of unit display from a config.ini file. No need for additional code.
 
 ❄️ Localization can is as simple as adding .localize to a units variable or setting it to automatic
 
 ## Requirements
+
 - Python 3.7
 
 ## How to use
 
+**Note: The following documentation is currently out of date after some major changes**
+
 ### Unit Conversion
-Conversion is as easy as using the desired unit's name or abbreviation as either an attribute or subscript
+
+Conversion is as easy as using the desired unit's name or aliases as either an attribute or subscript
 
 ```python
 from WeatherUnits.temperature import Fahrenheit
@@ -175,8 +179,8 @@ Multiple unit systems can be defined within one scale.  It is also to split syst
 each system that converts from one base unit to the other.
 
 - **SystemVariant:** A class that denotes is not the unit is not within the regular scale
-- **Synonym:** Denotes that a unit is the same as an already defined but uses another name.  Synonym classes inherit their identically valued class
-- **UnitSystem:** Decorator that assigns the decorated class to _unitSystem of all child classes
+- **Synonym:** Denotes that a unit is the same as an already defined but uses another name. Synonym classes inherit their identically valued class
+- **Dimension:** Decorator that assigns the decorated class to _unitSystem of all child classes
 - **BaseUnit:** Decorator to define the base unit for the system, this will be used for converting to the non-standard 'SystemVariant'
 - **Scale:** Uses the metaclass EnumMeta to define the scaling factors for a ScalingMeasurement class along with the multipliers for any SystemVariants
 and the base unit
@@ -191,10 +195,9 @@ have an SI basis, so this can be done fairly often.  However, it is sometimes ne
 ```python
 
 from WeatherUnits.base import NamedType, Synonym, ScalingMeasurement
-from WeatherUnits.base import Scale, BaseUnit, SystemVariant, UnitSystem
+from WeatherUnits.base import Scale, BaseUnit, SystemVariant, Dimension
 
 @NamedType
-@UnitSystem
 class Pressure(ScalingMeasurement):
 
     # The scale for the unit system is defined with by a class named _Scale inheriting.
@@ -246,7 +249,7 @@ class Millibar(Hectopascal):
 #### Split system
 
 ```python
-from WeatherUnits.base import NamedType, ScalingMeasurement, UnitSystem, BaseUnit
+from WeatherUnits.base import NamedType, ScalingMeasurement, Dimension, BaseUnit
 
 
 @NamedType
@@ -263,8 +266,7 @@ class Length(ScalingMeasurement):
     ft = foot
 
 
-@UnitSystem
-class Imperial(Length):
+class ImperialLength(Length):
 
     class _Scale(Scale):
         Line = 1
@@ -279,20 +281,20 @@ class Imperial(Length):
     def _foot(self):
         return self.changeScale(self._Scale.Foot)
 
-    # This function is called to convert from Imperial to Metric.  Once its
-    # converted to Metric, changeScale() is called within the Metric class
+    # This function is called to convert from ImperialLength to MetricLength.  Once its
+    # converted to MetricLength, changeScale() is called within the MetricLength class
     # to get to the final unit.
     def _meter(self):
         return self._foot() * 0.3048
 
 
 @BaseUnit
-class Foot(Imperial):
+class Foot(ImperialLength):
     _unit = 'ft'
 
 
-@UnitSystem
-class Metric(Length):
+@Dimension
+class MetricLength(Length):
 
     class _Scale(Scale):
         Millimeter = 1
@@ -307,14 +309,14 @@ class Metric(Length):
     def _meter(self):
         return self.changeScale(self._Scale.Meter)
 
-    # As with the pervious class, this method is called to convert from Metric
-    # to Imperial.
+    # As with the pervious class, this method is called to convert from MetricLength
+    # to ImperialLength.
     def _foot(self):
         return self._meter() * 3.280839895013123
 
 
 @BaseUnit
-class Meter(Metric):
+class Meter(MetricLength):
     _unit = 'm'
 ```
 

@@ -1,8 +1,7 @@
-from typing import Union
 
-from ...others import Direction, Voltage, Strikes, Humidity
+from ...others import Direction, Voltage, LightningStrike, Humidity
 from ...others.light import UVI, Lux, RadiantFlux
-from ...time import *
+from ...time_ import *
 from ...pressure import Millibar
 from ...derived import Wind, Precipitation
 from ...derived.precipitation import Daily as PrecipitationDaily, Hourly as PrecipitationHourly, Minutely as PrecipitationMinutely
@@ -54,27 +53,27 @@ UDPClasses = {
 		'temperature':           Celsius,
 		'humidity':              Humidity,
 
-		'illuminance':           Lux,
-		'uvi':                   UVI,
-		'irradiance':            RadiantFlux,
+	'illuminance':             Lux,
+	'uvi':                     UVI,
+	'irradiance':              RadiantFlux,
 
-		'precipitationRate':     'Precipitation',
-		'precipitationDaily':    'PrecipitationDaily',
-		'precipitationType':     Precipitation.Type,
+	'precipitationRate':       'Precipitation',
+	'precipitationDaily':      'PrecipitationDaily',
+	'precipitationType':       Precipitation.Type,
 
-		'distance':              Kilometer,
-		'lightningLastDistance': Kilometer,
-		'lightning':             Strikes,
-		'lightningEnergy':       int,
+	'distance':                Kilometer,
+	'lightningLastDistance':   Kilometer,
+	'lightning':               LightningStrike,
+	'lightningEnergy':         int,
 
-		'battery':               Voltage,
-		'reportInterval':        Time.Minute,
-		'Wind':                  (Wind, Meter, Time.Second),
-		'Precipitation':         (Precipitation.Hourly, Millimeter, Time.Minute),
-		'PrecipitationDaily':    (Precipitation.Daily, Millimeter, Time.Day),
+	'battery':                 Voltage,
+	'reportInterval':          Time.Minute,
+	'Wind':                    (Wind, Meter, Time.Second),
+	'Precipitation':           (Precipitation.Hourly, Millimeter, Time.Minute),
+	'PrecipitationDaily':      (Precipitation.Daily, Millimeter, Time.Day),
 
-		'deviceSerial':          str,
-		'hubSerial':             str,
+	'deviceSerial':            str,
+	'hubSerial':               str,
 		'uptime':                Time.Second,
 		'firmware':              int,
 		'deviceRSSI':            RSSI,
