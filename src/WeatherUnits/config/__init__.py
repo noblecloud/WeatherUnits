@@ -2,7 +2,8 @@ import os.path
 from functools import cached_property
 from importlib import resources
 
-from locale import locale_alias, setlocale, RADIXCHAR, LC_ALL, getlocale, THOUSEP, nl_langinfo
+import locale
+
 from logging import getLogger
 from configparser import ConfigParser, SectionProxy
 from pathlib import Path
@@ -15,7 +16,7 @@ log = getLogger('WeatherUnitsConfig')
 
 class Config(ConfigParser):
 	configuredUnits: dict[str, list[type]] = {}
-	locale = getlocale()[0]
+	locale = locale.getlocale()[0]
 	__localUnits: SectionProxy
 
 	def __init__(self, *args, path: str = None, locale: str = None, **kwargs):
@@ -26,8 +27,12 @@ class Config(ConfigParser):
 
 		if locale is not None:
 			self.locale = locale
+			try:
+				locale.setlocale(locale.LC_ALL, self.locale)
+			except Exception:
+				log.error(f'Unable to set locale to {self.locale}')
 		if path is None:
-			path = 'us.ini' if self.locale.lower().endswith('us') else 'si.ini'
+			path = 'us.ini' if (self.locale.lower().endswith('us') or 'United States' in self.locale) else 'si.ini'
 			with resources.path(__package__, path) as path:
 				self.path = path
 		else:
@@ -173,7 +178,12 @@ class Config(ConfigParser):
 
 config = Config()
 
-search = config.search('locale', fuzzy=True, default=getlocale()[0], accept=locale_alias)
-setlocale(LC_ALL)
-RADIX_CHAR = nl_langinfo(RADIXCHAR)
-GROUPING_CHAR = nl_langinfo(THOUSEP) or ','
+# search = config.search('locale', fuzzy=True, default=locale.getlocale()[0], accept=locale.locale_alias)
+locale.setlocale(locale.LC_ALL, '')
+
+try:
+	RADIX_CHAR = locale.nl_langinfo(locale.RADIXCHAR)
+	GROUPING_CHAR = locale.nl_langinfo(locale.THOUSEP)
+except AttributeError:
+	RADIX_CHAR = '.'
+	GROUPING_CHAR = ','
