@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from math import inf
 
@@ -37,10 +37,12 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 		Century = 10
 		Millennia = 10
 		Base = 'Second'
-		Week = 7.0*Day*Hour*Minute*Second
-		Month = 30.436875*Day*Hour*Minute*Second
+		Week = 7.0*float(Day*Hour*Minute*Second)
+		Month = 30.436875*float(Day*Hour*Minute*Second)
 
 	def _convert(self, other):
+		if isinstance(other, datetime):
+			other = Second(other.timestamp() - datetime.now().timestamp())
 		if isinstance(other, timedelta):
 			other = Second(other.total_seconds())
 		return super()._convert(other)
