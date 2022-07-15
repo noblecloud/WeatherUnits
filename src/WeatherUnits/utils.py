@@ -2,9 +2,8 @@ import logging
 import re
 from difflib import get_close_matches, SequenceMatcher
 from functools import lru_cache
-from inspect import getsource, getfile, getmodule
+from heapq import nlargest
 from itertools import product
-from types import FunctionType
 from typing import Hashable, Type, Union, Final, Any, Mapping, Callable, Set, Tuple, Optional, NamedTuple
 
 log = logging.getLogger(__name__)
@@ -20,14 +19,6 @@ def loadUnitLocalization(measurement: Type['Measurement'], config):
 	unitType = measurement.Generic.name.lower()
 	match = get_close_matches(unitName, config.localUnits.keys(), n=1, cutoff=0.85) or get_close_matches(unitType, config.localUnits.keys(), n=1, cutoff=0.8)
 	return config.localUnits[match[0]] if match else None
-
-
-# possibleTypes = (unitName.lower(), toCamelCase(unitName), unitName)
-# for classType in {*possibleNames, *possibleTypes}:
-# 	if classType in config.localUnits:
-# 		return config.localUnits[classType]
-# else:
-# 	log.warning(f'{measurement._type.__name__} has no type defined')
 
 
 def toCamelCase(string, titleCase: bool = False) -> str:
@@ -54,12 +45,24 @@ def convertString(value: str) -> Union[int, float, str, bool]:
 
 ScoredMatch = NamedTuple('Match', [('ratio', 'float'), ('value', 'str')])
 
-scored_get_close_matches: FunctionType
-sourceFile = getfile(get_close_matches)
-get_close_matches_code = getsource(get_close_matches)
-get_close_matches_code = get_close_matches_code.replace('def get_close_matches', 'def scored_get_close_matches')
-get_close_matches_code = get_close_matches_code.replace('return [x for score, x in result]', 'return tuple(ScoredMatch(k, v) for (k, v) in result)')
-exec(compile(get_close_matches_code, sourceFile, 'exec'), {**getmodule(get_close_matches, sourceFile).__dict__, **locals()}, globals())
+
+def scored_get_close_matches(word, possibilities, n=3, cutoff=0.8):
+	if not n > 0:
+		raise ValueError("n must be > 0: %r"%(n,))
+	if not 0.0 <= cutoff <= 1.0:
+		raise ValueError("cutoff must be in [0.0, 1.0]: %r"%(cutoff,))
+	result = []
+	s = SequenceMatcher()
+	s.set_seq2(word)
+	for x in possibilities:
+		s.set_seq1(x)
+		if s.real_quick_ratio() >= cutoff and \
+			s.quick_ratio() >= cutoff and \
+			s.ratio() >= cutoff:
+			result.append((s.ratio(), x))
+
+	result = nlargest(n, result)
+	return tuple(ScoredMatch(k, v) for (k, v) in result)
 
 
 def best_match(word, possibilities, cutoff=0) -> Optional[str]:
