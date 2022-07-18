@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 numeric = re.compile(r'^[-+]?[0-9]*\.?[0-9]+$')
 
 
-@lru_cache(maxsize=128)
+@lru_cache()
 def loadUnitLocalization(measurement: Type['Measurement'], config):
 	if not isinstance(measurement, type):
 		measurement = type(measurement)
