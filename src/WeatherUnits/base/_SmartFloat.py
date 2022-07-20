@@ -3,7 +3,7 @@ import re
 from builtins import float, isinstance
 from collections import ChainMap, namedtuple
 from difflib import get_close_matches
-from functools import lru_cache
+from functools import lru_cache, cached_property
 from locale import delocalize
 from typing import ClassVar, Optional, Set, Type, Union, Tuple, ForwardRef, TypeVar, Literal, Final, Mapping, Iterable
 from math import nan, isnan, inf
@@ -543,8 +543,23 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	@staticmethod
 	def intFloatLength(value: float) -> tuple[int, int]:
 		value = float(value)
-		d, *f = (len(i) for i in f'{abs(value):g}'.split('.'))
-		return d, f[0] if f else 0
+		if value.is_integer():
+			return len(str(int(value))), 0
+		f = f'{abs(value):g}'.split('.')
+		f = len(f[1]) if len(f) == 2 else 0
+		d = len(str(round(value)))
+		return d, f
+
+	@cached_property
+	def intLength(self) -> int:
+		return len(str(round(self)))
+
+	@cached_property
+	def floatLength(self) -> int:
+		value = float(self)
+		if value.is_integer():
+			return 0
+		return len(f'{abs(value):g}'.split('.')[1])
 
 	def _string(
 		self,
@@ -722,6 +737,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			if floatValue > 1:
 				max_ = int(params['max'])
 				intLength, valuePrecision = value.intFloatLength(floatValue)
+				params['value'] = floatValue = round(floatValue, min(p, valuePrecision))
 				if p:
 					totalLength = intLength + min(p, valuePrecision)
 					params['precision'] = min(totalLength, max_) or 1

@@ -85,6 +85,7 @@ class Angle(Dimensionless):
 	_precision = 0
 	_decorator = 'º'
 	_shorten = True
+	_id = 'º'
 
 
 class Direction(Angle, FiniteField, limits=(0, 360)):

@@ -71,7 +71,9 @@ def auto(*args) -> Measurement | Type[Measurement] | Tuple[Type[Measurement], ..
 			cls = tuple(Measurement.__findUnitClass__(u) for u in unit)
 
 			if len(cls) == 1:
-				return cls[0](float(number))
+				if number != '':
+					return cls[0](float(number))
+				return cls[0]
 			raise NotImplementedError('Multi-Unit values are not supported yet')
 
 		case [str(unit)]:
