@@ -5,6 +5,9 @@ from .length import Length
 
 
 class MetricLength(ScalingMeasurement, Length, system=metric, baseUnit='Meter'):
+
+	common = {'Kilometer', 'Meter', 'Centimeter', 'Millimeter'}
+
 	class _Scale(Scale):
 		Millimeter = 1
 		Centimeter = 10
@@ -17,7 +20,6 @@ class MetricLength(ScalingMeasurement, Length, system=metric, baseUnit='Meter'):
 
 	def _foot(self):
 		return self.changeScale(self._Scale.Meter) * 3.280839895013123
-
 
 @Tiny
 class Millimeter(MetricLength):

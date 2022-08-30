@@ -338,6 +338,30 @@ class MetaUnitClass(type):
 		value = super().__subclasscheck__(subclass)
 		return value
 
+	def __lt__(cls, other):
+		try:
+			return cls.scale.__lt__(other.scale)
+		except AttributeError:
+			return super().__lt__(cls, other)
+
+	def __gt__(cls, other):
+		try:
+			return cls.scale.__gt__(other.scale)
+		except AttributeError:
+			return super().__gt__(cls, other)
+
+	def __le__(cls, other):
+		try:
+			return cls.scale.__le__(other.scale)
+		except AttributeError:
+			return super().__le__(cls, other)
+
+	def __ge__(cls, other):
+		try:
+			return cls.scale.__ge__(other.scale)
+		except AttributeError:
+			return super().__ge__(cls, other)
+
 	@property
 	@lru_cache(maxsize=128)
 	def localizedUnit(self) -> Type[Measurement] | Tuple[Type[Measurement] | None, ...] | None:

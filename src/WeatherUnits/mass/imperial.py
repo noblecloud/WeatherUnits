@@ -6,6 +6,9 @@ __all__ = ['Dram', 'Ounce', 'Pound', 'Hundredweight', 'Ton']
 
 
 class Imperial(ScalingMeasurement, Mass, metaclass=Dimension, system=imperial, baseUnit='Pound'):
+
+	common = {'Gram', 'Pound', 'Ounce', 'Ton'}
+
 	class _Scale(Scale):
 		Dram = 1
 		Ounce = 16

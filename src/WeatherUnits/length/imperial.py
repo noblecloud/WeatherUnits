@@ -5,6 +5,9 @@ from .length import Length
 
 
 class ImperialLength(ScalingMeasurement, Length, system=imperial, baseUnit='Foot'):
+
+	common = {'Inch', 'Foot', 'Yard', 'Mile'}
+
 	class _Scale(Scale):
 		Line = 1
 		Inch = 12

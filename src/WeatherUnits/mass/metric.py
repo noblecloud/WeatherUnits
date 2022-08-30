@@ -6,6 +6,9 @@ __all__ = ['Metric', 'Microgram', 'Milligram', 'Gram', 'Kilogram', 'Tonne']
 
 
 class Metric(ScalingMeasurement, Mass, system=metric, baseUnit='Kilogram'):
+
+	common = {'Kilogram', 'Gram', 'Milligram'}
+
 	class _Scale(Scale):
 		Microgram = 1
 		Milligram = 1000
