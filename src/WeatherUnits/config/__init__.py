@@ -11,7 +11,7 @@ from typing import Any, Optional, Callable, Set, Iterable, Mapping
 
 from ..utils import convertString, setPropertiesFromConfig, scored_get_close_matches, best_match, CaseInsensitiveKey
 
-log = getLogger('WeatherUnitsConfig')
+log = getLogger('WeatherUnits').getChild('config')
 
 
 class Config(ConfigParser):
@@ -41,7 +41,7 @@ class Config(ConfigParser):
 			self.path = path
 
 		self.read(path, reloadModules=False)
-		log.info(f'Loaded {path}')
+		log.debug(f'Loaded "{path}"')
 
 	def __hash__(self):
 		return hash(self.path)
@@ -55,7 +55,7 @@ class Config(ConfigParser):
 			for arg in args:
 				if os.path.isfile(arg):
 					self.path = arg
-					log.info(f'Loaded {arg}')
+					log.debug(f'Loaded "{arg}"')
 					super().read(arg, **kwargs)
 					break
 				else:
@@ -63,7 +63,7 @@ class Config(ConfigParser):
 			else:
 				log.error(f'Unable to find config file')
 		else:
-			log.info(f'Loaded {self.path}')
+			log.debug(f'Loaded "{self.path}"')
 		for k, v in self.configuredUnits.copy().items():
 			setPropertiesFromConfig(v, self)
 

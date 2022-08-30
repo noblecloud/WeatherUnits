@@ -6,7 +6,7 @@ from heapq import nlargest
 from itertools import product
 from typing import Hashable, Type, Union, Final, Any, Mapping, Callable, Set, Tuple, Optional, NamedTuple
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('WeatherUnits').getChild('utils')
 
 numeric = re.compile(r'^[-+]?[0-9]*\.?[0-9]+$')
 

@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import SupportsAbs
 
 from ..base.Decorators import UnitType
 from . import Length, Time, DistanceOverTime
@@ -20,6 +21,11 @@ class PrecipitationRate(DistanceOverTime, Precipitation, limit=(0.0, None)):
 	Daily: type
 	Hourly: type
 	Minutely: type
+
+	def __new__(cls, numerator: Length, denominator: int = None, *args, **kwargs):
+		if isinstance(denominator, SupportsAbs):
+			denominator = abs(denominator)
+		return super().__new__(cls, numerator, denominator, *args, **kwargs)
 
 	def __init__(self, numerator: Length, denominator: int = None, *args, **kwargs):
 		if isinstance(denominator, int):

@@ -4,7 +4,8 @@ from collections import ChainMap
 from functools import lru_cache, cached_property
 import logging
 from datetime import datetime
-from typing import Callable, ClassVar, Dict, List, Optional, Type, Union, Final, Literal, Iterable
+from numbers import Number
+from typing import Callable, ClassVar, Dict, List, Optional, Type, Union, Final, Literal, Iterable, TypeVar, TypeAlias
 
 __all__ = ['Measurement', 'DerivedMeasurement', 'Dimension', 'metric', 'imperial', 'both', 'Dimensionless', 'Quantity', 'Index', 'NonPlural']
 
@@ -13,8 +14,10 @@ from . import SmartFloat, FormatSpec, MetaUnitClass
 from ..utils import HashSlice
 from ..config import config
 
-log = logging.getLogger('WeatherUnits')
+log = logging.getLogger('WeatherUnits').getChild('Measurement')
 
+Self: TypeAlias = TypeVar('Self', bound='Measurement')
+Other: TypeAlias = TypeVar('Other', bound='Measurement')
 
 class Measurement(SmartFloat):
 	__unitDict__ = ChainMap()
@@ -173,7 +176,7 @@ class Measurement(SmartFloat):
 				other = other.groupdict()['number']
 		return float(other)
 
-	def __eq__(self, other):
+	def __eq__(self: Self, other: Other | Number) -> bool:
 		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
 		other = self.__wrapOther(other)
 		precision = min(self.valuePrecision, otherPrecision)
@@ -181,7 +184,7 @@ class Measurement(SmartFloat):
 		other = round(float(other), precision)
 		return selfVal == other
 
-	def __getitem__(self, item):
+	def __getitem__(self: Self, item: Other | Number):
 		try:
 			return self.__getattribute__(item)
 		except AttributeError:
@@ -189,31 +192,33 @@ class Measurement(SmartFloat):
 				return type(self)[item](self)
 			raise errors.Conversion.UnknownUnit(self, item)
 
-	def __mul__(self, other):
+	def __mul__(self: Self, other: Other | Number) -> Self:
 		other = self.__wrapOther(other)
 		return type(self)(super().__mul__(other))
 
-	def __add__(self, other):
+	def __add__(self: Self, other: Other | Number) -> Self:
 		other = self.__wrapOther(other)
 		return type(self)(super().__add__(other))
 
-	def __radd__(self, other):
+	def __radd__(self: Self, other: Other | Number) -> Self :
+		if isinstance(other, SmartFloat):
+			return other.__add__(self)
 		other = self.__wrapOther(other)
 		return type(self)(super().__radd__(other))
 
-	def __sub__(self, other):
+	def __sub__(self: Self, other: Other | Number) -> Self:
 		other = self.__wrapOther(other)
 		return type(self)(super().__sub__(other))
 
-	def __rsub__(self, other):
+	def __rsub__(self: Self, other: Other | Number) -> Self | Other:
 		other = self.__wrapOther(other)
 		return type(self)(super().__rsub__(other))
 
-	def __pow__(self, power, modulo=None):
+	def __pow__(self: Self, power: Other | Number, modulo=None) -> Self:
 		other = self.__wrapOther(power)
 		return type(self)(super().__pow__(other, modulo))
 
-	def __truediv__(self, other):
+	def __truediv__(self: Self, other: Other | Number) -> Self:
 		if isinstance(self, DerivedMeasurement) and not isinstance(other, DerivedMeasurement):
 			numerator = type(self.numerator)(other)
 			value = numerator/other
@@ -222,15 +227,24 @@ class Measurement(SmartFloat):
 		other = self.__wrapOther(other)
 		return type(self)(super().__truediv__(other))
 
-	def __lt__(self, other):
+	def __floor__(self: Self)->  Self:
+		return type(self)(super().__floor__())
+
+	def __ceil__(self: Self) -> Self:
+		return type(self)(super().__ceil__())
+
+	def __floordiv__(self: Self, other: Other | Number) -> Self:
+		return type(self)(super().__floordiv__(other))
+
+	def __lt__(self: Self, other: Other | Number) -> bool:
 		other = self.__wrapOther(other)
 		return super().__lt__(other)
 
-	def __gt__(self, other):
+	def __gt__(self: Self, other: Other | Number) -> bool:
 		other = self.__wrapOther(other)
 		return super().__gt__(other)
 
-	def __ge__(self, other):
+	def __ge__(self: Self, other: Other | Number) -> bool:
 		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
 		other = self.__wrapOther(other)
 		precision = min(self.valuePrecision, otherPrecision)
@@ -238,7 +252,7 @@ class Measurement(SmartFloat):
 		other = round(float(other), precision)
 		return selfVal >= other
 
-	def __le__(self, other):
+	def __le__(self: Self, other: Other | Number) -> bool:
 		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
 		other = self.__wrapOther(other)
 		precision = min(self.valuePrecision, otherPrecision)
@@ -246,7 +260,7 @@ class Measurement(SmartFloat):
 		other = round(float(other), precision)
 		return selfVal <= other
 
-	def __abs__(self):
+	def __abs__(self: Self) -> Self:
 		return type(self)(super().__abs__())
 
 	def __hash__(self):
@@ -260,7 +274,7 @@ class DimensionlessMeta(MetaUnitClass):
 
 	@property
 	def type(cls):
-		return getattr(cls, '_type', None) or next((base for base in cls.__mro__ if Dimensionless in base.__bases__), cls)
+		return getattr(cls, '_type', None) or next((base for base in cls.__mro__ if SmartFloat.__Dimensionless__ in base.__bases__), cls)
 
 	@property
 	def isGeneric(cls):
@@ -315,6 +329,9 @@ class DerivedMeasurementMeta(MetaUnitClass):
 			attrs['__annotations__'] = annotations
 
 		return super().__new__(mcs, name, bases, attrs, **kwargs)
+
+	def _addSpecials(cls):
+		return
 
 	@property
 	def isGeneric(cls):
@@ -551,7 +568,7 @@ class DerivedMeasurement(Measurement, metaclass=DerivedMeasurementMeta):
 		if isinstance(numerator, cls.numeratorClass) and isinstance(denominator, cls.denominatorClass):
 			if cls.isGeneric:
 				cls = cls[type(numerator):type(denominator)]
-		elif items := [i for i in cls.type.subTypes if i.denominator is type(denominator)]:
+		elif items := [i for i in cls.type.subTypes if getattr(i, 'denominator', None) is type(denominator)]:
 			if len(items) == 1:
 				cls = items[0]
 			else:

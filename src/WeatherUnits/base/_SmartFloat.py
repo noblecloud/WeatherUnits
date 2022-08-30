@@ -16,7 +16,7 @@ __all__ = ('SmartFloat', 'Limits', 'TypedLimits', 'FormatSpec', 'FiniteField', '
 
 regexType: Final = Literal['b', 'c', 'd', 'e', 'E', 'f', 'F', 'g', 'G', 'n', 'o', 's', 'x', 'X', '%']
 
-log = logging.getLogger('SmartFloat')
+log = logging.getLogger('WeatherUnits').getChild('SmartFloat')
 
 __all__ = ['SmartFloat', 'FiniteField', 'MetaUnitClass', 'FormatSpec']
 
@@ -56,12 +56,12 @@ class FormatSpec:
 	)$
 	""", re.VERBOSE)
 	params = re.compile("""
-	(
+	(^)?(?(1)|,\s)(
     (?P<keyquote>[\'\"`]?)    # optional start quote
     (?P<key>\S+?)
     (?P=keyquote)
 	)
-	:\s*
+	=\s*
 	(
     (?P<valquote>[\'\"`]?)     # optional start quote
     (?P<value>.*?)           # literal value
@@ -181,6 +181,9 @@ class UnitDict(dict):
 
 
 class MetaUnitClass(type):
+
+	global Measurement
+
 	_name: ClassVar[Optional[str]]
 	_derived: ClassVar[bool]
 	_unit: ClassVar[Optional[str]] = None
@@ -317,7 +320,16 @@ class MetaUnitClass(type):
 
 		attrs['__annotations__'] = ChainMap(attrs.get('__annotations__', {}), *(b.__dict__.get('__annotations__', {}) for b in bases))
 
-		return super().__new__(mcs, name, bases, attrs, **kwargs)
+		mcs = super().__new__(mcs, name, bases, attrs, **kwargs)
+		# mcs._addSpecials()
+		return mcs
+
+	def _addSpecials(cls):
+		name = cls.__name__
+		one = cls(1)
+		cls.one = one
+		setattr(cls.type, f'an{name.title()}', one)
+		setattr(cls.type, f'a{name.title()}', one)
 
 	@property
 	def isGeneric(cls) -> bool:
@@ -654,6 +666,11 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		convertTo = None
 		compatible_units = type(self).compatibleUnits
 
+		if isinstance(formatSpec, dict):
+			params, formatSpec = formatSpec, formatSpec.get('format', '')
+		else:
+			params = {}
+
 		conversionSpecMatch = FormatSpec.conversion.search(formatSpec)
 		unitSet = set(compatible_units) | {'auto'}
 		if conversionSpecMatch:
@@ -701,10 +718,12 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 		floatValue = fm if (fm := getattr(value, 'formatValue', None)) is not None else float(value)
 
-		params = ChainMap(specParams)
+		params = ChainMap(specParams, params)
 		params.specParams = specParams
 		params.default = value.defaultFormatParams
 		params.maps.insert(1, params.default)
+
+		intLength, valuePrecision = value.intFloatLength(floatValue)
 
 		shortened = False
 		if params.get('shorten', False):
@@ -714,7 +733,10 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			else:
 				c = f'{floatValue:,}'.count(',')
 				if c:
-					shortened = True
+					shortened = self.precision + (2 * c)
+					valuePrecision += c * 2
+					params['precision'] += c * 2
+					intLength -= c * 2
 					floatValue /= 1000 ** c
 					params['valueSuffix'] = ['', 'k', 'm', 'B'][c]
 
@@ -742,6 +764,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		params.formatVars = formatVars
 
 		params['value'] = floatValue
+		params['self'] = value
 		params.maps.append(self.__dict__)
 		params.dict = self.__dict__
 
@@ -758,9 +781,8 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 		if params['type'] == 'g':
 			p = int(params['precision'])
-			if floatValue > 1:
+			if float(value) > 1:
 				max_ = int(params['max'])
-				intLength, valuePrecision = value.intFloatLength(floatValue)
 				params['value'] = floatValue = round(floatValue, min(p, valuePrecision))
 				if p:
 					totalLength = intLength + min(p, valuePrecision)
@@ -777,7 +799,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				params['precision'] = p
 
 		# params = value.__format_class__(formatSpec, params)
-		formatString = params.formatString
+		formatString = self.__replace_format_attrs__(formatString, params)
 
 		# params = {k: v if v is not None else '' for k, v in params.items() if not k.startswith('_')}
 		# for k, v in params.items():
@@ -785,6 +807,8 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		# 		params[k] = int(v)
 
 		params['value'] = self.__format_value__(params)
+		# if 0 < floatValue < 1 and not params['value'].startswith('0.0'):
+		# 	params['value'] = params['value'].lstrip('0')
 
 		formattedValue = formatString.format(**params)
 
@@ -792,6 +816,25 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	def __format_class__(self, formatSpec: str, formatParams: Mapping) -> dict:
 		return formatParams
+
+	def __replace_format_attrs__(self, formatString: str, formatParams: Mapping) -> str:
+		formatVars = {**formatParams.get('formatVars', {}), **dict(formatParams)}
+		self = formatParams.get('self', self)
+		for obj, attr, *frmt in re.findall(r'{(?P<obj>\w+)\.(?P<attr>[\w.]+\w)(:.+?)?}', formatString):
+			if obj not in formatVars:
+				if (attr_ := (getattr(self, obj, None))) is not None:
+					formatParams[obj] = attr_
+				continue
+			obj = formatVars[obj]
+			while '.' in attr:
+				attr, sub_attr = attr.split('.', 1)
+				obj = getattr(obj, attr, None)
+				if obj is None:
+					break
+				attr = sub_attr
+			value = getattr(obj, attr, obj)
+			formatString = formatString.replace(f'{{{obj}.{attr}}}', str(value))
+		return formatString
 
 	def __format_value__(self, params: Mapping) -> str:
 		return '{value:{fill}{align}{sign}{minwidth}.{precision}{type}}'.format(**params)
@@ -899,15 +942,27 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	@property
 	def withoutUnit(self) -> str:
-		return f'{self:showUnit: False}'
+		return f'{self:showUnit=False}'
 
 	@property
 	def unit(self) -> str:
-		return getattr(self, '_unit', '')
+		if (unit := getattr(self, '_unit', None)) is None:
+			return type(self).unit
+		return unit
 
 	@unit.setter
 	def unit(self, value: str):
 		self._unit = value
+
+	@property
+	def pluralUnit(self) -> str:
+		if (pluralUnit := getattr(self, '_pluralUnit', None)) is None:
+			return type(self).pluralUnit
+		return pluralUnit
+
+	@pluralUnit.setter
+	def pluralUnit(self, value: str):
+		self._pluralUnit = value
 
 	@property
 	def name(self):
@@ -923,12 +978,20 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return getattr(self, '_suffix', '')
 
 	@property
-	def as_int(self) -> float:
+	def int(self) -> int:
+		return int(self)
+
+	@property
+	def typedInt(self) -> '_SmartFloat':
+		return self.__class__(int(self))
+
+	@property
+	def rounded(self) -> '_SmartFloat':
 		return self.__class__(round(self))
 
 	@property
-	def as_decorated_int(self) -> str:
-		return f'{self:#.0g}'
+	def roundedInt(self) -> int:
+		return int(round(self))
 
 	@property
 	def name(self) -> str:
