@@ -1,8 +1,12 @@
+import re
 from datetime import timedelta, datetime
+from uuid import uuid4
 
 from math import inf
 
 __all__ = ['Time']
+
+from typing import Mapping
 
 from ..base.Decorators import UnitType
 from ..base import Dimension, both
@@ -39,6 +43,87 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 		Base = 'Second'
 		Week = 7.0*float(Day*Hour*Minute*Second)
 		Month = 30.436875*float(Day*Hour*Minute*Second)
+
+	def __new__(cls, value: float | datetime | timedelta, scale: Scale = None):
+		match value:
+			case float(value) | int(value):
+				pass
+			case datetime():
+				value = datetime.now().timestamp() - value.timestamp()
+				value = Second(value)
+			case timedelta():
+				value = value.total_seconds()
+				value = Second(value)
+		return super().__new__(cls, value, scale)
+
+	def __format__(self, format_spec: str) -> str:
+		if format_spec == 'timestamp':
+			if type(self) < Time.Minute:
+				if self < Time.anHour:
+					format_spec = '%MM:%SS'
+				else:
+					format_spec = '%H:%MM:%SS'
+			else:
+				format_spec = '%H:%MM'
+			if self.hour > 100:
+				format_spec = f'{{day}} {format_spec}'
+			if self.day > 100:
+				format_spec = f'{{year}} {format_spec}'
+		elif format_spec == 'simple':
+			value = self.autoAny
+			if float(value) < 0.9:
+				format_spec = '>{value}{unit}'
+			elif abs(d := int(value) - float(value)) < 0.3:
+				prefix = '>' if d > 0 else '<'
+				format_spec = f'{prefix}{{value}}{{unit}}'
+			if float(value) != 1:
+				format_spec = format_spec.replace('unit', 'pluralUnit')
+
+		units = 'ymwdHMS'
+		matches = list(i.groupdict() for i in re.finditer(rf'%(?P<full>(?P<leading>[-#])?(?P<char>[{units}])(?P=char)*)', format_spec))
+		params = {}
+		trailingID = str(uuid4())
+		for group in sorted(matches, key=lambda x: format_spec.index(x['full'])):
+			padding = len(group['full'].strip('-#')) if not group['leading'] else 0
+			match group['char']:
+				case 'y':
+					paramID = f'year_{trailingID}'
+					newValue = f'{{{paramID}:0{padding}}}'
+					params[paramID] = (self.year if not params else abs(self.year)).onlyInt
+				case 'm':
+					paramID = f'month_{trailingID}'
+					newValue = f'{{{paramID}:0{padding}}}'
+					params[paramID] = (self.month if not params else abs(self.month)).onlyInt
+				case 'w':
+					paramID = f'week_{trailingID}'
+					newValue = f'{{{paramID}:0{padding}}}'
+					params[paramID] = (self.week if not params else abs(self.week)).onlyInt
+				case 'd':
+					paramID = f'day_{trailingID}'
+					newValue = f'{{{paramID}:0{padding}}}'
+					params[paramID] = (self.day if not params else abs(self.day)).onlyInt
+				case 'H':
+					paramID = f'hour_{trailingID}'
+					newValue = f'{{{paramID}:0{padding}}}'
+					params[paramID] = (self.hour if not params else abs(self.hour)).onlyInt
+				case 'M':
+					paramID = f'minute_{trailingID}'
+					newValue = f'{{{paramID}:0{padding}}}'
+					params[paramID] = (self.minute if not params else abs(self.minute)).onlyInt
+				case 'S':
+					paramID = f'second_{trailingID}'
+					newValue = f'{{{paramID}:0{padding}}}'
+					params[paramID] = (self.second if not params else abs(self.second)).onlyInt
+				case _:
+					newValue = f'%{group["full"]}'
+			format_spec = format_spec.replace(f'%{group["full"]}', newValue)
+		if matches:
+			format_spec = {'format': format_spec, **params}
+		return super().__format__(format_spec)
+
+	def __format_value__(self, params: Mapping) -> str:
+
+		return super().__format_value__(params)
 
 	def _convert(self, other):
 		if isinstance(other, datetime):
@@ -221,3 +306,17 @@ Time.Year = Year
 Time.Decade = Decade
 Time.Century = Century
 Time.Millennia = Millennia
+
+Time.aMillisecond = Time.oneMillisecond = Millisecond.one = Millisecond(1)
+Time.aSecond = Time.oneSecond = Second.one = Second(1)
+Time.aMinute = Time.oneMinute = Minute.one = Minute(1)
+Time.anHour = Time.oneHour = Hour.one = Hour(1)
+Time.aDay = Time.oneDay = Day.one = Day(1)
+Time.aWeek = Time.oneWeek = Week.one = Week(1)
+Time.aMonth = Time.oneMonth = Month.one = Month(1)
+Time.aYear = Time.oneYear = Year.one = Year(1)
+Time.aDecade = Time.oneDecade = Decade.one = Decade(1)
+Time.aCentury = Time.oneCentury = Century.one = Century(1)
+Time.aMillennia = Time.oneMillennia = Millennia.one = Millennia(1)
+
+Time.common = Time.Year, Time.Day, Time.Hour, Time.Minute, Time.Second
