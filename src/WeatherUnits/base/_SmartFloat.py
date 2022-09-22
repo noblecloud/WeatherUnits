@@ -926,6 +926,12 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	def __float__(self) -> float:
 		return super().__float__()
 
+	def __round__(self, n=None):
+		value = super().__round__(n)
+		value = self.__class__(value)
+		value.__dict__.update(self.__dict__)
+		return value
+
 	def __hash__(self):
 		return hash(round(self, max(self._precision, 1)))
 
@@ -987,11 +993,11 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	@property
 	def rounded(self) -> '_SmartFloat':
-		return self.__class__(round(self))
+		return self.__class__(round(float(self)))
 
 	@property
 	def roundedInt(self) -> int:
-		return int(round(self))
+		return int(round(float(self)))
 
 	@property
 	def name(self) -> str:

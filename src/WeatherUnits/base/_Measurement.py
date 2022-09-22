@@ -19,6 +19,8 @@ log = logging.getLogger('WeatherUnits').getChild('Measurement')
 Self: TypeAlias = TypeVar('Self', bound='Measurement')
 Other: TypeAlias = TypeVar('Other', bound='Measurement')
 
+from math import isinf
+
 class Measurement(SmartFloat):
 	__unitDict__ = ChainMap()
 	_derived: bool
@@ -147,6 +149,8 @@ class Measurement(SmartFloat):
 
 	@cached_property
 	def valuePrecision(self) -> int:
+		if isinf(self):
+			return 0
 		_, value = self.intFloatLength(float(self))
 		return value
 
@@ -162,7 +166,7 @@ class Measurement(SmartFloat):
 		return other
 
 	def __wrapOther(self, other) -> float:
-		if type(other) == type(self):
+		if type(other) is type(self):
 			pass
 		elif isinstance(other, self.type):
 			if self.unit != other.unit:
@@ -176,13 +180,20 @@ class Measurement(SmartFloat):
 				other = other.groupdict()['number']
 		return float(other)
 
-	def __eq__(self: Self, other: Other | Number) -> bool:
+	def __prepareValues(self, other: int | float | Self) -> tuple[float | int, float | int]:
 		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
 		other = self.__wrapOther(other)
 		precision = min(self.valuePrecision, otherPrecision)
 		selfVal = round(float(self), precision)
 		other = round(float(other), precision)
-		return selfVal == other
+		return other, selfVal
+
+	def __eq__(self: Self, other: Other | Number) -> bool:
+		try:
+			other, selfVal = self.__prepareValues(other)
+			return selfVal == other
+		except (ValueError, TypeError):
+			return False
 
 	def __getitem__(self: Self, item: Other | Number):
 		try:
@@ -237,34 +248,40 @@ class Measurement(SmartFloat):
 		return type(self)(super().__floordiv__(other))
 
 	def __lt__(self: Self, other: Other | Number) -> bool:
-		other = self.__wrapOther(other)
-		return super().__lt__(other)
+		try:
+			other, selfVal = self.__prepareValues(other)
+			return selfVal < other
+		except (ValueError, TypeError):
+			return False
 
 	def __gt__(self: Self, other: Other | Number) -> bool:
-		other = self.__wrapOther(other)
-		return super().__gt__(other)
+		try:
+			other, selfVal = self.__prepareValues(other)
+			return selfVal > other
+		except (ValueError, TypeError):
+			return False
 
 	def __ge__(self: Self, other: Other | Number) -> bool:
-		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
-		other = self.__wrapOther(other)
-		precision = min(self.valuePrecision, otherPrecision)
-		selfVal = round(float(self), precision)
-		other = round(float(other), precision)
-		return selfVal >= other
+		try:
+			other, selfVal = self.__prepareValues(other)
+			return selfVal >= other
+		except (ValueError, TypeError):
+			return False
 
 	def __le__(self: Self, other: Other | Number) -> bool:
-		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
-		other = self.__wrapOther(other)
-		precision = min(self.valuePrecision, otherPrecision)
-		selfVal = round(float(self), precision)
-		other = round(float(other), precision)
-		return selfVal <= other
+		try:
+			other, selfVal = self.__prepareValues(other)
+			return selfVal <= other
+		except (ValueError, TypeError):
+			return False
 
 	def __abs__(self: Self) -> Self:
-		return type(self)(super().__abs__())
+		v = type(self)(super().__abs__())
+		v.__dict__.update(self.__dict__)
+		return v
 
 	def __hash__(self):
-		return hash(round(self, max(self._precision, 1)))
+		return hash(round(float(self), max(self._precision, 1)))
 
 
 class DimensionlessMeta(MetaUnitClass):
