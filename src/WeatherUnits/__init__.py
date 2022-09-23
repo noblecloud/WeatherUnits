@@ -51,12 +51,13 @@ def auto(value: str) -> Measurement: ...
 def auto(unit: str) -> Type[Measurement] | Tuple[Type[Measurement], ...]: ...
 
 
-def auto(*args) -> Measurement | Type[Measurement] | Tuple[Type[Measurement], ...]:
+def auto(*args, dimension: Type[Dimension | Dimensionless] = None) -> Measurement | Type[Measurement] | Tuple[Type[Measurement], ...]:
+	dimension = dimension or Measurement
 	match args:
 		case [int(value) | float(value) | str(value), str(unit)]:
 			measurement = float(value)
-			unit = Measurement.__findUnitClass__(unit)
-			cls = tuple(Measurement.__findUnitClass__(u) for u in unit)
+			unit = dimension.__findUnitClass__(unit)
+			cls = tuple(dimension.__findUnitClass__(u) for u in unit)
 
 			if len(cls) == 1:
 				return cls[0](measurement)
@@ -68,7 +69,7 @@ def auto(*args) -> Measurement | Type[Measurement] | Tuple[Type[Measurement], ..
 				number = number.groupdict()['number']
 
 			unit = DerivedMeasurement.__parse_unit__(value.replace(number, ''))
-			cls = tuple(Measurement.__findUnitClass__(u) for u in unit)
+			cls = tuple(dimension.__findUnitClass__(u) for u in unit)
 
 			if len(cls) == 1:
 				if number != '':
@@ -78,7 +79,7 @@ def auto(*args) -> Measurement | Type[Measurement] | Tuple[Type[Measurement], ..
 
 		case [str(unit)]:
 			unit = DerivedMeasurement.__parse_unit__(unit)
-			cls = tuple(Measurement.__findUnitClass__(u) for u in unit)
+			cls = tuple(dimension.__findUnitClass__(u) for u in unit)
 			return cls
 		case _:
 			raise ValueError
