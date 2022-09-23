@@ -9,7 +9,8 @@ from typing import ClassVar, Optional, Set, Type, Union, Tuple, ForwardRef, Type
 from math import nan, isnan, inf
 from decimal import Decimal
 
-from ..utils import modifyCase, pluralize, empty, getFrom, UnsetKwarg, loadUnitLocalization, CaseInsensitiveKey
+from ..errors import FormattingError
+from ..utils import modifyCase, pluralize, empty, getFrom, Unset, UnsetKwarg, loadUnitLocalization, CaseInsensitiveKey
 from ..config import config, GROUPING_CHAR, RADIX_CHAR
 
 __all__ = ('SmartFloat', 'Limits', 'TypedLimits', 'FormatSpec', 'FiniteField', 'UnitDict', 'MetaUnitClass')
@@ -43,7 +44,7 @@ class FormatSpec:
 	falsy_values: ClassVar[Set[str]] = {'false', 'f', 'no', 'n', 'off', 'hidden', 'hide'}
 	limit = re.compile(r'\[(?P<max>([+-]?[\d.]+)|\*)?:(?P<min>([+-]?[\d.]+)|\*)?]')
 	precision = re.compile("""	
-	^:?
+	(^)?(?(1)|(?<=:))
 	(?P<format_spec>
 		(?P<align>(?P<fill>.)?[<^>])?
 		(?P<sign>[-+\s])?
@@ -53,23 +54,24 @@ class FormatSpec:
 		(?P<radix>\.)?
 		(?(radix)(?P<precision>\d+)|)?
 		(?P<type>[bcdeEfFgGnosxX%])?
-	)$
+	)
+	(?=:|$)
 	""", re.VERBOSE)
 	params = re.compile("""
-	(^)?(?(1)|,\s)(
+  (^)?(?(1)|,\s)(
     (?P<keyquote>[\'\"`]?)    # optional start quote
-    (?P<key>\S+?)
-    (?P=keyquote)
+    (?P<key>\S+?)             # key
+    (?P=keyquote)							# end quote
 	)
-	=\s*
+	\s*=\s*
 	(
     (?P<valquote>[\'\"`]?)     # optional start quote
-    (?P<value>.*?)           # literal value
-    (?P=valquote)
+    (?P<value>.*?)             # literal value
+    (?P=valquote)              # end quote
 	)
-	(,|$)
+	(?=,|$)
 	""", re.VERBOSE)
-	formatParams = re.compile("""{(?P<name>\w+?) (?: :(?P<spec>.*?))?}""", re.VERBOSE)
+	formatParams = re.compile(r"{(?P<name>\w+?) (?: :(?P<spec>.*?))?}", re.VERBOSE)
 	conversion = re.compile(r"""
 	^(?P<fullmatch>
 		(?P<convertTo>[-\w\s/\\]+)
@@ -684,6 +686,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				convertTo = tuple(i.lower() for i in parsedUnit if i in unitSet)
 
 		if precisionSpec := FormatSpec.precision.search(formatSpec):
+			formatSpec = formatSpec[:precisionSpec.start()-1] if formatSpec.endswith(precisionSpec.group()) else formatSpec[precisionSpec.end()+1:]
 			precisionSpec = precisionSpec.groupdict()
 		else:
 			precisionSpec = {'format_spec': ''}
@@ -760,24 +763,17 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		params.maps.insert(0, precisionSpec)
 		params.precisionSpec = precisionSpec
 
-		formatVars = {i['name']: i.groupdict() for i in FormatSpec.formatParams.finditer(formatString)}
-		params.formatVars = formatVars
+		# find all sub format spect
+		formatVarsSpecs = {i['name']: i.groupdict() for i in FormatSpec.formatParams.finditer(formatString)}
+		params.formatVars = formatVarsSpecs
 
 		params['value'] = floatValue
 		params['self'] = value
 		params.maps.append(self.__dict__)
 		params.dict = self.__dict__
 
-		for key, opts in formatVars.items():
-			spec = opts['spec']
-			v = getFrom(key, value, self, params, locals(), globals())
-			if v is UnsetKwarg:
-				raise ValueError(f"Variable '{key}' is undefined")
-			if spec and key not in {'format', 'self', 'value'}:
-				v = f'{v:{spec}}'
-			formatVars[key] = v
-
-		params.maps.insert(0, formatVars)
+		# this was commented out because I don't think it is needed
+		# params.maps.insert(0, formatVarsSpecs)
 
 		if params['type'] == 'g':
 			p = int(params['precision'])
@@ -841,6 +837,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	def __format_template__(self, params: Mapping) -> str:
 		formatTemplate = []
+
 		if params.get('prefix', None):
 			formatTemplate.append('{prefix}')
 		value = params.get('value', None)
