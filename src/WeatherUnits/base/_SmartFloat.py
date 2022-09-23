@@ -794,6 +794,30 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				params['type'] = 'f'
 				params['precision'] = p
 
+		# determine if a plural unit should be used
+		unit = params.get('unit', self.unit)
+
+		if (params.get('plural', False) or unit == 'plural') and round(floatValue, params['precision']) != 1:
+			unit = self.pluralUnit
+			precisionSpec['unit'] = unit
+
+		for key, opts in formatVarsSpecs.items():
+			spec = opts['spec']
+			try:
+				v = getFrom(key, value, self, params, locals(), globals())
+			except KeyError:
+				raise FormattingError(f'Invalid format variable {key!r} in {formatString!r} while formatting {self!r}')
+			if spec and key not in {'format', 'self', 'value'}:
+				try:
+					v = f'{v:{spec}}'
+				except ValueError as e:
+					log.error(f'Error formatting {key} with {spec}: "{e}" while formatting {self}')
+					# if msg := next(iter(e.args), '').startswith('Unknown format code'):
+					# 	t = FormatSpec.precision.search(spec).groupdict()['type']
+					# 	spec = spec.removesuffix(t)
+					v = f'{v}'
+			formatVarsSpecs[key] = v
+
 		# params = value.__format_class__(formatSpec, params)
 		formatString = self.__replace_format_attrs__(formatString, params)
 

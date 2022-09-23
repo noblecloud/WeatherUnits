@@ -77,7 +77,10 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 				prefix = '>' if d > 0 else '<'
 				format_spec = f'{prefix}{{value}}{{unit}}'
 			if float(value) != 1:
-				format_spec = format_spec.replace('unit', 'pluralUnit')
+				format_spec = f"{precisionSpec['format_spec']}:plural=True"
+			else:
+				format_spec = precisionSpec['format_spec']
+			return super().__format__(format_spec)
 
 		units = 'ymwdHMS'
 		matches = list(i.groupdict() for i in re.finditer(rf'%(?P<full>(?P<leading>[-#])?(?P<char>[{units}])(?P=char)*)', format_spec))
