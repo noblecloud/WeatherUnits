@@ -70,12 +70,7 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 			if self.day > 100:
 				format_spec = f'{{year}} {format_spec}'
 		elif format_spec == 'simple':
-			value = self.autoAny
-			if float(value) < 0.9:
-				format_spec = '>{value}{unit}'
-			elif abs(d := int(value) - float(value)) < 0.3:
-				prefix = '>' if d > 0 else '<'
-				format_spec = f'{prefix}{{value}}{{unit}}'
+			value = self.auto
 			if float(value) != 1:
 				format_spec = f"{precisionSpec['format_spec']}:plural=True"
 			else:
@@ -164,38 +159,6 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 
 	def _millennia(self):
 		return self.changeScale(self.scale.Millennia)
-
-	@property
-	def auto(self):
-		if self._second() < 60 and self.scale <= self._Scale.Second:
-			return self.s
-		elif self._minute() < 60 and self.scale <= self._Scale.Minute:
-			return self.min
-		elif self._hour() < 24 and self.scale <= self._Scale.Hour:
-			return self.hour
-		elif self._day() < 7 and self.scale <= self._Scale.Year:
-			return self.week
-		elif self._day() < 30 and self.scale <= self._Scale.Year:
-			return self.month
-		return self
-
-	@property
-	def autoAny(self):
-		if abs(self._second()) < 60:
-			return self.s
-		elif abs(self._minute()) < 60:
-			return self.min
-		elif abs(self._hour()) < 24:
-			return self.hour
-		elif abs(self._day()) < 2:
-			return self.day
-		elif abs(self._day()) < 7:
-			return self.week
-		elif abs(self._day()) < 30:
-			return self.month
-		elif abs(self._year()) > 1:
-			return self.year
-		return self
 
 	@property
 	def millisecond(self):
