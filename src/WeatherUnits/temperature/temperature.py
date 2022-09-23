@@ -51,17 +51,14 @@ class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 		# Keep rh within reasonable ranges
 		rh = self.normalizeRh(rh)
 
-		# a, b = 17.27, 237.7
-		# n = ((a * T) / (b + T)) + logRH
-		# value = Celsius((b * n) / (a - n))
-
 		T = float(self.c)
+
 		logRH = log(rh/100)
 		A = 243.04
 		B = 17.625
-		value = Celsius(A*(logRH + ((B*T)/(A + T)))/(B - logRH - ((B*T)/(A + T))))
+		value = A*(logRH + ((B*T)/(A + T)))/(B - logRH - ((B*T)/(A + T)))
 
-		value = self.__class__(value[self._unit])
+		value = type(self)(Celsius(min(value, T)))
 		value = self.transform(value)
 		value.title = 'Dewpoint'
 		value.calculated = True
