@@ -4,12 +4,20 @@ from difflib import get_close_matches, SequenceMatcher
 from functools import lru_cache
 from heapq import nlargest
 from itertools import product
-from typing import Hashable, Type, Union, Final, Any, Mapping, Callable, Set, Tuple, Optional, NamedTuple
+from typing import (
+	Hashable, Type, TYPE_CHECKING, TypeAlias, TypeVar, Union, Final, Any, Mapping, Callable, Set, Tuple, Optional,
+	NamedTuple
+)
+
+if TYPE_CHECKING:
+	from .base import Measurement
 
 log = logging.getLogger('WeatherUnits').getChild('utils')
 
 numeric = re.compile(r'^[-+]?[0-9]*\.?[0-9]+$')
 
+Self: TypeAlias = TypeVar('Self', bound='Measurement')
+Other: TypeAlias = TypeVar('Other', bound='Measurement')
 
 @lru_cache()
 def loadUnitLocalization(measurement: Type['Measurement'], config):
@@ -46,7 +54,7 @@ def convertString(value: str) -> Union[int, float, str, bool]:
 ScoredMatch = NamedTuple('Match', [('ratio', 'float'), ('value', 'str')])
 
 
-def scored_get_close_matches(word, possibilities, n=3, cutoff=0.8):
+def scored_get_close_matches(word, possibilities, n=3, cutoff=0.8) -> Tuple[ScoredMatch, ...]:
 	if not n > 0:
 		raise ValueError("n must be > 0: %r"%(n,))
 	if not 0.0 <= cutoff <= 1.0:
@@ -337,7 +345,8 @@ def getFrom(
 				_pop(subKey)
 			if not findAll:
 				return factory(value)
-			found.append(factory(value))
+			else:
+				found.append(factory(value))
 	if findAll:
 		return found
 	elif default is UnsetKwarg:

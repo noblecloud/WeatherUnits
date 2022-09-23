@@ -11,13 +11,12 @@ __all__ = ['Measurement', 'DerivedMeasurement', 'Dimension', 'metric', 'imperial
 
 from .. import errors
 from . import SmartFloat, FormatSpec, MetaUnitClass
-from ..utils import HashSlice
+from ..utils import HashSlice, Other, Self
 from ..config import config
 
 log = logging.getLogger('WeatherUnits').getChild('Measurement')
 
-Self: TypeAlias = TypeVar('Self', bound='Measurement')
-Other: TypeAlias = TypeVar('Other', bound='Measurement')
+
 
 from math import isinf
 
@@ -108,7 +107,7 @@ class Measurement(SmartFloat):
 		return str(self)
 
 	@property
-	def type(self) -> type:
+	def type(self: Self) -> Type[Self]:
 		return type(self).type
 
 	@property
@@ -132,14 +131,15 @@ class Measurement(SmartFloat):
 		self._indoor = value
 
 	@property
-	def calculated(self):
+	def calculated(self) -> bool:
 		return self._calculated
 
 	@calculated.setter
-	def calculated(self, value):
+	def calculated(self, value: bool):
 		self._calculated = value
 
-	def _convert(self, other):
+	def _convert(self: Self, other: Other) -> Self:
+		"""For comparisons, convert other to own type"""
 		if isinstance(other, self.type):
 			return self.__class__(other)
 		if isinstance(other, (float, int)):
@@ -165,7 +165,7 @@ class Measurement(SmartFloat):
 			other._updateFunction(other)
 		return other
 
-	def __wrapOther(self, other) -> float:
+	def __wrapOther(self: Self, other: Other) -> float:
 		if type(other) is type(self):
 			pass
 		elif isinstance(other, self.type):
@@ -180,7 +180,7 @@ class Measurement(SmartFloat):
 				other = other.groupdict()['number']
 		return float(other)
 
-	def __prepareValues(self, other: int | float | Self) -> tuple[float | int, float | int]:
+	def __prepareValues(self: Self, other: int | float | Other) -> tuple[float | int, float | int]:
 		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
 		other = self.__wrapOther(other)
 		precision = min(self.valuePrecision, otherPrecision)
@@ -201,7 +201,7 @@ class Measurement(SmartFloat):
 		except AttributeError:
 			if isinstance(item, str):
 				return type(self)[item](self)
-			raise errors.Conversion.UnknownUnit(self, item)
+			raise errors.Conversion.UnknownUnit(self, str(item))
 
 	def __mul__(self: Self, other: Other | Number) -> Self:
 		other = self.__wrapOther(other)
@@ -486,8 +486,8 @@ systemName: Final = Literal['metric', 'imperial', 'mixed']
 
 class Dimension(MetaUnitClass):
 	__systems__: Dict[str, Type['Dimension']] = {metric: {}, imperial: {}, both: ChainMap()}
+	__dimension__: Type['Dimension']
 	_system: systemName
-	__dimensions__: Type['Dimension']
 
 	def __new__(mcs, name, bases, attrs, *args, **kwargs):
 		system = kwargs.get('system', None)
@@ -509,7 +509,7 @@ class Dimension(MetaUnitClass):
 		return newCls
 
 	@classmethod
-	def registerDimension(mcs, dimension):
+	def registerDimension(mcs, dimension: 'Dimension') -> None:
 		systems = mcs.__systems__
 		dimension.__dimension__ = dimension
 		if dimension not in systems[both]:
@@ -527,7 +527,7 @@ class Dimension(MetaUnitClass):
 			systems[both][dimension.__name__] = dimensionDictBoth
 
 	@classmethod
-	def register(mcs, newCls):
+	def register(mcs, newCls: 'Dimension') -> None:
 		systems = mcs.__systems__
 
 		dimension = newCls.dimension or newCls
