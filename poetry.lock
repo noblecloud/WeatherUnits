@@ -2,7 +2,7 @@ package = []
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.7"
-content-hash = "4ea3d706f0e7aefcde6b84bd691e4cdc5c7bd5c4fe478da3a89bbc99ce825f98"
+python-versions = "^3.10"
+content-hash = "53f2eabc9c26446fbcc00d348c47878e118afc2054778c3c803a0a8028af27d9"
 
 [metadata.files]

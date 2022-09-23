@@ -10,7 +10,7 @@ Easily convert typical weather units from one unit to another with automatic loc
 
 ## Requirements
 
-- Python 3.7
+- Python 3.10
 
 ## How to use
 
