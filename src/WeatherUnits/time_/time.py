@@ -10,7 +10,7 @@ from typing import Mapping
 
 from ..base.Decorators import UnitType
 from ..base import Dimension, both
-from ..base import ScalingMeasurement, Scale
+from ..base import ScalingMeasurement, Scale, FormatSpec
 
 
 @UnitType
@@ -57,6 +57,13 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 		return super().__new__(cls, value, scale)
 
 	def __format__(self, format_spec: str) -> str:
+
+		if precisionSpec := FormatSpec.precision.search(format_spec):
+			format_spec = format_spec[:precisionSpec.start()-1] if format_spec.endswith(precisionSpec.group()) else format_spec[precisionSpec.end()+1:]
+			precisionSpec = precisionSpec.groupdict()
+		else:
+			precisionSpec = {'format_spec': ''}
+
 		if format_spec == 'timestamp':
 			if type(self) < Time.Minute:
 				if self < Time.anHour:
@@ -156,6 +163,10 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 
 	def _century(self):
 		return self.changeScale(self.scale.Century)
+
+	@property
+	def timedelta(self) -> timedelta:
+		return timedelta(seconds=self.second)
 
 	def _millennia(self):
 		return self.changeScale(self.scale.Millennia)
@@ -285,4 +296,4 @@ Time.aDecade = Time.oneDecade = Decade.one = Decade(1)
 Time.aCentury = Time.oneCentury = Century.one = Century(1)
 Time.aMillennia = Time.oneMillennia = Millennia.one = Millennia(1)
 
-Time.common = Time.Year, Time.Day, Time.Hour, Time.Minute, Time.Second
+Time.common = Time.Decade, Time.Year, Time.Day, Time.Hour, Time.Minute, Time.Second, Time.Millisecond
