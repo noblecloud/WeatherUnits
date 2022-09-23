@@ -1,15 +1,27 @@
 from abc import abstractmethod
 from enum import Enum, EnumMeta
 from itertools import groupby
+from math import prod
 from typing import Optional, Type, Tuple, Set, Dict
 
+from ._Measurement import systemName
 from .. import errors
 from . import Measurement, DerivedMeasurement, MetaUnitClass
+from ..utils import Self
 
 __all__ = ['ScalingMeasurement', 'SystemVariant', 'Scale']
 
 
 class AddressableEnum(EnumMeta):
+	_list: list['Scale']
+
+	def __new__(cls, *args, **kwargs):
+		instance = super().__new__(cls, *args, **kwargs)
+		instance._list = [i for i in instance if not i.isVariant]
+		instance._sorted = sorted(instance, key=lambda x: x.absoluteValue)
+		for i, scale in enumerate(instance._sorted):
+			scale._index_ = i
+		return instance
 
 	def __getitem__(self, indexOrName):
 		if isinstance(indexOrName, str):
@@ -20,9 +32,6 @@ class AddressableEnum(EnumMeta):
 			indices = range(*indexOrName.indices(len(self._list)))
 			return [self._list[i] for i in indices]
 
-	@property
-	def _list(self):
-		return list(self)
 
 
 class Indexer:
@@ -38,6 +47,7 @@ class Indexer:
 
 
 class Scale(Enum, metaclass=AddressableEnum):
+	_index_: int
 
 	Base: 'Scale'
 
@@ -62,8 +72,11 @@ class Scale(Enum, metaclass=AddressableEnum):
 
 		return obj
 
-	def __str__(self):
-		return str(self.value)
+	def __repr__(self):
+		index = self.sortedIndex
+		value = self.value
+		absoluteValue = self.absoluteValue
+		return f"{self.__class__.__name__}({index=:.g}, {value=:.g}, {absoluteValue=:.g})"
 
 	# this makes sure that the description is read-only
 	@property
@@ -73,24 +86,37 @@ class Scale(Enum, metaclass=AddressableEnum):
 		return self._value_
 
 	@property
+	def sortedIndex(self) -> int:
+		return self._index_
+
+	@property
 	def value(self):
 		return self._mul_
 
-	def __repr__(self):
-		return "<%s.%s: %r>" % (self.__class__.__name__, self._name_, self._mul_)
+	@property
+	def absoluteValue(self) -> int | float:
+		if not self.isVariant:
+			return prod(i._mul_ for i in self._list if i.index <= self.index)
+		return self._mul_
+
+	def __truediv__(self, other):
+		if isinstance(other, self.__class__):
+			return self.absoluteValue / other.absoluteValue
+		return self.absoluteValue / other
 
 	def __mul__(self, other):
 		if isinstance(other, self.__class__):
-			variant = self.isVariant or other.isVariant
-			val = 1
-			array = self.__class__[min(self.index, other.index) + 1: max(self.index, other.index) + 1]
-			array.sort(key=lambda x: x.index)
-			array = array[:-1] if variant else array
-			for i in array:
-				val *= i.value
-			if variant:
-				val *= self.value if self.isVariant else other.value
-			return val
+			return other.absoluteValue * self.absoluteValue
+		return self.absoluteValue * other
+
+	def __rmul__(self, other):
+		return self.__mul__(other)
+
+	def __rtruediv__(self, other):
+		if isinstance(other, self.__class__):
+			return other.absoluteValue / self.absoluteValue
+		else:
+			return other / self.absoluteValue
 
 	def __gt__(self, other):
 		if isinstance(other, self.__class__):
@@ -108,6 +134,8 @@ class Scale(Enum, metaclass=AddressableEnum):
 		if isinstance(other, self.__class__):
 			return self.index == other.index
 		else:
+			if (scale := getattr(other, 'scale', None)) is not None and (index := getattr(scale, 'index', None)) is not None:
+				return self.index == index
 			return self.index == int(other)
 
 	def __le__(self, other):
@@ -125,6 +153,20 @@ class Scale(Enum, metaclass=AddressableEnum):
 	def __hash__(self):
 		return hash((self.index, self.value))
 
+	@property
+	def up(self) -> 'Scale':
+		try:
+			return self._sorted[self.sortedIndex + 1]
+		except IndexError:
+			return self
+
+	@property
+	def down(self) -> 'Scale':
+		try:
+			return self._sorted[self.sortedIndex - 1]
+		except IndexError:
+			return self
+
 
 class BaseUnit:
 
@@ -134,8 +176,10 @@ class BaseUnit:
 
 
 class ScalingMeasurement(Measurement):
-	_baseUnit: Type[Measurement]
-	_Scale: Scale = None
+	_baseUnit: Type['ScalingMeasurement']
+	_Scale: Scale | None = None
+	_systemName: systemName
+	_system: Type['ScalingMeasurement']
 
 	common: Set[_Scale] = set()
 
@@ -191,17 +235,17 @@ class ScalingMeasurement(Measurement):
 		raise errors.Conversion.BadConversion(cls.__name__, value.__class__.__name__)
 
 	@property
-	def up(self) -> 'ScalingMeasurement':
+	def up(self: Self) -> Self:
 		value = self.changeScale(self.nextScale)
 		return getattr(self.type, self.nextScale.name)(value)
 
 	@property
-	def down(self) -> 'ScalingMeasurement':
+	def down(self: Self) -> Self:
 		value = self.changeScale(self.previousScale)
 		return getattr(self.type, self.previousScale.name)(value)
 
 	@property
-	def downCommon(self) -> 'ScalingMeasurement':
+	def downCommon(self: Self) -> Self:
 		down = self.down
 		while type(down) not in self.common:
 			down = down.down
@@ -210,22 +254,22 @@ class ScalingMeasurement(Measurement):
 		return down
 
 	@property
-	def upCommon(self) -> 'ScalingMeasurement':
+	def upCommon(self: Self) -> Self:
 		up = self.up
 		while up.scale not in self.common or up.scale == self.scale:
 			up = up.up
 		return up
 
 	@property
-	def nextScale(self) -> _Scale:
-		return type(self)._Scale[min(self.scale.index + 1, max(type(self)._Scale).index)]
+	def nextScale(self) -> Scale:
+		return self.scale.up
 
 	@property
-	def previousScale(self) -> _Scale:
-		return type(self)._Scale(max(self.scale.index - 1, min(type(self)._Scale).index))
+	def previousScale(self) -> Scale:
+		return self.scale.down
 
 	@property
-	def remainder(self) -> 'ScalingMeasurement':
+	def remainder(self: Self) -> Self:
 		return sum(i for i in self.splitIntoDict() if i.scale < self.scale)
 
 	@property
@@ -233,14 +277,14 @@ class ScalingMeasurement(Measurement):
 		return int(self.remainder)
 
 	@property
-	def only(self) -> 'ScalingMeasurement':
+	def only(self: Self) -> Self:
 		return self.splitIntoDict().get(self.name, None) or type(self)(0)
 
 	@property
 	def onlyInt(self) -> int:
 		return int(self.only)
 
-	def splitInto(self, *into: Type['ScalingMeasurement']) -> Tuple['ScalingMeasurement', ...]:
+	def splitInto(self: Self, *into: Type[Self]) -> Tuple[Self, ...]:
 		into = into or type(self).common or self.type.subTypes
 		into = sorted(into, key=lambda x: x(self).int)
 		if self.down == type(self)(0):
@@ -262,35 +306,45 @@ class ScalingMeasurement(Measurement):
 					values.append(nextVal)
 		return tuple(values)
 
-	def splitIntoDict(self, *into: Type['ScalingMeasurement']) -> Dict[str, 'ScalingMeasurement']:
+	def splitIntoDict(self: Self, *into: Type[Self]) -> Dict[str, Self]:
 		values = self.splitInto(*into)
 		return {type(i).name: i for i in values}
 
-
 	def changeScale(self, newUnit: Scale, scale: Scale = None) -> Optional[float]:
 		scale = getattr(self, 'scale', scale)
-		multiplier = scale*newUnit
 		if scale > newUnit:
-			return float(self)*multiplier
+			return float(self) / (newUnit / scale)
 		else:
-			return float(self)/multiplier
+			return float(self) * (scale / newUnit)
 
 	def toBaseUnit(self) -> Measurement:
 		return self._baseUnit(self.changeScale(self._Scale.Base))
 
 	@classmethod
 	@property
-	def scale(cls) -> _Scale:
+	def scale(cls) -> Type[Scale]:
 		return cls._Scale[cls.__name__]
 
 	@classmethod
 	@property
-	def Scale(cls) -> _Scale:
+	def Scale(cls) -> Scale:
 		return cls._Scale
 
 	@property
 	def isSystemVariant(self):
 		return issubclass(self.__class__, SystemVariant)
+
+	@property
+	def auto(self: Self) -> Self:
+		auto = self
+		if abs(auto.up) > abs((up := auto.up).one):
+			while abs(up.one) < abs(up) != abs(auto):
+				auto, up = up, up.up
+		else:
+			while not auto.int and auto.down != auto:
+				auto = auto.down
+
+		return auto
 
 
 class SystemVariant:
