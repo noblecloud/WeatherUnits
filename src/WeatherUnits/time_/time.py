@@ -83,6 +83,11 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 			else:
 				format_spec = precisionSpec['format_spec']
 			return super().__format__(format_spec)
+		elif format_spec == 'ago':
+			if self < 0:
+				return f'in {abs(self).__format__("simple")}'
+			return f'{self.__format__("simple")} ago'
+
 
 		units = 'ymwdHMS'
 		matches = list(i.groupdict() for i in re.finditer(rf'%(?P<full>(?P<leading>[-#])?(?P<char>[{units}])(?P=char)*)', format_spec))
