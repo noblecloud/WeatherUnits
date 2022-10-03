@@ -51,12 +51,18 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 			case datetime():
 				value = datetime.now().timestamp() - value.timestamp()
 				value = Second(value)
+				if cls is type(value):
+					return value
 			case timedelta():
 				value = value.total_seconds()
 				value = Second(value)
+				if cls is type(value):
+					return value
 		return super().__new__(cls, value, scale)
 
 	def __format__(self, format_spec: str) -> str:
+
+		original_spec = format_spec
 
 		if precisionSpec := FormatSpec.precision.search(format_spec):
 			format_spec = format_spec[:precisionSpec.start()-1] if format_spec.endswith(precisionSpec.group()) else format_spec[precisionSpec.end()+1:]
@@ -77,8 +83,9 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 			if self.day > 100:
 				format_spec = f'{{year}} {format_spec}'
 		elif format_spec == 'simple':
-			value = self.auto
-			if float(value) != 1:
+			if (auto_value := self.auto).unit != self.unit:
+				return auto_value.__format__(original_spec)
+			if float(self) != 1:
 				format_spec = f"{precisionSpec['format_spec']}:plural=True"
 			else:
 				format_spec = precisionSpec['format_spec']
