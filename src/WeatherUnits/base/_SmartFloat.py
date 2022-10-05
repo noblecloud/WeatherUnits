@@ -26,6 +26,15 @@ _T = TypeVar('_T', Measurement, float)
 
 Limits = namedtuple('Limits', 'min max')
 
+scale_factors = (
+	'', 'k', 'm', 'b',
+	't', 'q', 'Q', 's',
+	'S', 'o', 'n', 'd',
+	'U', 'D', 'T', 'Qt',
+	'Qd', 'Sd', 'St', 'O',
+	'N', 'v', 'c'
+)
+
 
 class TypedLimits(Limits):
 	min: _T
@@ -560,6 +569,20 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	_sizeHint: Optional[str]
 	_acceptedTypes: ClassVar[tuple] = (float, int, Decimal)
 	__unitDict__: ChainMap[str, Type]
+	__transferable__: set[str] = {
+		'leadingZero',
+		'trailingZero',
+		'align',
+		'fill',
+		'sign',
+		'minwidth',
+		'type',
+		'decorator',
+		'unitSpacer',
+		'unit',
+		'showUnit',
+		'suffix',
+	}
 
 	@classmethod
 	def noneToNan(cls, value):
@@ -727,12 +750,24 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		params.maps.insert(1, params.default)
 
 		intLength, valuePrecision = value.intFloatLength(floatValue)
-
+		max_len = params.get('max', value._max)
 		shortened = False
 		if params.get('shorten', False):
-			if (auto := getattr(self, 'auto', None)) is not None:
+			starting_len = len(str(int(floatValue)))
+			if (best_fit := getattr(value, 'bestFit', None)) is not None:
+				value = best_fit(max_len)
+				floatValue = float(value)
+				intLength = value.intLength
+				precision_offset = starting_len - intLength
+				params['precision'] += precision_offset
+				valuePrecision += precision_offset
+			elif (auto := getattr(self, 'auto', None)) is not None:
 				value = auto
 				floatValue = float(value)
+				intLength = value.intLength
+				precision_offset = starting_len - intLength
+				params['precision'] += precision_offset
+				valuePrecision += precision_offset
 			else:
 				c = f'{floatValue:,}'.count(',')
 				if c:
@@ -741,10 +776,16 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 					params['precision'] += c * 2
 					intLength -= c * 2
 					floatValue /= 1000 ** c
-					params['valueSuffix'] = ['', 'k', 'm', 'B'][c]
+					if (valueSuffix := scale_factors[c]) == value.unit:
+						valueSuffix += ' '
+					params['valueSuffix'] = valueSuffix
+
+			# update params.default to reflect the new value
+			new_defaults = value.transferable_defaults
+			params.default.update({k:v for k,v in value.defaultFormatParams.items() if k in new_defaults})
 
 		# get the formatSpec from the params['format']
-		formatString = params.get('format', self.__format_template__(params))
+		formatString = params.get('format', value.__format_template__(params))
 		params.formatString = formatString
 
 		# get format specs from inside the param formatSpec
@@ -795,10 +836,10 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				params['precision'] = p
 
 		# determine if a plural unit should be used
-		unit = params.get('unit', self.unit)
+		unit = params.get('unit', value.unit)
 
 		if (params.get('plural', False) or unit == 'plural') and round(floatValue, params['precision']) != 1:
-			unit = self.pluralUnit
+			unit = value.pluralUnit
 			precisionSpec['unit'] = unit
 
 		for key, opts in formatVarsSpecs.items():
@@ -819,14 +860,14 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			formatVarsSpecs[key] = v
 
 		# params = value.__format_class__(formatSpec, params)
-		formatString = self.__replace_format_attrs__(formatString, params)
+		formatString = value.__replace_format_attrs__(formatString, params)
 
 		# params = {k: v if v is not None else '' for k, v in params.items() if not k.startswith('_')}
 		# for k, v in params.items():
 		# 	if k in {'precision', 'minwidth'} and v:
 		# 		params[k] = int(v)
 
-		params['value'] = self.__format_value__(params)
+		params['value'] = value.__format_value__(params)
 		# if 0 < floatValue < 1 and not params['value'].startswith('0.0'):
 		# 	params['value'] = params['value'].lstrip('0')
 
@@ -907,6 +948,10 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			'limits':       self._limits,
 			'shorten':      self.shorten,
 		}
+
+	@property
+	def transferable_defaults(self) -> set[str]:
+		return self.__transferable__
 
 	@property
 	def properties(self) -> dict:
