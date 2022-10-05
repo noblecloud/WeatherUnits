@@ -253,17 +253,21 @@ class ScalingMeasurement(Measurement):
 	@property
 	def downCommon(self: Self) -> Self:
 		down = self.down
-		while type(down) not in self.common:
-			down = down.down
-			if down.down.scale == down.scale:
-				break
+		while down.scale not in (self.common or self._Scale) and down.scale is not self.scale:
+			down_down = down.down
+			if down_down.scale is down.scale:
+				return down
+			down = down_down
 		return down
 
 	@property
 	def upCommon(self: Self) -> Self:
 		up = self.up
-		while up.scale not in self.common or up.scale == self.scale:
-			up = up.up
+		while up.scale not in (self.common or self._Scale) and up.scale is not self.scale:
+			up_up = up.up
+			if up_up.scale is up.scale:
+				return up
+			up = up_up
 		return up
 
 	@property
