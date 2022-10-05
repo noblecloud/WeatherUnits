@@ -76,7 +76,7 @@ class Scale(Enum, metaclass=AddressableEnum):
 		index = self.sortedIndex
 		value = self.value
 		absoluteValue = self.absoluteValue
-		return f"{self.__class__.__name__}({index=:.g}, {value=:.g}, {absoluteValue=:.g})"
+		return f"{self.__class__.__name__}({index=:g}, {value=:g}, {absoluteValue=:g})"
 
 	# this makes sure that the description is read-only
 	@property
@@ -181,7 +181,7 @@ class ScalingMeasurement(Measurement):
 	_systemName: systemName
 	_system: Type['ScalingMeasurement']
 
-	common: Set[_Scale] = set()
+	common: Set[Type[_Scale]] = set()
 
 	def __init_subclass__(cls, **kwargs):
 		baseUnit = kwargs.get('baseUnit', None)
@@ -193,6 +193,12 @@ class ScalingMeasurement(Measurement):
 			baseUnitRef = getattr(cls, '_baseUnitRef', None)
 			if baseUnitRef == cls.__name__:
 				cls._system._baseUnit = cls
+		if cls.name in cls.common:
+			cls.common.discard(cls.name)
+			cls.common.add(cls.scale)
+		elif cls in cls.common:
+			cls.common.discard(cls)
+			cls.common.add(cls.scale)
 		super().__init_subclass__(**kwargs)
 
 	def __new__(cls, value, *args, **kwargs):
