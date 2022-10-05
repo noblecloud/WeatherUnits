@@ -613,7 +613,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	@cached_property
 	def intLength(self) -> int:
-		return len(str(round(self)))
+		return len(str(round(float(self))))
 
 	@cached_property
 	def floatLength(self) -> int:
