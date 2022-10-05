@@ -352,6 +352,22 @@ class ScalingMeasurement(Measurement):
 
 		return auto
 
+	def bestFit(self, max_digits: int = None) -> Self:
+		"""Returns the best fit unit for the value"""
+		if max_digits is None:
+			max_digits = self.max
+
+		int_digits_count = self.intLength
+		value = self
+
+		while int_digits_count > max_digits:
+			old, value = value, value.upCommon
+			if type(old) is type(value):
+				return value
+			if (int_digits_count := value.intLength) <= max_digits:
+				return value
+		return value
+
 
 class SystemVariant:
 	_multiplier: float = 1.0
