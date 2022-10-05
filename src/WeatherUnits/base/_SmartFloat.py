@@ -980,11 +980,25 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return attrs
 
 	def __repr__(self):
-		attrsString = ', '.join(f'{k}={str(v)}' for k, v in self.properties.items())
+		properties = self.properties
+		properties['shorten'] = False
+		attrsString = ', '.join(f'{k}={str(v)}' for k, v in properties.items())
+
+		if (auto_value := getattr(self, 'auto', None)) is not None:
+			if (auto_type := type(auto_value)) is not type(self):
+				attrsString = f'auto={auto_value}, ' + attrsString
+		else:
+			auto_type = type(self)
+
+		if (best_fit := getattr(self, 'bestFit', None)) is not None:
+			best_fit = best_fit()
+			if type(best_fit) is not auto_type:
+				attrsString = f'bestFit={best_fit}, ' + attrsString
+
 		return f'{type(self).__name__}(value={self.__repr_value__()}, {attrsString})'
 
 	def __repr_value__(self) -> str:
-		return f'{self: format:{"{value}{decorator}"}, type: g}'
+		return f'{self: format={"{value}{decorator}"}, type=g, shorten=False}'
 
 	def __bool__(self):
 		return super().__bool__() or bool(self.unit)
