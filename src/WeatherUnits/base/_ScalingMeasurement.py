@@ -2,7 +2,7 @@ from abc import abstractmethod
 from enum import Enum, EnumMeta
 from itertools import groupby
 from math import prod
-from typing import Optional, Type, Tuple, Set, Dict
+from typing import Optional, Type, Tuple, Set, Dict, Union
 
 from ._Measurement import systemName
 from .. import errors
@@ -326,6 +326,20 @@ class ScalingMeasurement(Measurement):
 			return float(self) / (newUnit / scale)
 		else:
 			return float(self) * (scale / newUnit)
+
+	@staticmethod
+	def getConversionFactor(
+		fromUnit: Union[Type['ScalingMeasurement'], 'ScalingMeasurement'],
+		toUnit: Union[Type['ScalingMeasurement'], 'ScalingMeasurement'],
+	) -> float:
+		fromScale = fromUnit.scale
+		toScale = toUnit.scale
+		if fromScale > toScale:
+			return 1 / (toScale / fromScale)
+		elif fromScale == toScale:
+			return 1.0
+		else:
+			return fromScale / toScale
 
 	def toBaseUnit(self) -> Measurement:
 		return self._baseUnit(self.changeScale(self._Scale.Base))
