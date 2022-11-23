@@ -183,7 +183,7 @@ class Cardinal:
 
 	@property
 	def __shortIndex(self):
-		return int(round(self.direction/45)%16)
+		return int(round(self.direction/45)%8)*2
 
 	@property
 	def __longIndex(self):
