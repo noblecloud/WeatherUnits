@@ -687,7 +687,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	def __str__(self):
 		return f'{self}'
 
-	def __format__(self, formatSpec):
+	def __format__(self, formatSpec, **extras):
 		convertTo = None
 		compatible_units = type(self).compatibleUnits
 
@@ -708,7 +708,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				formatSpec = re.sub(fr'{conversionSpecMatch["fullmatch"]}', '', formatSpec)
 				convertTo = tuple(i.lower() for i in parsedUnit if i in unitSet)
 
-		if precisionSpec := FormatSpec.precision.search(formatSpec):
+		if (precisionSpec := FormatSpec.precision.search(formatSpec)) and precisionSpec.group():
 			formatSpec = formatSpec[:precisionSpec.start()-1] if formatSpec.endswith(precisionSpec.group()) else formatSpec[precisionSpec.end()+1:]
 			precisionSpec = precisionSpec.groupdict()
 		else:
@@ -721,6 +721,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			elif (boolValue := FormatSpec.getBool(value, strict=None)) is not None:
 				specParams[key] = boolValue if boolValue is not None else empty
 
+		# Conversion
 		paramsSpecConversionMatch = type(self).__parse_unit__(specParams.get('convert', None))
 		paramsSpecConversion = next(iter({paramsSpecConversionMatch} & unitSet), None)
 		if convertTo := (convertTo or paramsSpecConversion):
@@ -744,10 +745,11 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 		floatValue = fm if (fm := getattr(value, 'formatValue', None)) is not None else float(value)
 
-		params = ChainMap(specParams, params)
+		params = ChainMap(extras, specParams, params)
+		params.extras = extras
 		params.specParams = specParams
 		params.default = value.defaultFormatParams
-		params.maps.insert(1, params.default)
+		params.maps.insert(2, params.default)
 
 		intLength, valuePrecision = value.intFloatLength(floatValue)
 		max_len = params.get('max', value._max)
@@ -836,11 +838,16 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				params['precision'] = p
 
 		# determine if a plural unit should be used
-		unit = params.get('unit', value.unit)
+		if params.get('unit_type', 'unit') == 'name':
+			unit = params.get('name', value.name)
+		else:
+			unit = params.get('unit', value.unit)
 
-		if (params.get('plural', False) or unit == 'plural') and round(floatValue, params['precision']) != 1:
-			unit = value.pluralUnit
-			precisionSpec['unit'] = unit
+		is_plural = round(floatValue, int(params['precision'])) != 1
+		if is_plural:
+			if params.get('plural', False) or unit == 'plural':
+				unit = value.pluralUnit if params.get('unit_type', 'unit') != 'name' else type(value).pluralName
+				precisionSpec['unit'] = unit
 
 		for key, opts in formatVarsSpecs.items():
 			spec = opts['spec']
