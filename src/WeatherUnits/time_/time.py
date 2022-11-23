@@ -44,6 +44,9 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 		Week = 7.0*float(Day*Hour*Minute*Second)
 		Month = 30.436875*float(Day*Hour*Minute*Second)
 
+
+	common = {'Decade', 'Year', 'Day', 'Hour', 'Minute', 'Second', 'Millisecond'}
+
 	def __new__(cls, value: float | datetime | timedelta, scale: Scale = None):
 		match value:
 			case float(value) | int(value):
@@ -60,7 +63,7 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 					return value
 		return super().__new__(cls, value, scale)
 
-	def __format__(self, format_spec: str) -> str:
+	def __format__(self, format_spec: str, **extras) -> str:
 
 		original_spec = format_spec
 
@@ -82,18 +85,20 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 				format_spec = f'{{day}} {format_spec}'
 			if self.day > 100:
 				format_spec = f'{{year}} {format_spec}'
-		elif format_spec == 'simple':
-			if (auto_value := self.auto).unit != self.unit:
-				return auto_value.__format__(original_spec)
-			if float(self) != 1:
-				format_spec = f"{precisionSpec['format_spec']}:plural=True"
-			else:
-				format_spec = precisionSpec['format_spec']
-			return super().__format__(format_spec)
-		elif format_spec == 'ago':
+		elif format_spec.startswith('simple'):
+			extras['unitSpacer'] = ' '
+			if format_spec[-1] == '+':
+				extras['unit_type'] = 'name'
+			if format_spec := precisionSpec['format_spec']:
+				format_spec += ':'
+			format_spec = "shorten=True, plural=True"
+			return super().__format__(format_spec, **extras)
+		elif format_spec.startswith('ago'):
+			if format_spec[-1] == '+':
+				extras['unit_type'] = 'name'
 			if self < 0:
-				return f'in {abs(self).__format__("simple")}'
-			return f'{self.__format__("simple")} ago'
+				return f'in {abs(self).__format__("simple", **extras)}'
+			return f'{self.__format__("simple", **extras)} ago'
 
 
 		units = 'ymwdHMS'
@@ -256,8 +261,9 @@ class Hour(Time):
 	_unit = 'hr'
 
 
-class Day(Time):
+class Day(Time, plural_name='days'):
 	_unit = 'd'
+	_max = 2
 
 
 class Week(Time):
@@ -307,5 +313,3 @@ Time.aYear = Time.oneYear = Year.one = Year(1)
 Time.aDecade = Time.oneDecade = Decade.one = Decade(1)
 Time.aCentury = Time.oneCentury = Century.one = Century(1)
 Time.aMillennia = Time.oneMillennia = Millennia.one = Millennia(1)
-
-Time.common = Time.Decade, Time.Year, Time.Day, Time.Hour, Time.Minute, Time.Second, Time.Millisecond
