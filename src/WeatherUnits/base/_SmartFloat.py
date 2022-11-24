@@ -761,7 +761,10 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				floatValue = float(value)
 				intLength = value.intLength
 				precision_offset = starting_len - intLength
-				params['precision'] += precision_offset
+				try:
+					params['precision'] += precision_offset
+				except TypeError:
+					params['precision'] = int(params['precision']) + precision_offset
 				valuePrecision += precision_offset
 			elif (auto := getattr(self, 'auto', None)) is not None:
 				value = auto
