@@ -6,7 +6,7 @@ from difflib import get_close_matches
 from functools import lru_cache, cached_property
 from locale import delocalize
 from typing import ClassVar, Optional, Set, Type, Union, Tuple, ForwardRef, TypeVar, Literal, Final, Mapping, Iterable
-from math import nan, isnan, inf
+from math import nan, isnan, inf, isinf
 from decimal import Decimal
 
 from ..errors import FormattingError
@@ -39,10 +39,13 @@ scale_factors = (
 class TypedLimits(Limits):
 	min: _T
 	max: _T
+	_type: Type[_T] = float
 
 	@classmethod
 	def fromLimits(cls, limit: tuple, type: _T = float) -> 'TypedLimits':
-		return cls(type(limit[0]), type(limit[1]))
+		lim = cls(*(type(x) if not isinf(x) else x for x in limit))
+		lim._type = type
+		return lim
 
 	def cast(self, type: _T) -> 'TypedLimits':
 		return self.fromLimits(self, type)
