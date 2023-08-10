@@ -281,7 +281,7 @@ class Measurement(SmartFloat):
 		return v
 
 	def __hash__(self):
-		return hash(round(float(self), max(self._precision, 1)))
+		return hash(round(float(self), max(self.valuePrecision, 1)))
 
 
 class DimensionlessMeta(MetaUnitClass):

@@ -609,6 +609,8 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		value = float(value)
 		if value.is_integer():
 			return len(str(int(value))), 0
+		elif isinf(value):
+			return 0, 0
 		f = f'{abs(value):g}'.split('.')
 		f = len(f[1]) if len(f) == 2 else 0
 		d = len(str(round(value)))
@@ -647,7 +649,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		if spacer is None:
 			spacer = getattr(self, '_unitSpacer', '')
 		elif spacer is True:
-			spacer = getattr(self, '_spacer', ' ') or ' '
+			spacer = getattr(self, '_spacer', ' ')
 		else:
 			spacer = ''
 		if unit is None:
@@ -831,7 +833,8 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				params['value'] = floatValue = round(floatValue, min(p, valuePrecision))
 				if p:
 					totalLength = intLength + min(p, valuePrecision)
-					params['precision'] = min(totalLength, max_) or 1
+					params['precision'] = min(totalLength - intLength, max_) or 1
+					params['type'] = 'f'
 				else:
 					if shortened:
 						totalLength = min(intLength + valuePrecision, max_) - intLength
