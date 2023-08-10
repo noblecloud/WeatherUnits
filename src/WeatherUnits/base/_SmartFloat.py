@@ -10,7 +10,7 @@ from math import nan, isnan, inf, isinf
 from decimal import Decimal
 
 from ..errors import FormattingError
-from ..utils import modifyCase, pluralize, empty, getFrom, Unset, UnsetKwarg, loadUnitLocalization, CaseInsensitiveKey
+from ..utils import modifyCase, pluralize, empty, getFrom, loadUnitLocalization, CaseInsensitiveKey, DEBUG
 from ..config import config, GROUPING_CHAR, RADIX_CHAR
 
 __all__ = ('SmartFloat', 'Limits', 'TypedLimits', 'FormatSpec', 'FiniteField', 'UnitDict', 'MetaUnitClass')
@@ -992,26 +992,32 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			attrs['limits'] = limits
 		return attrs
 
-	def __repr__(self):
-		properties = self.properties
-		properties['shorten'] = False
-		attrsString = ', '.join(f'{k}={str(v)}' for k, v in properties.items())
-
-		if (auto_value := getattr(self, 'auto', None)) is not None:
-			if (auto_type := type(auto_value)) is not type(self):
-				attrsString = f'auto={auto_value}, ' + attrsString
-		else:
-			auto_type = type(self)
-
-		if (best_fit := getattr(self, 'bestFit', None)) is not None:
-			best_fit = best_fit()
-			if type(best_fit) is not auto_type:
-				attrsString = f'bestFit={best_fit}, ' + attrsString
-
-		return f'{type(self).__name__}(value={self.__repr_value__()}, {attrsString})'
-
 	def __repr_value__(self) -> str:
 		return f'{self: format={"{value}{decorator}"}, type=g, shorten=False}'
+
+	if DEBUG:
+
+		def __repr__(self):
+			properties = self.properties
+			properties['shorten'] = False
+			attrsString = ', '.join(f'{k}={str(v)}' for k, v in properties.items())
+
+			if (auto_value := getattr(self, 'auto', None)) is not None:
+				if (auto_type := type(auto_value)) is not type(self):
+					attrsString = f'auto={auto_value}, ' + attrsString
+			else:
+				auto_type = type(self)
+
+			if (best_fit := getattr(self, 'bestFit', None)) is not None:
+				best_fit = best_fit()
+				if type(best_fit) is not auto_type:
+					attrsString = f'bestFit={best_fit}, ' + attrsString
+
+			return f'{type(self).__name__}(value={self.__repr_value__()}, {attrsString})'
+
+	else:
+		def __repr__(self):
+			return f'{type(self).__name__}({self.__repr_value__()})'
 
 	def __bool__(self):
 		return super().__bool__() or bool(self.unit)

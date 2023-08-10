@@ -4,10 +4,13 @@ from difflib import get_close_matches, SequenceMatcher
 from functools import lru_cache
 from heapq import nlargest
 from itertools import product
+from os import environ
 from typing import (
 	Hashable, Type, TYPE_CHECKING, TypeAlias, TypeVar, Union, Final, Any, Mapping, Callable, Set, Tuple, Optional,
 	NamedTuple
 )
+
+DEBUG = environ.get('WU_DEBUG', False)
 
 if TYPE_CHECKING:
 	from .base import Measurement

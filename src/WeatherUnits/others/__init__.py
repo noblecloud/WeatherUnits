@@ -26,11 +26,16 @@ class Percentage(Dimensionless, NonPlural):
 
 		return super(Percentage, cls).__new__(cls, value, *args, **kwargs)
 
-	def __format__(self, format_spec: str) -> str:
-		return super().__format__(format_spec)
+	def __format__(self, format_spec: str, **extras) -> str:
+		return super().__format__(format_spec, **extras)
 
 	def __int__(self) -> int:
 		return int(float(self)*100)
+
+	@cached_property
+	def valuePrecision(self) -> int:
+		value = super().valuePrecision
+		return value + 2
 
 	# @property
 	# def defaultFormatParams(self):
