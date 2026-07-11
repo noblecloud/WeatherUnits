@@ -532,6 +532,9 @@ class MetaUnitClass(type):
 
 	# @lru_cache(maxsize=512)
 	def __findUnitClass__(cls, unit: str) -> Type['Measurement'] | None:
+		if unit is None:
+			return None
+
 		if matched := UnitRegistry.get(unit):
 			return matched
 
