@@ -144,8 +144,16 @@ class Measurement(SmartFloat):
 				if (newUnit := type(self).localizedUnit) is not None:
 					return newUnit(self)
 				return self
-			except AttributeError or KeyError as e:
-				errors.Conversion.BadConversion("Unable to get localized type for {}".format(self.name), e)
+			except (AttributeError, KeyError) as e:
+				# `except AttributeError or KeyError` only ever caught
+				# AttributeError (the `or` short-circuits to its first,
+				# always-truthy operand at class-definition time) and never
+				# returned/raised on catch, so failed localization (e.g. no
+				# config loaded) silently produced None instead of falling
+				# back to self - matching DerivedMeasurement.localize's
+				# existing, correct fallback below.
+				log.error("Unable to get localized type for {}: {}".format(self.name, e))
+				return self
 		else:
 			return self
 

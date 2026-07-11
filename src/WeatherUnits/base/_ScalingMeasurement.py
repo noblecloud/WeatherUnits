@@ -366,15 +366,15 @@ class ScalingMeasurement(Measurement):
 
 	@property
 	def auto(self: Self) -> Self:
-		auto = self
-		if abs(auto.up) > abs((up := auto.up).one):
-			while abs(up.one) < abs(up) != abs(auto):
-				auto, up = up, up.up
-		else:
-			while not auto.int and auto.down != auto:
-				auto = auto.down
-
-		return auto
+		# "Automagic" display: localize to the user's preferred unit for this
+		# dimension, then fit within that system's scale for the digit
+		# budget. The original implementation (pre-2026) referenced a `.one`
+		# property that was never defined anywhere in the library's history -
+		# broken since the commit that introduced it, masked because every
+		# call site wraps `.auto` in getattr(..., None)/hasattr, which
+		# swallows an AttributeError raised from inside a property getter
+		# indistinguishably from the attribute not existing at all.
+		return self.localize.bestFit()
 
 	def bestFit(self, max_digits: int = None) -> Self:
 		"""Returns the best fit unit for the value"""
