@@ -7,8 +7,6 @@ __all__ = ['Fahrenheit']
 
 
 class Fahrenheit(Temperature, system=imperial):
-	_showUnit = True
-	_decorator = 'º'
 	_limits = (-459.6699, inf)
 	_unit = 'f'
 
