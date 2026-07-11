@@ -12,6 +12,7 @@ class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 	Fahrenheit: type
 	Kelvin: type
 
+	_showUnit = False
 	_decorator = 'º'
 	_id = 'ºt'
 

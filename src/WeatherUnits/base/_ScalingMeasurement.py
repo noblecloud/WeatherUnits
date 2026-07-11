@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from enum import Enum, EnumMeta
+from functools import lru_cache, cached_property
 from itertools import groupby
 from math import prod
 from typing import Optional, Type, Tuple, Set, Dict, Union
@@ -7,9 +8,20 @@ from typing import Optional, Type, Tuple, Set, Dict, Union
 from ._Measurement import systemName
 from .. import errors
 from . import Measurement, DerivedMeasurement, MetaUnitClass
-from ..utils import Self
+from ..utils import Self, classproperty
 
 __all__ = ['ScalingMeasurement', 'SystemVariant', 'Scale']
+
+
+@lru_cache(maxsize=None)
+def _scaleFactor(fromScale: 'Scale', toScale: 'Scale') -> float:
+	"""Cached multiplicative factor to convert a value from ``fromScale`` to ``toScale``.
+
+	Scale relationships are fixed at class-registration time, so the factor is stable and
+	safe to cache. This replaces the per-call ``Scale`` enum arithmetic that previously ran
+	on every element of the conversion hot path.
+	"""
+	return fromScale / toScale
 
 
 class AddressableEnum(EnumMeta):
@@ -223,12 +235,12 @@ class ScalingMeasurement(Measurement):
 
 		if sameSystem and sameDimension:
 			if isinstance(value, ScalingMeasurement) and not isinstance(value, value._baseUnit):
-				value = cls.changeScale(value, cls._Scale.Base)
+				value = value.changeScale(value._Scale.Base)
 			if cls is cls._baseUnit:
-				return cls.__new__(cls, value)
+				return Measurement.__new__(cls, float(value), *args, **kwargs)
 			else:
 				value = cls._baseUnit.changeScale(value, cls._Scale[cls.__name__], cls._Scale.Base)
-			return cls.__new__(cls, value)
+			return cls(value)
 
 		# If values are cousins initiate with values base sibling causing a recursive call to __new__
 		elif sameDimension:
@@ -236,7 +248,7 @@ class ScalingMeasurement(Measurement):
 				value = value.toBaseUnit()
 			if (converter := getattr(value, f'_{cls._baseUnitRef.lower()}', None)) is not None:
 				value = cls._baseUnit(converter())
-			return cls.__new__(cls, value)
+			return cls(value)
 
 		raise errors.Conversion.BadConversion(cls.__name__, value.__class__.__name__)
 
@@ -322,36 +334,30 @@ class ScalingMeasurement(Measurement):
 
 	def changeScale(self, newUnit: Scale, scale: Scale = None) -> Optional[float]:
 		scale = getattr(self, 'scale', scale)
-		if scale > newUnit:
-			return float(self) / (newUnit / scale)
-		else:
-			return float(self) * (scale / newUnit)
+		return float(self) * _scaleFactor(scale, newUnit)
 
 	@staticmethod
 	def getConversionFactor(
 		fromUnit: Union[Type['ScalingMeasurement'], 'ScalingMeasurement'],
 		toUnit: Union[Type['ScalingMeasurement'], 'ScalingMeasurement'],
 	) -> float:
-		fromScale = fromUnit.scale
-		toScale = toUnit.scale
-		if fromScale > toScale:
-			return 1 / (toScale / fromScale)
-		elif fromScale == toScale:
-			return 1.0
-		else:
-			return fromScale / toScale
+		return _scaleFactor(fromUnit.scale, toUnit.scale)
 
 	def toBaseUnit(self) -> Measurement:
 		return self._baseUnit(self.changeScale(self._Scale.Base))
 
-	@classmethod
-	@property
-	def scale(cls) -> Type[Scale]:
+	@cached_property
+	def _comparableValue(self) -> float:
+		# Cached since ScalingMeasurement instances are immutable (float
+		# subclass) - the conversion result never changes after construction.
+		return float(self.changeScale(self._Scale.Base))
+
+	@classproperty
+	def scale(cls) -> Scale:
 		return cls._Scale[cls.__name__]
 
-	@classmethod
-	@property
-	def Scale(cls) -> Scale:
+	@classproperty
+	def Scale(cls) -> Type[Scale]:
 		return cls._Scale
 
 	@property

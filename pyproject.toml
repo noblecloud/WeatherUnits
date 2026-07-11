@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/noblecloud/WeatherUnits"
 keywords = ["weather", "units", "temperature", "conversion", "converter"]
 classifiers = [
-	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
 	"License :: OSI Approved :: MIT License",
 	"Operating System :: OS Independent",
 	"Natural Language :: English",
@@ -31,7 +31,14 @@ packages = [
 "Bug Tracker" = "https://github.com/noblecloud/WeatherUnits/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.10,<3.14"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

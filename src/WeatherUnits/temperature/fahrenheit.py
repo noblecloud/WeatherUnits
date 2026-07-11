@@ -7,12 +7,14 @@ __all__ = ['Fahrenheit']
 
 
 class Fahrenheit(Temperature, system=imperial):
+	_showUnit = True
+	_decorator = 'º'
 	_limits = (-459.6699, inf)
 	_unit = 'f'
 
 	def _celsius(self, delta: bool = False):
 		if delta:
-			return self/1.8
+			return float(self)/1.8
 		else:
 			return (float(self) - 32)/1.8
 

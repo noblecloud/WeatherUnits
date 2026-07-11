@@ -84,6 +84,24 @@ def best_match(word, possibilities, cutoff=0) -> Optional[str]:
 	return guesses[0] if guesses else None
 
 
+class classproperty:
+	"""A read-only descriptor that behaves like a ``property`` but is accessible on
+	both the owning class and its instances, always receiving the class as its argument.
+
+	This replaces the ``@classmethod`` + ``@property`` chaining that was removed in
+	Python 3.13.
+	"""
+	__slots__ = ('fget',)
+
+	def __init__(self, fget: Callable[[type], Any]):
+		self.fget = fget
+
+	def __get__(self, obj: Any, owner: type = None) -> Any:
+		if owner is None:
+			owner = type(obj)
+		return self.fget(owner)
+
+
 class CaseInsensitiveKey(str):
 
 	def __hash__(self):

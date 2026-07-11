@@ -1,0 +1,14 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 2
+indent_style = tab
+insert_final_newline = false
+max_line_length = 240
+
+[{*.py,*.pyw}]
+indent_style = tab
+indent_size = 2
+insert_final_newline = true

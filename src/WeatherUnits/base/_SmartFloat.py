@@ -5,13 +5,14 @@ from collections import ChainMap, namedtuple
 from difflib import get_close_matches
 from functools import lru_cache, cached_property
 from locale import delocalize
-from typing import ClassVar, Optional, Set, Type, Union, Tuple, ForwardRef, TypeVar, Literal, Final, Mapping, Iterable
+from typing import ClassVar, Optional, Set, Type, Union, Tuple, ForwardRef, TypeVar, Literal, Final, Mapping, Iterable, Self
 from math import nan, isnan, inf, isinf
 from decimal import Decimal
 
 from ..errors import FormattingError
 from ..utils import modifyCase, pluralize, empty, getFrom, loadUnitLocalization, CaseInsensitiveKey, DEBUG
 from ..config import config, GROUPING_CHAR, RADIX_CHAR
+from .Registry import UnitRegistry
 
 __all__ = ('SmartFloat', 'Limits', 'TypedLimits', 'FormatSpec', 'FiniteField', 'UnitDict', 'MetaUnitClass')
 
@@ -22,7 +23,7 @@ log = logging.getLogger('WeatherUnits').getChild('SmartFloat')
 __all__ = ['SmartFloat', 'FiniteField', 'MetaUnitClass', 'FormatSpec']
 
 Measurement = ForwardRef('Measurement', is_class=True, module='Measurement')
-_T = TypeVar('_T', Measurement, float)
+_T = TypeVar('_T', bound='SmartFloat')
 
 Limits = namedtuple('Limits', 'min max')
 
@@ -335,6 +336,7 @@ class MetaUnitClass(type):
 		attrs['__annotations__'] = ChainMap(attrs.get('__annotations__', {}), *(b.__dict__.get('__annotations__', {}) for b in bases))
 
 		mcs = super().__new__(mcs, name, bases, attrs, **kwargs)
+		UnitRegistry.register(mcs)
 		# mcs._addSpecials()
 		return mcs
 
@@ -390,7 +392,7 @@ class MetaUnitClass(type):
 
 	@property
 	@lru_cache(maxsize=128)
-	def localizedUnit(self) -> Type[Measurement] | Tuple[Type[Measurement] | None, ...] | None:
+	def localizedUnit(self) -> Type['Measurement'] | Tuple[Type['Measurement'] | None, ...] | None:
 		unit = self.__parse_unit__(loadUnitLocalization(self, config))
 		if isinstance(unit, (tuple, list)):
 			if '*' in unit:
@@ -478,11 +480,11 @@ class MetaUnitClass(type):
 		return units
 
 	@property
-	def compatibleTypes(cls) -> Set[Measurement]:
+	def compatibleTypes(cls) -> Set[Type['Measurement']]:
 		return cls._acceptedTypes
 
 	@property
-	def fixedUnits(cls) -> tuple[Optional[Type[Measurement]], Optional[Type[Measurement]]]:
+	def fixedUnits(cls) -> tuple[Optional[Type['Measurement']], Optional[Type['Measurement']]]:
 		n: Type['Measurement'] = getattr(cls, '_numerator', None)
 		d: Type['Measurement'] = getattr(cls, '_denominator', None)
 		if n is not None:
@@ -529,7 +531,10 @@ class MetaUnitClass(type):
 		return cls.__name__
 
 	# @lru_cache(maxsize=512)
-	def __findUnitClass__(cls, unit: str) -> Type[Measurement] | None:
+	def __findUnitClass__(cls, unit: str) -> Type['Measurement'] | None:
+		if matched := UnitRegistry.get(unit):
+			return matched
+
 		unitDict = cls.compatibleUnits
 		# unitDict.update({v.__name__.lower(): v for v in unitDict.values() if v.__name__.lower() not in unitDict})
 		closestMatch = get_close_matches(unit.lower(), (i.lower() for i in unitDict.keys()), 1, cutoff=0.7)
@@ -551,8 +556,8 @@ class MetaUnitClass(type):
 
 	def _limitFunc(cls, value: _T) -> float:
 		if cls.isDerived:
-			return cls.numeratorClass._limitFunc(value)
-		return cls._limitFunc(value)
+			return cls.numerator._limitFunc(value)
+		return value
 
 
 class SmartFloat(float, metaclass=MetaUnitClass):
@@ -645,24 +650,28 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		if suffix is None:
 			suffix = getattr(self, '_suffix', '')
 		if decorator is None:
-			decorator = getattr(self, '_decorator', '')
+			decorator = self.decorator
 		if spacer is None:
-			spacer = getattr(self, '_unitSpacer', '')
+			spacer = getattr(self, '_unitSpacer', None)
+		if spacer is None:
+			spacer = ' ' if self._unit and not self.decorator else ''
 		elif spacer is True:
 			spacer = getattr(self, '_spacer', ' ')
-		else:
+		elif spacer is False:
 			spacer = ''
 		if unit is None:
-			unit = getattr(self, 'unit', True)
+			unit = self.showUnit
 		if maxLength is None:
 			maxLength = getattr(self, '_max', 4)
 		if formatSpec is None:
 			formatSpec = getattr(self, '_format', 'g')
+		if shorten is None:
+			shorten = getattr(self, '_shorten', False)
 
 		if shorten:
 			c, valueFloat = 0, float(self)
 			numberLength = len(str(int(valueFloat)))
-			while numberLength > 3 and numberLength >= self._max:
+			while numberLength > 3 and numberLength >= maxLength:
 				c += 1
 				valueFloat /= 1000
 				numberLength = len(str(int(valueFloat)))
@@ -682,12 +691,17 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		stringType = 'f'
 
 		# Max amount of precision that can be displayed while keeping string under max length
-		intAllowedPrecision = max(0, self._max - integerLength)
-		precision = min(self._precision, integerLength)
-		# Allow at least on level of precision if
-		# Removed 1 if not decimal and c else decimal
+		intAllowedPrecision = max(0, maxLength - integerLength)
+		precision = min(self._precision, intAllowedPrecision)
+		if formatSpec == 'g':
+			formatSpec = f'.{max(1, precision + integerLength)}g'
 
-		f'{prefix}{self:{formatSpec}}{valueSuffix}{suffix}{decorator}{spacer}{unit}'
+		if unit:
+			unitString = self.unit
+		else:
+			unitString = ''
+		spacer = spacer if spacer else ''
+		return f'{prefix}{valueFloat:{formatSpec}}{valueSuffix}{suffix}{decorator}{spacer}{unitString}'
 
 	def __str__(self):
 		return f'{self}'
@@ -762,15 +776,16 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		if params.get('shorten', False):
 			starting_len = len(str(int(floatValue)))
 			if (best_fit := getattr(value, 'bestFit', None)) is not None:
-				value = best_fit(max_len)
-				floatValue = float(value)
-				intLength = value.intLength
-				precision_offset = starting_len - intLength
-				try:
-					params['precision'] += precision_offset
-				except TypeError:
-					params['precision'] = int(params['precision']) + precision_offset
-				valuePrecision += precision_offset
+				if (fitted_value := best_fit(max_len)) is not value:
+					value = fitted_value
+					floatValue = float(value)
+					intLength = value.intLength
+					precision_offset = starting_len - intLength
+					try:
+						params['precision'] += precision_offset
+					except TypeError:
+						params['precision'] = int(params['precision']) + precision_offset
+					valuePrecision += precision_offset
 			elif (auto := getattr(self, 'auto', None)) is not None:
 				value = auto
 				floatValue = float(value)
@@ -834,6 +849,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				if p:
 					totalLength = intLength + min(p, valuePrecision)
 					params['precision'] = min(totalLength - intLength, max_) or 1
+					# params['precision'] = max(min(totalLength - intLength, max_), 0) or 1z
 					params['type'] = 'f'
 				else:
 					if shortened:

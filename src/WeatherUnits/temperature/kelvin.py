@@ -7,6 +7,8 @@ __all__ = ['Kelvin']
 
 
 class Kelvin(Temperature, system=metric):
+	_showUnit = True
+	_decorator = ''
 	_limits = (0, inf)
 	_unit = 'k'
 

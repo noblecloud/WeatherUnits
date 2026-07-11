@@ -16,6 +16,6 @@ class RSSI(Measurement):
 	def string(self):
 		v = int(self)
 		i = 0
-		while v < self._values[i] and i < 6:
+		while i < len(self._values) - 1 and v < self._values[i]:
 			i += 1
 		return self._strings[i]

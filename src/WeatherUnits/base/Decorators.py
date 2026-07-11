@@ -3,14 +3,18 @@
 __all__ = ['UnitType', 'Synonym', 'Tiny', 'Small', 'Medium', 'Large', 'Huge']
 
 
+from .Registry import UnitRegistry
+
 def UnitType(*args, **kwargs):
 	if args:
 		cls = args[0]
 		cls._type = cls
+		UnitRegistry.register_derived(cls)
 		return cls
 	else:
 		def wrapper(cls):
 			cls._type = cls
+			UnitRegistry.register_derived(cls)
 			return cls
 
 		return wrapper

@@ -247,6 +247,26 @@ class LightningStrike(Quantity, altName='Strike'):
 	...
 
 
+# class OzoneThickness(Millimeter, altName='Dobson'):
+# 	_unit = 'DU'
+# 	_precision = 0
+#
+# 	@property
+# 	def ppm(self) -> 'Ozone':
+# 		return Ozone(float(self) * 2.69e-5)
+#
+#
+# class Ozone(PartPerMillion, altName='O3'):
+# 	_unit = 'ppm'
+# 	_precision = 0
+#
+# 	@property
+# 	def du(self) -> 'OzoneThickness':
+# 		return OzoneThickness(float(self) / 2.69e-5)
+
+
+
+
 Percentage.Humidity = Humidity
 Percentage.Probability = Probability
 Percentage.Coverage = Coverage

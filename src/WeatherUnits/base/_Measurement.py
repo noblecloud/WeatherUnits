@@ -3,14 +3,15 @@ from collections import ChainMap
 
 from functools import lru_cache, cached_property
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from numbers import Number
-from typing import Callable, ClassVar, Dict, List, Optional, Type, Union, Final, Literal, Iterable, TypeVar, TypeAlias
+from typing import Callable, ClassVar, Dict, List, Optional, Type, Union, Final, Literal, Iterable, TypeVar, TypeAlias, Self
 
 __all__ = ['Measurement', 'DerivedMeasurement', 'Dimension', 'metric', 'imperial', 'both', 'Dimensionless', 'Quantity', 'Index', 'NonPlural']
 
 from .. import errors
 from . import SmartFloat, FormatSpec, MetaUnitClass
+from .Registry import UnitRegistry
 from ..utils import HashSlice, Other, Self
 from ..config import config
 
@@ -19,6 +20,21 @@ log = logging.getLogger('WeatherUnits').getChild('Measurement')
 
 
 from math import isinf
+
+
+@lru_cache(maxsize=None)
+def _conversionParams(toUnit: type, fromUnit: type) -> tuple:
+	"""Return the affine ``(factor, offset)`` pair for converting a raw value expressed
+	in ``fromUnit`` into ``toUnit`` via ``value * factor + offset``.
+
+	The pair is derived once from the existing (correct) conversion path by sampling the
+	conversion of ``0.0`` and ``1.0`` and is then cached for reuse. This works uniformly
+	for multiplicative units (``offset == 0``) and affine units such as temperature.
+	"""
+	offset = float(toUnit(fromUnit(0.0)))
+	factor = float(toUnit(fromUnit(1.0))) - offset
+	return factor, offset
+
 
 class Measurement(SmartFloat):
 	__unitDict__ = ChainMap()
@@ -61,6 +77,41 @@ class Measurement(SmartFloat):
 		if isinstance(unit, Iterable) and not isinstance(unit, str):
 			unit = ''.join(unit)
 		return cls.__findUnitClass__(unit)
+
+	@classmethod
+	def get_conversion(cls, from_unit: Union[Type['Measurement'], 'Measurement']) -> tuple:
+		"""Return the cached affine ``(factor, offset)`` used to convert a raw value
+		expressed in ``from_unit`` into ``cls`` via ``value * factor + offset``.
+
+		Supports both multiplicative units (``offset == 0``) and affine units such as
+		temperature. The result is cached, so repeated conversions between the same two
+		units avoid re-running the per-instance conversion machinery.
+		"""
+		if not isinstance(from_unit, type):
+			from_unit = type(from_unit)
+		return _conversionParams(cls, from_unit)
+
+	@classmethod
+	def convert_array(cls, values, from_unit: Union[Type['Measurement'], 'Measurement'] = None):
+		"""Vectorized conversion of an array of raw values from ``from_unit`` into ``cls``.
+
+		Converts an entire array in a single ``values * factor + offset`` operation using
+		the cached conversion parameters, returning a raw array without constructing a
+		``Measurement`` per element. Accepts any array-like; when :mod:`numpy` is available
+		the input is coerced to a ``float64`` ``ndarray``.
+
+		This is the array-first conversion path intended for bulk/plotting pipelines where
+		values are flattened into numeric arrays anyway.
+		"""
+		if from_unit is None:
+			from_unit = cls
+		factor, offset = cls.get_conversion(from_unit)
+		try:
+			import numpy as np
+			values = np.asarray(values, dtype='float64')
+		except ImportError:
+			pass
+		return values * factor + offset
 
 	def __init__(self, value, title: str = None, key: str = None, timestamp: datetime = None, category: str = None):
 		if isinstance(value, Measurement):
@@ -107,7 +158,7 @@ class Measurement(SmartFloat):
 		return str(self)
 
 	@property
-	def type(self: Self) -> Type[Self]:
+	def type(self) -> Type[Self]:
 		return type(self).type
 
 	@property
@@ -138,7 +189,7 @@ class Measurement(SmartFloat):
 	def calculated(self, value: bool):
 		self._calculated = value
 
-	def _convert(self: Self, other: Other) -> Self:
+	def _convert(self, other: 'Measurement') -> Self:
 		"""For comparisons, convert other to own type"""
 		if isinstance(other, self.type):
 			return self.__class__(other)
@@ -165,34 +216,58 @@ class Measurement(SmartFloat):
 			other._updateFunction(other)
 		return other
 
-	def __wrapOther(self: Self, other: Other) -> float:
+	def __wrapOther(self, other: Union['Measurement', float, int]) -> float:
 		if type(other) is type(self):
-			pass
-		elif isinstance(other, self.type):
-			if self.unit != other.unit:
-				other = self._convert(other)
-		elif isinstance(other, (float, int)):
-			return self.__class__(other)
-		elif isinstance(other, self._acceptedTypes):
-			other = self._convert(other)
-		elif isinstance(other, str):
-			if (other := FormatSpec.number.search(other)) is not None:
-				other = other.groupdict()['number']
+			return float(other)
+		if isinstance(other, self.type):
+			return float(other[self.unit])
+		# Dimensionality guard: two measurements of different, non-dimensionless
+		# dimensions can not be combined (e.g. Length + Temperature).
+		# Note: Measurement subclasses float, so this must precede the numeric check.
+		if isinstance(other, Measurement) and not isinstance(other, Dimensionless) and not isinstance(self, Dimensionless):
+			raise errors.BadConversion(self, other)
+		if isinstance(other, (float, int)):
+			return float(other)
+		if isinstance(other, timedelta):
+			return other.total_seconds()
+		if isinstance(other, str):
+			if (match := FormatSpec.number.search(other)) is not None:
+				return float(match.groupdict()['number'])
 		return float(other)
 
-	def __prepareValues(self: Self, other: int | float | Other) -> tuple[float | int, float | int]:
+	@property
+	def _comparableValue(self) -> float:
+		"""A canonical numeric value for hashing and ordering comparisons.
+
+		Defaults to the raw magnitude, which is unambiguous for measurements
+		without a scale family. ScalingMeasurement overrides this to compare
+		in a common base unit instead, since two different scales of the same
+		dimension can share a raw magnitude without being equal
+		(e.g. Week(1) and Month(1) are both "1").
+		"""
+		return float(self)
+
+	def __prepareValues(self, other: Union['Measurement', float, int]) -> tuple[float | int, float | int]:
 		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
-		other = self.__wrapOther(other)
 		precision = min(self.valuePrecision, otherPrecision)
-		selfVal = round(float(self), precision)
-		other = round(float(other), precision)
+		if isinstance(other, Measurement) and isinstance(other, self.type):
+			# Same dimension family: compare in a unit-independent frame
+			# instead of converting other into self's unit, so equal-looking
+			# raw magnitudes in different scales (Week(1) vs Month(1)) don't
+			# compare or hash as equal.
+			selfVal = round(self._comparableValue, precision)
+			other = round(other._comparableValue, precision)
+		else:
+			other = self.__wrapOther(other)
+			selfVal = round(float(self), precision)
+			other = round(float(other), precision)
 		return other, selfVal
 
-	def __eq__(self: Self, other: Other | Number) -> bool:
+	def __eq__(self, other: Union['Measurement', float, int]) -> bool:
 		try:
 			other, selfVal = self.__prepareValues(other)
-			return selfVal == other
-		except (ValueError, TypeError):
+			return abs(selfVal - other) < 1e-1
+		except (ValueError, TypeError, errors.BadConversion):
 			return False
 
 	def __getitem__(self: Self, item: Other | Number):
@@ -200,10 +275,30 @@ class Measurement(SmartFloat):
 			return self.__getattribute__(item)
 		except AttributeError:
 			if isinstance(item, str):
-				return type(self)[item](self)
+				# type(self)[item] goes through __class_getitem__, which is for
+				# building composite/generic types (e.g. DerivedMeasurement
+				# numerator/denominator pairing) - it resolves the unit class
+				# correctly via __findUnitClass__ internally, then discards
+				# that result and synthesizes a bogus multi-inheritance class
+				# when the unit isn't a literal subType of cls (true for any
+				# sibling unit in the same scale family, e.g. Week vs Month).
+				# Go straight to the unit lookup instead.
+				if (unitClass := type(self).__findUnitClass__(item)) is not None:
+					return unitClass(self)
+				raise errors.Conversion.UnknownUnit(self, str(item))
 			raise errors.Conversion.UnknownUnit(self, str(item))
 
 	def __mul__(self: Self, other: Other | Number) -> Self:
+		# Simplify a derived measurement multiplied by its denominator's dimension:
+		# e.g. (m/s) * s -> m
+		if isinstance(self, DerivedMeasurement) and isinstance(other, Measurement):
+			denominator = self.denominator
+			if isinstance(other, denominator.type):
+				otherValue = float(other[denominator.unit])
+				return type(self).numerator(float(self) * otherValue)
+		# Multiplication commutes: allow  <Measurement> * <derived>  to simplify too
+		if isinstance(other, DerivedMeasurement) and not isinstance(self, DerivedMeasurement):
+			return other.__mul__(self)
 		other = self.__wrapOther(other)
 		return type(self)(super().__mul__(other))
 
@@ -230,10 +325,21 @@ class Measurement(SmartFloat):
 		return type(self)(super().__pow__(other, modulo))
 
 	def __truediv__(self: Self, other: Other | Number) -> Self:
-		if isinstance(self, DerivedMeasurement) and not isinstance(other, DerivedMeasurement):
-			numerator = type(self.numerator)(other)
-			value = numerator/other
-			return type(self)(value, self.denominator.__class__(1))
+		if isinstance(self, DerivedMeasurement) and not isinstance(other, Measurement):
+			# Dividing a derived measurement by a scalar scales its numerator:
+			# e.g. (6m / 2s) / 2 -> (3m / 2s)
+			numerator = self.numerator / other
+			return type(self)(numerator, self.denominator)
+
+		if isinstance(other, Measurement) and not isinstance(self, DerivedMeasurement):
+			if matched := UnitRegistry.get_derived(type(self), type(other)):
+				return matched(self, other)
+			return DerivedMeasurement(self, other)
+
+		if isinstance(other, (float, int)):
+			v = type(self)(super().__truediv__(other))
+			v.__dict__.update({k: v for k, v in self.__dict__.items() if k != '_calculated'})
+			return v
 
 		other = self.__wrapOther(other)
 		return type(self)(super().__truediv__(other))
@@ -251,28 +357,28 @@ class Measurement(SmartFloat):
 		try:
 			other, selfVal = self.__prepareValues(other)
 			return selfVal < other
-		except (ValueError, TypeError):
+		except (ValueError, TypeError, errors.BadConversion):
 			return False
 
 	def __gt__(self: Self, other: Other | Number) -> bool:
 		try:
 			other, selfVal = self.__prepareValues(other)
 			return selfVal > other
-		except (ValueError, TypeError):
+		except (ValueError, TypeError, errors.BadConversion):
 			return False
 
 	def __ge__(self: Self, other: Other | Number) -> bool:
 		try:
 			other, selfVal = self.__prepareValues(other)
 			return selfVal >= other
-		except (ValueError, TypeError):
+		except (ValueError, TypeError, errors.BadConversion):
 			return False
 
 	def __le__(self: Self, other: Other | Number) -> bool:
 		try:
 			other, selfVal = self.__prepareValues(other)
 			return selfVal <= other
-		except (ValueError, TypeError):
+		except (ValueError, TypeError, errors.BadConversion):
 			return False
 
 	def __abs__(self: Self) -> Self:
@@ -281,7 +387,7 @@ class Measurement(SmartFloat):
 		return v
 
 	def __hash__(self):
-		return hash(round(float(self), max(self.valuePrecision, 1)))
+		return hash(round(self._comparableValue, max(self.valuePrecision, 1)))
 
 
 class DimensionlessMeta(MetaUnitClass):
@@ -327,25 +433,26 @@ class DerivedMeasurementMeta(MetaUnitClass):
 	denominator: Type[Measurement]
 	_denominator: Type[Measurement]
 
-	def __new__(mcs, *args, numerator: Type[Measurement] = None, denominator: Type[Measurement] = None, **kwargs):
-		name, bases, attrs, *args = args
+	def __new__(mcs, name, bases, attrs, numerator: Type[Measurement] = None, denominator: Type[Measurement] = None, **kwargs):
 		if numerator is None:
 			numerator = next((j for i in bases if (j := getattr(i, 'numerator', None)) is not None), None)
-		else:
+		if numerator:
 			attrs['_numerator'] = numerator
 			annotations = attrs.get('__annotations__', {})
 			annotations['numerator'] = Type[numerator]
 			attrs['__annotations__'] = annotations
 
 		if denominator is None:
-			denominator = next((base_d for base in bases if (base_d := getattr(base, 'denominator', None)) is not Measurement), None)
-		else:
+			denominator = next((base_d for base in bases if (base_d := getattr(base, 'denominator', None)) is not Measurement and base_d is not None), None)
+		if denominator:
 			attrs['_denominator'] = denominator
 			annotations = attrs.get('__annotations__', {})
 			annotations['denominator'] = Type[denominator]
 			attrs['__annotations__'] = annotations
 
-		return super().__new__(mcs, name, bases, attrs, **kwargs)
+		cls = super().__new__(mcs, name, bases, attrs, **kwargs)
+		UnitRegistry.register_derived(cls)
+		return cls
 
 	def _addSpecials(cls):
 		return

@@ -1,22 +1,22 @@
 from unittest import TestCase
-from src.WeatherUnits import *
+from WeatherUnits import Temperature
 
 
 class TestTemperature(TestCase):
-	cLow = temperature.Celsius(0)
-	fLow = temperature.Fahrenheit(32)
-	kLow = temperature.Kelvin(273.15)
-	cHigh = temperature.Celsius(100)
-	fHigh = temperature.Fahrenheit(212)
-	kHigh = temperature.Kelvin(373.15)
+	cLow = Temperature.Celsius(0)
+	fLow = Temperature.Fahrenheit(32)
+	kLow = Temperature.Kelvin(273.15)
+	cHigh = Temperature.Celsius(100)
+	fHigh = Temperature.Fahrenheit(212)
+	kHigh = Temperature.Kelvin(373.15)
 
-	cRoom: temperature.Celsius = temperature.Celsius(20.0)
-	fRoom = temperature.Fahrenheit(68.0)
-	cDewpoint = temperature.Celsius(13.2)
-	fDewpoint = temperature.Fahrenheit(55.76)
+	cRoom: Temperature.Celsius = Temperature.Celsius(20.0)
+	fRoom = Temperature.Fahrenheit(68.0)
+	cDewpoint = Temperature.Celsius(13.2)
+	fDewpoint = Temperature.Fahrenheit(55.76)
 
 	def test_celsius(self):
-		low: temperature.Celsius = self.cLow
+		low: Temperature.Celsius = self.cLow
 		self.assertEqual(self.fLow, low.f)
 		self.assertEqual(self.kLow, low.kel)
 		self.assertEqual(self.cLow, low.c)
@@ -26,34 +26,34 @@ class TestTemperature(TestCase):
 		self.assertEqual(self.kHigh, high.kel)
 		self.assertEqual(self.cHigh, high.c)
 
-		delta = temperature.Celsius(10)
-		self.assertEqual(temperature.Fahrenheit(18), delta.fDelta)
+		delta = Temperature.Celsius(10)
+		self.assertEqual(Temperature.Fahrenheit(18), delta.fDelta)
 
 		self.assertEqual('0º', str(low))
 
 	def test_fahrenheit(self):
-		low: temperature.Fahrenheit = self.fLow
+		low: Temperature.Fahrenheit = self.fLow
 		self.assertEqual(self.cLow, low.c)
 		self.assertEqual(self.kLow, low.kel)
 		self.assertEqual(self.fLow, low.f)
 
-		high: temperature.Fahrenheit = self.fHigh
+		high: Temperature.Fahrenheit = self.fHigh
 		self.assertEqual(self.cHigh, high.c)
 		self.assertEqual(self.kHigh, high.kel)
 		self.assertEqual(self.fHigh, high.f)
 
-		delta = temperature.Fahrenheit(18)
-		self.assertEqual(temperature.Celsius(10), delta.cDelta)
+		delta = Temperature.Fahrenheit(18)
+		self.assertEqual(Temperature.Celsius(10), delta.cDelta)
 
 		self.assertEqual('32ºf', str(low.withUnit))
 
 	def test_kelvin(self):
-		low: temperature.Kelvin = self.kLow
+		low: Temperature.Kelvin = self.kLow
 		self.assertEqual(self.fLow, low.f)
 		self.assertEqual(self.cLow, low.c)
 		self.assertEqual(self.kLow, low.kel)
 
-		high: temperature.Kelvin = self.kHigh
+		high: Temperature.Kelvin = self.kHigh
 		self.assertEqual(self.cHigh, high.c)
 		self.assertEqual(self.kHigh, high.kel)
 		self.assertEqual(self.fHigh, high.f)

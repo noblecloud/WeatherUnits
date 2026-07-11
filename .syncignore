@@ -1,0 +1,6 @@
+# CodeSync won't sync the files in the .syncignore. It follows same format as .gitignore.
+/.idea/
+/dist/
+/build/
+*.egg-info/
+.envrc
