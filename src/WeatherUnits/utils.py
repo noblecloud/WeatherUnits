@@ -27,7 +27,11 @@ def loadUnitLocalization(measurement: Type['Measurement'], config):
 	if not isinstance(measurement, type):
 		measurement = type(measurement)
 	unitName = measurement.type.name.lower()
-	unitType = measurement.Generic.name.lower()
+	# `Generic` is None for a class that has no other generic base than itself
+	# (e.g. the bare `Measurement` class used as a catch-all unit type), so fall
+	# back to `unitName` rather than crashing on `None.name`.
+	generic = measurement.Generic
+	unitType = generic.name.lower() if generic is not None else unitName
 	match = get_close_matches(unitName, config.localUnits.keys(), n=1, cutoff=0.85) or get_close_matches(unitType, config.localUnits.keys(), n=1, cutoff=0.8)
 	return config.localUnits[match[0]] if match else None
 
