@@ -902,6 +902,14 @@ class DerivedMeasurement(Measurement, metaclass=DerivedMeasurementMeta):
 	def localize(self):
 		try:
 			units = type(self).localizedUnit
+			if units is None:
+				# No localization config loaded for this composite type -
+				# same fallback as the non-derived Measurement.localize
+				# above; without this guard, `len(units)` below raises
+				# TypeError (uncaught - only KeyError is handled here),
+				# crashing any caller that reads `.value` on a derived
+				# measurement (e.g. Wind speed) with no localized unit set.
+				return self
 			if len(units) == 1:
 				unit = units[0]
 				if issubclass(unit, self.type):
