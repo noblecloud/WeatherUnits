@@ -76,7 +76,13 @@ class FormatSpec:
     (?P<key>\S+?)             # key
     (?P=keyquote)							# end quote
 	)
-	\s*=\s*
+	\s*[=:]\s*                # separator: '=' or ':' (both are written in
+	                          # the wild - `showUnit=False` vs the
+	                          # `showUnit: True` / `cardinal: False` style
+	                          # used by .withUnit and Direction.__str__.
+	                          # Only ':' was ever unsupported, so those
+	                          # specs silently parsed as nothing and the
+	                          # whole parameter was dropped.
 	(
     (?P<valquote>[\'\"`]?)     # optional start quote
     (?P<value>.*?)             # literal value

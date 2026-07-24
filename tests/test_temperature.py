@@ -32,19 +32,18 @@ class TestTemperature(TestCase):
 
 		self.assertEqual('0º', str(low))
 
-	@unittest.expectedFailure
 	def test_fahrenheit(self):
-		# The withUnit assertion below (`'32ºf'`) only ever "passed" because
-		# Fahrenheit._showUnit was incorrectly hardcoded to True (fixed in
-		# fahrenheit.py - it was overriding the correct Temperature._showUnit
-		# = False default that Celsius already inherits cleanly). That made
-		# `.withUnit`'s attempt to *force* showUnit=True indistinguishable
-		# from the class default, masking that the forcing mechanism itself
-		# (the `showUnit: True` format-spec parsed in __format__) doesn't
-		# actually override the instance default - see test_kelvin's
-		# withUnit assertion, which "passes" for the same reason (Kelvin's
-		# default is also True). Needs a real fix in __format__/_format's
-		# format-spec-to-parameter threading, not a test change.
+		# The withUnit assertion below (`'32ºf'`) was an expected failure
+		# until FormatSpec.params learned ':' as a key/value separator.
+		# `.withUnit` is `f'{self:showUnit: True}'`, but the params regex
+		# only ever matched `key=value`, so `showUnit: True` was silently
+		# dropped and the force-show did nothing at all.
+		#
+		# It looked like it worked wherever the class default for showUnit
+		# was already True (Kelvin, and Fahrenheit back when _showUnit was
+		# incorrectly hardcoded True in fahrenheit.py) - "forced" and
+		# "default" were indistinguishable there. Celsius, whose default is
+		# False, is the honest test: see test_celsius_force_show_unit.
 		low: Temperature.Fahrenheit = self.fLow
 		self.assertEqual(self.cLow, low.c)
 		self.assertEqual(self.kLow, low.kel)
@@ -73,6 +72,16 @@ class TestTemperature(TestCase):
 		low.precision = 1
 		low.max = 4
 		self.assertEqual('273.1k', low.withUnit)
+
+	def test_celsius_force_show_unit(self):
+		# Celsius defaults to showUnit=False (the º decorator already conveys
+		# it), so this is the one temperature where forcing the unit on is
+		# actually distinguishable from the class default - the regression
+		# guard for the ':' separator fix.
+		low = Temperature.Celsius(0)
+		self.assertFalse(low.showUnit)
+		self.assertEqual('0º', str(low))
+		self.assertEqual('0ºc', str(low.withUnit))
 
 	def test_dewpoint(self):
 		self.assertEqual(self.cDewpoint, self.cRoom.dewpoint(65))
