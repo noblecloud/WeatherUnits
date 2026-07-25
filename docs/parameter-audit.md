@@ -91,8 +91,6 @@ here so they survive the next person who reads "never consumed" as "unused".
 
 | param | intended behavior |
 |---|---|
-| `trailing_zero` | pad decimals to full precision, staying under `digit_budget`. The missing half of the `30.0 → '30'` width-drift problem |
-| `force_precision` | always show decimals out to `precision`. Overlaps `trailing_zero` — see the open decision below |
 | `size_hint` | override the generated size-hint string. The natural lever for reserving layout width |
 | `slide` | rescale the *unit* rather than the number — 1000 m → 1 km |
 | `k_separator` | the character separating powers of 10³ — the `,` in `1,000` |
@@ -148,11 +146,9 @@ throughout LevityDash, and the `docs/change-logs/` history.
 
 ## 5. What's left
 
-1. **Decide `trailing_zero` vs `force_precision`** — probably one option, not
-   two. Implementing it closes the width-drift gap where a live pressure
-   readout oscillates between `29.9`, `30` and `30.1`. A shape worth
-   considering: a single `trailing_zeros` taking `off | precision | fill | <int>`
-   rather than two booleans that interact.
+1. ~~Decide `trailing_zero` vs `force_precision`~~ — **done.** Both were
+   replaced by a single `trailing_zeros` taking
+   `off | precision | fill | <int>`, closing the width-drift gap.
 2. **Implement or drop the rest of §3** — now that intents are recorded, each
    is a small self-contained piece of work.
 3. **`grouping_character` straggler** (§1).

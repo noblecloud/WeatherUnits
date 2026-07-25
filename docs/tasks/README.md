@@ -15,11 +15,17 @@ These are blocked on a judgment call, not on effort.
 | | |
 |---|---|
 | **Library name** | `WeatherUnits` undersells it — `digital`, `mass`, `length`, `time_` and the whole `derived` machinery are general-purpose; the weather part lives in the config. `unitcorn` 🦄 is the standing candidate and is free on PyPI. The current name is already published at 0.7.1 and is the author's own, so a rename is a clean handoff: publish the new name, then ship the old one as a shim that depends on it and warns. See [parameter-audit.md](../parameter-audit.md) §4. |
-| **`trailing_zero` vs `force_precision`** | Both declared, neither consumed, and they overlap. Probably one option rather than two — a single `trailing_zeros` taking `off \| precision \| fill \| <int>` was floated. Implementing it closes the width-drift gap where a live pressure readout oscillates between `29.9`, `30` and `30.1`. |
+| ~~**`trailing_zero` vs `force_precision`**~~ | **Resolved 2026-07-25.** Both replaced by a single `trailing_zeros` taking `off \| precision \| fill \| <int>`, always capped by the budget. Default stays `off`, so no existing output changed. |
 | ~~**`shorten=False` on `Direction`**~~ | **Resolved 2026-07-25.** The budget counts compass *components*; the atom is a letter when abbreviated and a word when spelled out. Both forms now read one shared index ladder, so they always name the same heading. Word forms are derived from the abbreviations rather than kept in a parallel list — the old list had `NE` spelling as the single word `Northeast`, so word count never matched the budget. |
 
 ## Ready to pick up
 
+- **[unitproperties-binding.md](unitproperties-binding.md)** — per-unit
+  `[UnitProperties]` keys silently never bind: a key is matched against the
+  class name only, so unit-symbol keys like `inHg`/`mmHg` are ignored and
+  their `precision`/`digit_budget` never reach the class. ⚠️ Fixing it
+  activates config lines that have been inert since they were written, so it
+  changes rendered output in both repos.
 - **[format-playground.md](format-playground.md)** — interactive demo page
   with sliders for every formatting parameter. Runs the real library in the
   browser via Pyodide (the package has zero runtime dependencies), so it
@@ -52,4 +58,6 @@ Small, self-contained, no decisions needed.
   ⚠️; unclear whether that's the intent or a second gap.
 - **`[UnitProperties]` only half-binds to derived unit classes.**
   `precision` reaches `Hourly[in/hr]`, `digit_budget` does not. Found from
-  the LevityDash side; not yet diagnosed here.
+  the LevityDash side; likely the same root cause as
+  [unitproperties-binding.md](unitproperties-binding.md), which is now
+  diagnosed.

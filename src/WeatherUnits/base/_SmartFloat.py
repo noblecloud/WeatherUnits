@@ -596,7 +596,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	__unitDict__: ChainMap[str, Type]
 	__transferable__: set[str] = {
 		'leading_zero',
-		'trailing_zero',
+		'trailing_zeros',
 		'align',
 		'fill',
 		'sign',
@@ -900,6 +900,29 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				params['leadingZeroDropped'] = intDigits != intLength
 				params['precision'] = max(min(p, max_ - intDigits), 0)
 
+		# `precision` above is derived from the value's own decimal content,
+		# so a value that happens to land on a whole number renders without
+		# any decimals at all: a live pressure readout drifts 29.9 -> 30 ->
+		# 30.1 and the panel width jumps with it. `trailing_zeros` overrides
+		# that derivation with a stable width. See __resolveTrailingZeros.
+		trailing = params.get('trailing_zeros', 'off')
+		if trailing not in (False, None, 'off'):
+			intDigits = intLength - bool(params.get('leadingZeroDropped'))
+			# The configured precision, NOT params['precision'] - the latter
+			# has already been clamped down to the value's own decimal count,
+			# which is exactly the clamp this option exists to override. An
+			# explicit `precision=` in the spec outranks the class default.
+			configured = params.specParams.get('precision')
+			if configured is None:
+				configured = getattr(value, '_precision', None)
+			params['precision'] = self.__resolveTrailingZeros(
+				trailing,
+				configured=None if configured is None else int(configured),
+				fallback=int(params['precision']),
+				room=max(int(params['digit_budget']) - intDigits, 0),
+			)
+			params['type'] = 'f'
+
 		# determine if a plural unit should be used
 		if params.get('unit_type', 'unit') == 'name':
 			unit = params.get('name', value.name)
@@ -970,6 +993,40 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			value = getattr(obj, attr, obj)
 			formatString = formatString.replace(f'{{{obj}.{attr}}}', str(value))
 		return formatString
+
+	@staticmethod
+	def __resolveTrailingZeros(mode, configured: int | None, fallback: int, room: int) -> int:
+		"""How many decimal places to render, ignoring the value's own content.
+
+		`precision` is normally derived per value from how many decimals that
+		value actually has, which is why 30.0 renders '30' while 29.92 renders
+		'29.9'. For anything read at a glance - a dashboard panel, a column of
+		figures - that instability is the problem, not a feature: the width
+		changes as the value crosses a whole number.
+
+		  mode          | 30.0 at precision=2, budget=5
+		  --------------|------------------------------
+		  'off'         | 30      (default; today's behaviour)
+		  'precision'   | 30.00   (pad to the configured precision)
+		  'fill'        | 30.000  (pad to whatever the budget allows)
+		  <int>         | exactly that many places
+
+		`True` is accepted as an alias for 'precision', and 'off'/False/None
+		all mean off - the spec parser already folds 'off' to False.
+
+		Every mode is capped by `room` (the budget minus the integer digits),
+		so trailing zeros can never push a value over its digit budget.
+		"""
+		if mode is True or mode == 'precision':
+			target = configured if configured is not None else fallback
+		elif mode == 'fill':
+			target = room
+		else:
+			try:
+				target = int(mode)
+			except (TypeError, ValueError):
+				target = fallback
+		return max(0, min(int(target), room))
 
 	@staticmethod
 	def __intDigits(params: Mapping, floatValue: float, intLength: int, max_: int, precision: int) -> int:
@@ -1048,7 +1105,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	def defaultFormatParams(self):
 		return {
 			'leading_zero':  self.leading_zero,
-			'trailing_zero': True,
+			'trailing_zeros': self.trailing_zeros,
 			'align':        '',
 			'fill':         '',
 			'sign':         '',
@@ -1248,6 +1305,29 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	@leading_zero.setter
 	def leading_zero(self, value):
 		self._leading_zero = value
+
+	@property
+	def trailing_zeros(self):
+		"""Pad decimals to a stable width instead of the value's own content.
+
+		By default (``'off'``) `precision` is derived per value from how many
+		decimals that value actually has, so 29.92 renders '29.9' but 30.0
+		renders '30' - a live readout changes width as it crosses a whole
+		number. Set this where the value is read at a glance:
+
+		  ``'precision'``  pad to the configured precision  -> '30.00'
+		  ``'fill'``       pad to whatever the budget allows -> '30.000'
+		  ``<int>``        exactly that many decimal places
+		  ``'off'``        the derived, variable width (default)
+
+		Always capped by `digit_budget`, so padding can never push a value
+		over its budget. ``True`` is an alias for ``'precision'``.
+		"""
+		return getattr(self, '_trailing_zeros', 'off')
+
+	@trailing_zeros.setter
+	def trailing_zeros(self, value):
+		self._trailing_zeros = value
 
 	@property
 	def unit_symbol(self) -> str:

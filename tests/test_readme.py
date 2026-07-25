@@ -86,3 +86,14 @@ class TestReadmeTranscript(TestCase):
 		# cardinal table
 		self.assertEqual('S', format(Direction(180), 'cardinal=True'))
 		self.assertEqual('180°', format(Direction(180), 'cardinal=False'))
+
+		# trailing_zeros table
+		from WeatherUnits import Pressure
+		v = Pressure.InchOfMercury(30.0)
+		for mode, expected in (('off', '30.0'), ('precision', '30.00'), ('fill', '30.000'), ('3', '30.000')):
+			with self.subTest(trailing_zeros=mode):
+				self.assertEqual(
+					expected,
+					format(v, f'precision=2, digit_budget=5, trailing_zeros={mode}, show_unit=False'),
+				)
+		self.assertEqual('30 inHg', str(v))

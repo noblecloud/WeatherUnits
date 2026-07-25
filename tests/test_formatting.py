@@ -60,26 +60,26 @@ class TestPrecisionAndMax(TestCase):
 		self.assertEqual('100 g', str(Mass.Gram(100)))
 		self.assertEqual('100 lux', str(Light.Lux(100)))
 
-	def test_trailing_zero_gap_is_current_behaviour_not_intent(self):
-		"""KNOWN GAP, pinned deliberately - see docs/formatting.md.
+	def test_the_derived_width_is_still_the_default(self):
+		"""The gap this used to pin is now closed - see TestTrailingZeros.
 
-		A value of exactly 30.0 renders as '30', so a live pressure readout
-		drifts between '29.9', '30' and '30.1'. Raising precision/max does
-		not help, because precision is capped by the value's own decimals.
-		Two declared-but-unconsumed options in config/template.ini are the
-		intended mechanism: `trailing_zero` ("display zero after decimal
-		point to full precision staying under max") and `force_precision`
-		("decimals are always displayed within the precision amount").
+		This test previously documented a KNOWN GAP: 30.0 rendered '30', so a
+		live pressure readout drifted between '29.9', '30' and '30.1', and
+		the two declared-but-unconsumed options meant to fix it
+		(`trailing_zero`, `force_precision`) did nothing. Both have since
+		been replaced by a single `trailing_zeros` option.
 
-		When either is implemented, this test SHOULD fail - update it to the
-		intended '30.00 inHg' rather than working around it.
+		What remains true - and is what this test now guards - is that the
+		*default* is still the value-derived width. Opting into a stable
+		width is deliberate, so nobody's existing output changed underneath
+		them.
 		"""
 		self.assertEqual('30 inHg', str(Pressure.InchOfMercury(30.0)))
 		self.assertEqual('30.0 inHg', format(Pressure.InchOfMercury(30.0), 'precision=2, digit_budget=5'))
-		# trailing_zero currently has no effect either way
+		# ...and the fix is one parameter away.
 		self.assertEqual(
-			format(Pressure.InchOfMercury(30.0), 'trailing_zero=True'),
-			format(Pressure.InchOfMercury(30.0), 'trailing_zero=False'),
+			'30.00 inHg',
+			format(Pressure.InchOfMercury(30.0), 'precision=2, digit_budget=5, trailing_zeros=precision'),
 		)
 
 
@@ -452,3 +452,69 @@ class TestDirectionCardinal(TestCase):
 	def test_default_is_abbreviated_cardinal(self):
 		from WeatherUnits.others import Direction
 		self.assertEqual('S', str(Direction(180)))
+
+
+class TestTrailingZeros(TestCase):
+	"""`trailing_zeros` overrides the value-derived precision with a stable width.
+
+	`precision` is normally derived per value from that value's own decimal
+	content, so 29.92 renders '29.9' but 30.0 renders '30'. For a readout
+	glanced at rather than read, that instability is the defect: the panel
+	width jumps as the value crosses a whole number.
+
+	This replaces the two declared-but-never-consumed booleans that used to
+	sit here, `trailing_zero` and `force_precision`, which overlapped and
+	neither of which did anything.
+	"""
+
+	def test_off_is_the_default_and_changes_nothing(self):
+		self.assertEqual('30 inHg', str(Pressure.InchOfMercury(30.0)))
+		self.assertEqual('29.9 inHg', str(Pressure.InchOfMercury(29.92)))
+		self.assertEqual(
+			format(Pressure.InchOfMercury(30.0), 'precision=2, digit_budget=5'),
+			format(Pressure.InchOfMercury(30.0), 'precision=2, digit_budget=5, trailing_zeros=off'),
+		)
+
+	def test_precision_pads_to_the_configured_precision(self):
+		v = Pressure.InchOfMercury(30.0)
+		self.assertEqual('30.00 inHg', format(v, 'precision=2, digit_budget=5, trailing_zeros=precision'))
+		self.assertEqual('30.000 inHg', format(v, 'precision=3, digit_budget=6, trailing_zeros=precision'))
+
+	def test_fill_pads_to_whatever_the_budget_allows(self):
+		v = Pressure.InchOfMercury(30.0)
+		self.assertEqual('30.000 inHg', format(v, 'precision=2, digit_budget=5, trailing_zeros=fill'))
+		self.assertEqual('30.0 inHg', format(v, 'precision=2, digit_budget=3, trailing_zeros=fill'))
+
+	def test_an_integer_asks_for_exactly_that_many_places(self):
+		v = Pressure.InchOfMercury(30.0)
+		self.assertEqual('30.0 inHg', format(v, 'digit_budget=6, trailing_zeros=1'))
+		self.assertEqual('30.0000 inHg', format(v, 'digit_budget=6, trailing_zeros=4'))
+
+	def test_the_digit_budget_still_wins(self):
+		"""Padding must never push a value over its budget."""
+		v = Pressure.InchOfMercury(30.0)
+		for mode in ('precision', 'fill', '9'):
+			with self.subTest(trailing_zeros=mode):
+				# 2 integer digits against a 3-digit budget leaves room for 1.
+				self.assertEqual('30.0 inHg', format(v, f'precision=4, digit_budget=3, trailing_zeros={mode}'))
+
+	def test_width_is_stable_across_a_whole_number_crossing(self):
+		"""The actual complaint: a live readout must not change width."""
+		spec = 'precision=2, digit_budget=5, trailing_zeros=precision, show_unit=False'
+		widths = {len(format(Pressure.InchOfMercury(x), spec)) for x in (29.9, 29.95, 30.0, 30.05, 30.1)}
+		self.assertEqual(1, len(widths), f'widths varied: {widths}')
+
+	def test_it_composes_with_a_dropped_leading_zero(self):
+		# The zero is dropped for budget, which frees a digit - and `fill`
+		# must spend the freed digit rather than the one already spent.
+		self.assertEqual(
+			'.04',
+			format(Length.Inch(0.04), 'precision=2, digit_budget=2, trailing_zeros=fill, show_unit=False'),
+		)
+
+	def test_true_is_an_alias_for_precision(self):
+		v = Pressure.InchOfMercury(30.0)
+		self.assertEqual(
+			format(v, 'precision=2, digit_budget=5, trailing_zeros=precision'),
+			format(v, 'precision=2, digit_budget=5, trailing_zeros=True'),
+		)

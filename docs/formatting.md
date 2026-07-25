@@ -129,13 +129,12 @@ Defaults come from the class, which comes from the config file
 |---|---|---|---|
 | `precision` | per class | decimal places, **capped by `max`** | ✅ |
 | `max` | per class | **total displayed digits** — the width budget `shorten` rescales to fit | ✅ |
-| `force_precision` | `False` | *intended:* always show decimals out to `precision` | ⚠️ **NOT IMPLEMENTED** |
 | `size_hint` | per class | *intended:* override the generated size-hint string | ⚠️ **NOT IMPLEMENTED** |
 | `type` | `g` | float type; `g` is renormalized to `f` internally | ✅ |
 | `shorten` | per config | rescale/refit — may change the unit | ✅ |
 | `minwidth` / `fill` / `align` / `sign` | `''` | standard float-spec fields | ✅ |
 | `leading_zero` | `'auto'` | the `0` before the radix on values < 1 — `True`/`False`/`'auto'`, see [below](#leadingzero-and-the-borrowed-digit) | ✅ |
-| `trailing_zero` | `True` | *intended:* pad decimals to full precision, staying under `max` | ⚠️ **NOT IMPLEMENTED** |
+| `trailing_zeros` | `'off'` | pad decimals to a stable width — `off` / `precision` / `fill` / `<int>`, always capped by the budget | ✅ |
 
 ### Unit and decoration
 
@@ -320,16 +319,20 @@ it, because precision is capped by the value's own decimals:
 '30.0 inHg'
 ```
 
-**Two declared-but-unimplemented options are the intended mechanism**, both
-from `config/template.ini`:
+**`trailing_zeros` closes this gap.** It replaced two overlapping
+declared-but-never-consumed booleans (`trailing_zero` and `force_precision`)
+with one option that overrides the value-derived precision:
 
-| Option | Intent |
+| Value | `inHg(30.0)` at `precision=2, digit_budget=5` |
 |---|---|
-| `trailing_zero` | *"display zero after decimal point to full precision staying under max"* |
-| `force_precision` | *"decimals are always displayed within the precision amount"* |
+| `off` *(default)* | `30.0` — and a bare `30` at class defaults |
+| `precision` | `30.00` |
+| `fill` | `30.000` |
+| `<int>` | exactly that many places |
 
-Neither is consumed by any code. Until one lands there is no way to pin a
-fixed decimal width — which is why a pressure readout drifts in width.
+Always capped by `digit_budget`, so padding can never push a value over its
+budget. `True` is an alias for `precision`. The default stays `off`, so no
+existing output changed — opting into a stable width is deliberate.
 
 ---
 
@@ -381,11 +384,16 @@ Because class defaults sit *below* spec parameters in the precedence chain,
 any format spec overrides the config. Per-instance assignment
 (`m.precision = 2`) works through the same layer.
 
-Declared in the config templates but **never consumed**: `trailing_zero`,
-`force_precision`, `size_hint`, `exp`, `slide` (the ini says "not yet
-implemented"), `k_separator`, `grouping_char`, `combine_unit_and_suffix`, and
-`degrees`. The first two are the ones with real display consequences — see
-[the `30.00` gap](#-the-3000-gap).
+Declared in the config templates but **never consumed**: `size_hint`, `exp`,
+`slide` (the ini says "not yet implemented"), `k_separator`, `grouping_char`,
+`combine_unit_and_suffix`, and `degrees`. Intents for each are recorded in
+[`parameter-audit.md`](parameter-audit.md) §3 — they are unfinished features,
+not debris.
+
+⚠️ **Separately: per-unit `[UnitProperties]` keys do not bind at all.** A key
+is matched against the *class name* only, so unit-symbol keys like `inHg` and
+`mmHg` are silently ignored — their `precision` and `digit_budget` never
+reach the class. See `docs/tasks/unitproperties-binding.md`.
 
 ---
 

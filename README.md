@@ -90,7 +90,21 @@ The basic rules are:
 - **exp:** Override exponent.  I can't imagine why this would be used
 - **show_unit:** Show unit True: 5km False: 5
 - **leading_zero:** Display zero before values less than 1. `True`: 0.1in  `False`: .1in  `auto` (default): keeps the zero unless keeping it would cost the value its last meaningful digit — see [the formatting reference](docs/formatting.md) for the exact rule
-- **trailing_zero:** Display zero after decimal point to full precision staying under `digit_budget` True: 1.0in False: 1in True: 4.00cm  _Not yet implemented_
+- **trailing_zeros:** Pad decimals to a stable width instead of the value's own content. By default `precision` follows the value, so `29.92` shows `29.9` but `30.0` shows `30` — a live readout changes width as it crosses a whole number.
+
+    |value|`inHg(30.0)` at `precision=2, digit_budget=5`|
+    |----|------|
+    |`off` (default)|`30.0`|
+    |`precision`|`30.00`|
+    |`fill`|`30.000`|
+    |`3`|`30.000`|
+
+    (At class defaults, with no spec at all, `off` gives a bare `30` — the
+    derived precision is zero because the value has no decimals of its own.
+    That is the drift this option exists to remove.)
+
+    Always capped by `digit_budget`, so padding can never push a value over
+    budget. `True` is an alias for `precision`.
 - **unit_spacer:** The text placed between the value and its unit. ⚠️ **This is a string, not a flag** — `False` removes it (`90°f`), but `True` inserts the literal word (`90°Truef`). Leave it unset for the class default (a space), or give it the string you want.
 - **k_separator:** The character separating powers of 10³ — the `,` in `1,000`.  _Not yet implemented_
 
