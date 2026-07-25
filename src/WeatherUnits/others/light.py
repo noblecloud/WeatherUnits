@@ -17,7 +17,7 @@ class Light(Measurement):
 
 class UVI(Index, Light, alias='UVI Index'):
 	_id = 'uvi'
-	_max = 2
+	_digit_budget = 2
 
 
 class Irradiance(Light):

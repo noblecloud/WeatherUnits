@@ -13,8 +13,8 @@ __all__ = ['Light', 'Angle', 'Direction', 'Humidity', 'Voltage', 'LightningStrik
 
 @UnitType
 class Percentage(Dimensionless, NonPlural):
-	_decorator = '%'
-	_max = 3
+	_unit_symbol = '%'
+	_digit_budget = 3
 	_precision = 2
 
 	def __new__(cls, value, isPercentage: bool = None, *args, **kwargs):
@@ -53,12 +53,12 @@ class Percentage(Dimensionless, NonPlural):
 
 
 class Humidity(Percentage, limits=(0.0, 1.0)):
-	_decorator = '%'
+	_unit_symbol = '%'
 	_id = '%h'
 
 
 class Probability(Percentage, limits=(0.0, 1.0)):
-	_decorator = '%'
+	_unit_symbol = '%'
 	_id = '%p'
 	_fraction: Optional[Fraction]
 	_denominatorLimit: int = 10
@@ -71,13 +71,13 @@ class Probability(Percentage, limits=(0.0, 1.0)):
 
 
 class Coverage(Percentage, limits=(0.0, 1.0)):
-	_decorator = '%'
+	_unit_symbol = '%'
 	_id = '%c'
 
 
 class BatteryPercentage(Percentage, limits=(0.0, 1.0)):
 	_voltageLimits: Optional[Tuple[float, float]]
-	_decorator = '%'
+	_unit_symbol = '%'
 	_id = '%bat'
 
 	def __init__(self, value, voltageLimits: Optional[Tuple[float, float]] = None, *args, **kwargs):
@@ -88,16 +88,16 @@ class BatteryPercentage(Percentage, limits=(0.0, 1.0)):
 @UnitType
 class Angle(Dimensionless):
 	_precision = 0
-	_decorator = '°'
+	_unit_symbol = '°'
 	_shorten = True
 	_id = '°'
 
 
 class Direction(Angle, FiniteField, limits=(0, 360)):
 	_cardinal = True
-	_decorator = '°'
+	_unit_symbol = '°'
 	_id = '°d'
-	_max = 3
+	_digit_budget = 3
 
 	@cached_property
 	def cardinal(self) -> 'Cardinal':
@@ -117,7 +117,7 @@ class Direction(Angle, FiniteField, limits=(0, 360)):
 
 	@property
 	def __valueFormat(self):
-		return "{value}{decorator}"
+		return "{value}{unit_symbol}"
 
 	@property
 	def defaultFormat(self) -> str:
@@ -129,29 +129,29 @@ class Direction(Angle, FiniteField, limits=(0, 360)):
 	def defaultFormatParams(self):
 		return {
 			'cardinal':     self._cardinal if self._cardinal else False,
-			'showCardinal': self._cardinal,
+			'show_cardinal': self._cardinal,
 			**super().defaultFormatParams
 		}
 
 	@property
 	def properties(self):
 		measurement = super().properties
-		return {'cardinal': self.cardinal, 'showCardinal': self._cardinal, **measurement, }
+		return {'cardinal': self.cardinal, 'show_cardinal': self._cardinal, **measurement, }
 
 	def __repr_value__(self) -> str:
 		return f'{self: cardinal: False}'
 
 	def __format_value__(self, params: Mapping) -> str:
-		showCardinal = getFrom(('showCardinal', 'cardinal'), *params.maps, default=self._cardinal, expectedType=(bool, str))
-		if showCardinal:
+		show_cardinal = getFrom(('show_cardinal', 'cardinal'), *params.maps, default=self._cardinal, expectedType=(bool, str))
+		if show_cardinal:
 			return self.cardinal.__format_value__(params)
 		return super().__format_value__(params)
 
 	def __format_template__(self, params: Mapping) -> str:
 		template = super().__format_template__(params)
-		showCardinal = getFrom(('showCardinal', 'cardinal'), *params.maps, default=self._cardinal, expectedType=(bool, str))
-		if showCardinal and '{cardinal}' not in template:
-			template = template.replace('{decorator}', '')
+		show_cardinal = getFrom(('show_cardinal', 'cardinal'), *params.maps, default=self._cardinal, expectedType=(bool, str))
+		if show_cardinal and '{cardinal}' not in template:
+			template = template.replace('{unit_symbol}', '')
 		return template
 
 
@@ -196,13 +196,13 @@ class Cardinal:
 
 	@property
 	def abbrivated(self):
-		if self.direction.max > 2:
+		if self.direction.digit_budget > 2:
 			return self.threeLetter
 		return self.twoLetter
 
 	@property
 	def shortened(self):
-		if self.direction.max < 5:
+		if self.direction.digit_budget < 5:
 			return self.abbrivated
 		return self.singleWord
 
@@ -220,7 +220,7 @@ class Cardinal:
 
 	@property
 	def text(self):
-		if self.direction.max < 7:
+		if self.direction.digit_budget < 7:
 			return self.singleWord
 		return self.full
 
@@ -238,7 +238,7 @@ class Cardinal:
 
 
 class Voltage(Measurement):
-	_max = 3
+	_digit_budget = 3
 	_precision = 2
 	_unit = 'v'
 

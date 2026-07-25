@@ -35,12 +35,12 @@ class TestTemperature(TestCase):
 	def test_fahrenheit(self):
 		# The withUnit assertion below (`'32°f'`) was an expected failure
 		# until FormatSpec.params learned ':' as a key/value separator.
-		# `.withUnit` is `f'{self:showUnit: True}'`, but the params regex
-		# only ever matched `key=value`, so `showUnit: True` was silently
+		# `.withUnit` is `f'{self:show_unit: True}'`, but the params regex
+		# only ever matched `key=value`, so `show_unit: True` was silently
 		# dropped and the force-show did nothing at all.
 		#
-		# It looked like it worked wherever the class default for showUnit
-		# was already True (Kelvin, and Fahrenheit back when _showUnit was
+		# It looked like it worked wherever the class default for show_unit
+		# was already True (Kelvin, and Fahrenheit back when _show_unit was
 		# incorrectly hardcoded True in fahrenheit.py) - "forced" and
 		# "default" were indistinguishable there. Celsius, whose default is
 		# False, is the honest test: see test_celsius_force_show_unit.
@@ -70,16 +70,16 @@ class TestTemperature(TestCase):
 		self.assertEqual(self.kHigh, high.kel)
 		self.assertEqual(self.fHigh, high.f)
 		low.precision = 1
-		low.max = 4
+		low.digit_budget= 4
 		self.assertEqual('273.1k', low.withUnit)
 
 	def test_celsius_force_show_unit(self):
-		# Celsius defaults to showUnit=False (the ° decorator already conveys
+		# Celsius defaults to show_unit=False (the ° unit_symbol already conveys
 		# it), so this is the one temperature where forcing the unit on is
 		# actually distinguishable from the class default - the regression
 		# guard for the ':' separator fix.
 		low = Temperature.Celsius(0)
-		self.assertFalse(low.showUnit)
+		self.assertFalse(low.show_unit)
 		self.assertEqual('0°', str(low))
 		self.assertEqual('0°c', str(low.withUnit))
 

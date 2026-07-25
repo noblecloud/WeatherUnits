@@ -379,7 +379,7 @@ class ScalingMeasurement(Measurement):
 	def bestFit(self, max_digits: int = None) -> Self:
 		"""Returns the best fit unit for the value"""
 		if max_digits is None:
-			max_digits = self.max
+			max_digits = self.digit_budget
 
 		int_digits_count = self.intLength
 		value = self

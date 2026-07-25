@@ -10,7 +10,7 @@ class RSSI(Measurement):
 	_strings = ['Perfect', 'Great', 'Good', 'Bad', 'None']
 	_values = [-30, -67, -70, -80, -90]
 	_precision = 0
-	_max = 2
+	_digit_budget = 2
 
 	@property
 	def string(self):

@@ -55,7 +55,7 @@ class PartsPer(ScalingMeasurement, baseClass='Hundred'):
 
 class Hundred(PartsPer):
 	_precision = 2
-	_max = 3
+	_digit_budget = 3
 	_unit = '%'
 
 

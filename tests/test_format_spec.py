@@ -2,7 +2,7 @@
 
 `FormatSpec.params` (base/_SmartFloat.py) originally accepted only `=` as
 the key/value separator. Specs written with `: ` - including two inside this
-library itself, `.withUnit`'s `f'{self:showUnit: True}'` and Direction's
+library itself, `.withUnit`'s `f'{self:show_unit: True}'` and Direction's
 `f'{self: cardinal: False}'` - matched nothing and were silently discarded,
 so the parameter simply never took effect. Nothing raised; the spec just did
 nothing, which is why it went unnoticed (see the note in
@@ -24,7 +24,7 @@ class TestFormatSpecSeparators(TestCase):
 			Length.Inch(51),
 		]
 		for subject in subjects:
-			for key, value in (('showUnit', 'True'), ('showUnit', 'False')):
+			for key, value in (('show_unit', 'True'), ('show_unit', 'False')):
 				with self.subTest(subject=repr(subject), key=key, value=value):
 					self.assertEqual(
 						format(subject, f'{key}={value}'),
@@ -32,12 +32,12 @@ class TestFormatSpecSeparators(TestCase):
 					)
 
 	def test_force_show_unit_overrides_a_false_default(self):
-		# Celsius defaults to showUnit=False, so this distinguishes a real
+		# Celsius defaults to show_unit=False, so this distinguishes a real
 		# override from merely inheriting the default.
 		c = Temperature.Celsius(0)
-		self.assertFalse(c.showUnit)
-		self.assertEqual('0°c', format(c, 'showUnit: True'))
-		self.assertEqual('0°c', format(c, 'showUnit=True'))
+		self.assertFalse(c.show_unit)
+		self.assertEqual('0°c', format(c, 'show_unit: True'))
+		self.assertEqual('0°c', format(c, 'show_unit=True'))
 
 	def test_format_template_isolates_the_unit(self):
 		# `format: {unit}` must yield the bare unit symbol, not the whole
@@ -66,8 +66,8 @@ class TestFormatSpecSeparators(TestCase):
 		ordinary word values, which is every real use in this library.
 		"""
 		i = Length.Inch(51)
-		self.assertEqual('51_in', format(i, 'unitSpacer=_'))   # '=' honours it
-		self.assertEqual(' 51 in', format(i, 'unitSpacer: _'))  # ':' does not
+		self.assertEqual('51_in', format(i, 'unit_spacer=_'))   # '=' honours it
+		self.assertEqual(' 51 in', format(i, 'unit_spacer: _'))  # ':' does not
 
 	def test_conversion_spec_is_not_mistaken_for_a_param(self):
 		# A leading `unit:` is a conversion and is stripped before params are

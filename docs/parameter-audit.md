@@ -17,9 +17,9 @@ The impression is "some camel, some snake". The reality is narrower:
 camelCase or single lowercase words.** There is no snake_case in any `.ini`:
 
 ```
-precision  max  unit  suffix  decorator  title  exp  slide  shorten
-showUnit  unitSpacer  leadingZero  trailingZero  forcePrecision
-kSeparator  sizeHint  groupingChar  combineUnitAndSuffix  cardinal
+precision  max  unit  suffix  unit_symbol  title  exp  slide  shorten
+show_unit  unit_spacer  leading_zero  trailing_zero  force_precision
+k_separator  size_hint  grouping_char  combine_unit_and_suffix  cardinal
 degrees  precipitationRate
 ```
 
@@ -47,7 +47,7 @@ Ordered by how much confusion each has demonstrably caused.
 
 Reads as "maximum value". It is a **total displayed-digit budget**. This
 single name cost a multi-hour debugging session: a config saying
-`precision=2, max=2` looks reasonable and is in fact self-contradictory,
+`precision=2, digit_budget=2` looks reasonable and is in fact self-contradictory,
 because `0.01` needs three digits.
 
 Candidates: `maxDigits`, `digitBudget`, `width`.
@@ -63,14 +63,14 @@ change out from under them.
 Worth considering splitting into two options, or at minimum documenting the
 branch (currently covered in `formatting.md`).
 
-### `decorator` — vague
+### `unit_symbol` — vague
 
 It is the symbol trailing the number — `°` on temperatures. "Decorator" also
 means something entirely different in Python, which makes the code harder to
 read than it needs to be. Candidates: `symbol`, `valueSuffix` (taken),
 `glyph`.
 
-### `kSeparator` — cryptic
+### `k_separator` — cryptic
 
 The `k` presumably refers to thousands. Never consumed by any code, so its
 intent is unrecoverable from behavior alone — **only you know what this was
@@ -96,21 +96,21 @@ across all `.py` files:
 
 | param | status | notes |
 |---|---|---|
-| `trailingZero` | **dead** | documented intent: pad decimals to full precision under `max`. The missing half of the `30.0 → '30'` width-drift problem |
-| `forcePrecision` | **dead** | documented intent: always show decimals to `precision`. Overlaps `trailingZero` — likely only one is needed |
-| `sizeHint` | **dead** | documented intent: override the generated size-hint string. The natural lever for reserving layout width |
+| `trailing_zero` | **dead** | documented intent: pad decimals to full precision under `max`. The missing half of the `30.0 → '30'` width-drift problem |
+| `force_precision` | **dead** | documented intent: always show decimals to `precision`. Overlaps `trailing_zero` — likely only one is needed |
+| `size_hint` | **dead** | documented intent: override the generated size-hint string. The natural lever for reserving layout width |
 | `exp` | **dead** | no documented intent |
 | `slide` | **dead** | ini says "not yet implemented" |
-| `kSeparator` | **dead** | intent unclear |
-| `groupingChar` | **dead** | thousands separators are parsed then dropped — `{x:,.2f}` silently loses the separator |
-| `combineUnitAndSuffix` | **dead** | `si.ini` only |
+| `k_separator` | **dead** | intent unclear |
+| `grouping_char` | **dead** | thousands separators are parsed then dropped — `{x:,.2f}` silently loses the separator |
+| `combine_unit_and_suffix` | **dead** | `si.ini` only |
 | `degrees` | **dead** | `[UnitProperties] direction` |
 | `limits` | **dead as a format param** | reachable only as a template variable |
 
-`leadingZero` was on this list until it was implemented (see
+`leading_zero` was on this list until it was implemented (see
 `formatting.md`).
 
-**Three of these — `trailingZero`, `forcePrecision`, `sizeHint` — form a
+**Three of these — `trailing_zero`, `force_precision`, `size_hint` — form a
 coherent cluster** around controlling rendered width, and are the ones with
 real display consequences. The rest are candidates for deletion.
 
@@ -151,14 +151,14 @@ throughout LevityDash, and the `docs/change-logs/` history.
 
 ## 5. Suggested order, if you do the work-over
 
-1. **Delete the unrecoverable dead params** (`exp`, `slide`, `kSeparator`,
-   `combineUnitAndSuffix`, `degrees`, `groupingChar`) — removing them costs
+1. **Delete the unrecoverable dead params** (`exp`, `slide`, `k_separator`,
+   `combine_unit_and_suffix`, `degrees`, `grouping_char`) — removing them costs
    nothing since nothing reads them, and it shrinks the surface the docs
    have to explain.
 2. **Rename `unit_type` → `unitType`** — makes casing uniform in one commit.
 3. **Rename `max`** — the highest-value change, and the one most likely to
    prevent a repeat of this week.
-4. **Decide `trailingZero` vs `forcePrecision`** — probably one option, not
+4. **Decide `trailing_zero` vs `force_precision`** — probably one option, not
    two, and implementing it closes the width-drift gap.
 5. *Then* write the public docs, against a surface that no longer needs
    apologising for.

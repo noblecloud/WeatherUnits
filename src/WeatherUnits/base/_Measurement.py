@@ -425,12 +425,12 @@ class NonPlural(SmartFloat.__NonPlural__, Measurement):
 
 
 class Quantity(Dimensionless):
-	_max = 3
+	_digit_budget = 3
 	_precision = 0
 
 
 class Index(Dimensionless, NonPlural):
-	_max = 3
+	_digit_budget = 3
 	_precision = 0
 
 
