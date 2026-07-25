@@ -135,6 +135,7 @@ Defaults come from the class, which comes from the config file
 | `minwidth` / `fill` / `align` / `sign` | `''` | standard float-spec fields | ✅ |
 | `leading_zero` | `'auto'` | the `0` before the radix on values < 1 — `True`/`False`/`'auto'`, see [below](#leadingzero-and-the-borrowed-digit) | ✅ |
 | `trailing_zeros` | `'off'` | pad decimals to a stable width — `off` / `precision` / `fill` / `<int>`, always capped by the budget | ✅ |
+| `true_zero` | `True` | keep an exact zero bare while `trailing_zeros` pads the rest — `0` means *actually* zero, `0.0` means rounds-to-zero | ✅ |
 
 ### Unit and decoration
 

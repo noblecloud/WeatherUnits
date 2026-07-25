@@ -105,6 +105,14 @@ The basic rules are:
 
     Always capped by `digit_budget`, so padding can never push a value over
     budget. `True` is an alias for `precision`.
+
+- **true_zero:** Keep an exact zero bare (`0`) even while `trailing_zeros` is
+  padding everything else. Default `True`. A bare `0` says the value is
+  *actually* zero, where `0.0` says "not zero, but rounds to it at this
+  width" — `Inch(0)` gives `0` while `Inch(0.004)` gives `0.0`. Set `False`
+  where a column that never changes width matters more than the distinction,
+  which is most places zero is an ordinary reading: precipitation, wind,
+  lightning strikes. No effect unless `trailing_zeros` is on.
 - **unit_spacer:** The text placed between the value and its unit. ⚠️ **This is a string, not a flag** — `False` removes it (`90°f`), but `True` inserts the literal word (`90°Truef`). Leave it unset for the class default (a space), or give it the string you want.
 - **k_separator:** The character separating powers of 10³ — the `,` in `1,000`.  _Not yet implemented_
 

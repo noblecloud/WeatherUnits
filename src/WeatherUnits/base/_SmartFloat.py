@@ -610,6 +610,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	__transferable__: set[str] = {
 		'leading_zero',
 		'trailing_zeros',
+		'true_zero',
 		'align',
 		'fill',
 		'sign',
@@ -930,12 +931,16 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		# 30.1 and the panel width jumps with it. `trailing_zeros` overrides
 		# that derivation with a stable width. See __resolveTrailingZeros.
 		trailing = params.get('trailing_zeros', 'off')
-		# Exact zero is exempt. '0' means the value is actually zero, while
-		# '0.00' would read as "close to zero but not quite" - the same
-		# distinction `0` vs `0.0` carries everywhere else in this library.
-		# Padding it away would destroy information rather than stabilise
-		# width, and it would break the "zero renders bare" invariant.
-		if trailing not in (False, None, 'off') and floatValue != 0:
+		# Exact zero is exempt by default, because a bare '0' is meaningful:
+		# it says the value is *actually* zero, where '0.0' says "not zero,
+		# but rounds to it at this width". That distinction holds at default
+		# settings - Inch(0) renders '0' while Inch(0.004) renders '0.0'.
+		#
+		# `true_zero=False` gives it up in exchange for a column that never
+		# changes width, which is the better trade wherever zero is a common
+		# reading rather than a catastrophe - precipitation, wind.
+		if trailing not in (False, None, 'off') \
+				and (floatValue != 0 or not params.get('true_zero', True)):
 			intDigits = intLength - bool(params.get('leadingZeroDropped'))
 			# The configured precision, NOT params['precision'] - the latter
 			# has already been clamped down to the value's own decimal count,
@@ -1135,6 +1140,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return {
 			'leading_zero':  self.leading_zero,
 			'trailing_zeros': self.trailing_zeros,
+			'true_zero':     self.true_zero,
 			'align':        '',
 			'fill':         '',
 			'sign':         '',
@@ -1357,6 +1363,30 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	@trailing_zeros.setter
 	def trailing_zeros(self, value):
 		self._trailing_zeros = value
+
+	@property
+	def true_zero(self) -> bool:
+		"""Keep an exact zero bare, even when `trailing_zeros` is padding.
+
+		A bare '0' carries information: it says the value is *actually* zero,
+		where '0.0' says "not zero, but rounds to it at this width". At
+		default settings that distinction holds - Inch(0) renders '0' while
+		Inch(0.004) renders '0.0'.
+
+		Default ``True``, which preserves it. Set ``False`` where a column
+		that never changes width matters more than the distinction, which is
+		most places zero is an ordinary reading rather than an emergency -
+		precipitation, wind speed, lightning strikes. Then zero pads like
+		any other value: '0.00'.
+
+		No effect unless `trailing_zeros` is on; without it zero renders bare
+		regardless.
+		"""
+		return getattr(self, '_true_zero', True)
+
+	@true_zero.setter
+	def true_zero(self, value):
+		self._true_zero = value
 
 	@property
 	def unit_symbol(self) -> str:

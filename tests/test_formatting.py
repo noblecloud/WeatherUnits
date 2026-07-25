@@ -571,3 +571,49 @@ class TestRefitCarriesTheTargetUnitsConfig(TestCase):
 		direct = str(Pressure.MillimeterOfMercury(760.0))
 		self.assertEqual('760.00 mmHg', converted)
 		self.assertEqual(converted, direct)
+
+
+class TestTrueZero(TestCase):
+	"""A bare '0' says *exactly* zero; '0.0' says "rounds to zero at this width".
+
+	That distinction is real at default settings - Inch(0) renders '0' while
+	Inch(0.004) renders '0.0' - and `trailing_zeros` would erase it by padding
+	zero like any other value. So exact zero is exempt by default.
+
+	`true_zero=False` gives the distinction up on purpose, in exchange for a
+	column that never changes width. That is the better trade anywhere zero
+	is an ordinary reading rather than an emergency: precipitation, wind,
+	lightning strikes. Air pressure is not one of those places.
+	"""
+
+	def test_exact_zero_stays_bare_by_default(self):
+		# mmHg config: precision=2, digit_budget=5, trailing_zeros=precision
+		self.assertEqual('0 mmHg', str(Pressure.MillimeterOfMercury(0.0)))
+
+	def test_true_zero_false_pads_it_like_anything_else(self):
+		z = Pressure.MillimeterOfMercury(0.0)
+		self.assertEqual('0.00 mmHg', format(z, 'true_zero=False'))
+
+	def test_the_distinction_it_protects(self):
+		# Exactly zero vs. rounds-to-zero must not look the same while
+		# true_zero is on.
+		self.assertEqual('0 mmHg', str(Pressure.MillimeterOfMercury(0.0)))
+		self.assertEqual('0.00 mmHg', str(Pressure.MillimeterOfMercury(0.004)))
+
+	def test_nonzero_values_are_untouched_either_way(self):
+		v = Pressure.MillimeterOfMercury(30.0)
+		self.assertEqual('30.00 mmHg', str(v))
+		self.assertEqual('30.00 mmHg', format(v, 'true_zero=False'))
+
+	def test_it_is_moot_without_trailing_zeros(self):
+		# Nothing pads zero unless trailing_zeros is on, so true_zero has
+		# nothing to protect it from.
+		self.assertEqual(
+			format(Length.Inch(0), 'show_unit=False'),
+			format(Length.Inch(0), 'true_zero=False, show_unit=False'),
+		)
+
+	def test_it_is_settable_per_instance(self):
+		z = Pressure.MillimeterOfMercury(0.0)
+		z.true_zero = False
+		self.assertEqual('0.00 mmHg', str(z))
