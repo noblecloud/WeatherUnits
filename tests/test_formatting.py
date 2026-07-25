@@ -518,3 +518,56 @@ class TestTrailingZeros(TestCase):
 			format(v, 'precision=2, digit_budget=5, trailing_zeros=precision'),
 			format(v, 'precision=2, digit_budget=5, trailing_zeros=True'),
 		)
+
+
+class TestUnitPropertiesBinding(TestCase):
+	"""`[UnitProperties]` keys must bind by unit symbol, not just class name.
+
+	The metaclass gated config lookup on `name.lower() in unitPropertiesKeys`
+	where `name` is the CLASS name, so `MillimeterOfMercury` never matched the
+	key `mmHg` and that whole config line was silently ignored. Keys that
+	happen to coincide with a class name (`temperature`, `direction`) bound
+	fine, which is what made the section look like it worked.
+
+	It then re-resolved the key with get_close_matches(cutoff=0.3) and took
+	the first hit, so it could apply a *different* unit's settings than the
+	one that passed the check.
+	"""
+
+	def test_a_symbol_keyed_unit_gets_its_config(self):
+		# si.ini: mmHg = precision=2, digit_budget=5, trailing_zeros=precision
+		m = Pressure.MillimeterOfMercury(760.0)
+		self.assertEqual(2, m._precision)
+		self.assertEqual(5, m._digit_budget)
+		self.assertEqual('760.00 mmHg', str(m))
+
+	def test_lookup_is_exact_not_fuzzy(self):
+		from WeatherUnits.config import config
+		self.assertEqual('mmHg', config.unitPropertiesKeyFor('MillimeterOfMercury', 'mmHg'))
+		self.assertEqual('mmHg', config.unitPropertiesKeyFor('mmhg'))          # case-insensitive
+		self.assertIsNone(config.unitPropertiesKeyFor('MillimeterOfMercury'))  # class name alone: no key
+		self.assertIsNone(config.unitPropertiesKeyFor('mmH'))                  # near miss must NOT match
+		self.assertIsNone(config.unitPropertiesKeyFor(None))
+
+	def test_class_name_keys_still_bind(self):
+		# `direction` and `temperature` matched by class name before and must
+		# keep matching - this is the half that always worked.
+		from WeatherUnits.others import Direction
+		self.assertEqual(3, Direction(180)._digit_budget)
+
+
+class TestRefitCarriesTheTargetUnitsConfig(TestCase):
+	"""A refit changes the unit, so it must change the settings too.
+
+	`params.default` is captured from the original measurement before
+	`shorten`/`bestFit` swaps in a different unit. Without refreshing it, a
+	Hectopascal displayed as mmHg was formatted with Hectopascal's precision
+	and trailing_zeros while wearing mmHg's label - the same value rendered
+	differently depending on which unit you happened to start from.
+	"""
+
+	def test_both_routes_to_the_same_reading_agree(self):
+		converted = str(Pressure.Hectopascal(1013.25).withUnit)
+		direct = str(Pressure.MillimeterOfMercury(760.0))
+		self.assertEqual('760.00 mmHg', converted)
+		self.assertEqual(converted, direct)

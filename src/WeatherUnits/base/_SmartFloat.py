@@ -335,10 +335,23 @@ class MetaUnitClass(type):
 		# 	base.__unitDict__.maps.append(unitDict)
 		# attrs['__unitDict__'] = unitDict
 
-		if name.lower() in config.unitPropertiesKeys:
-			configPropertiesKey = get_close_matches(name, list(config.unitProperties.keys()), cutoff=0.3)
+		# A unit is looked up by its class name AND by its unit symbol, because
+		# config keys are routinely written as symbols - `inHg`, `mmHg`.
+		# Matching on the class name alone meant `InchOfMercury` never found
+		# the `inHg` line, so those settings were silently ignored.
+		#
+		# The match is exact (case-insensitively). It used to run the name
+		# through get_close_matches(cutoff=0.3) and take the first hit, which
+		# could apply a *different* unit's settings than the one that passed
+		# the check above.
+		#
+		# Only the class's own declared `_unit` counts, never an inherited
+		# one: a subclass that inherits its parent's symbol must not silently
+		# adopt the parent's config line.
+		configPropertiesKey = config.unitPropertiesKeyFor(name, attrs.get('_unit'))
+		if configPropertiesKey is not None:
 			configProps = {}
-			for item in config.unitProperties[configPropertiesKey[0]].split(','):
+			for item in config.unitProperties[configPropertiesKey].split(','):
 				key, value = item.strip(' ').split('=')
 				if (number := FormatSpec.getNumber(value, strict=True)) is not None:
 					value = number
@@ -802,6 +815,17 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			if (best_fit := getattr(value, 'bestFit', None)) is not None:
 				if (fitted_value := best_fit(max_len)) is not value:
 					value = fitted_value
+					# The refit changed the unit, so the unit's own settings
+					# have to come with it: precision, digit_budget and
+					# trailing_zeros all belong to the unit being displayed,
+					# not the one the value started in. `params.default` was
+					# captured from the original above, so without this a
+					# Hectopascal shown as mmHg was formatted with
+					# Hectopascal's config while wearing mmHg's label.
+					# Spec parameters still outrank it - the defaults sit
+					# below `specParams` in the chain.
+					params.default = value.defaultFormatParams
+					params.maps[2] = params.default
 					floatValue = float(value)
 					intLength = value.intLength
 					precision_offset = starting_len - intLength
@@ -906,7 +930,12 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		# 30.1 and the panel width jumps with it. `trailing_zeros` overrides
 		# that derivation with a stable width. See __resolveTrailingZeros.
 		trailing = params.get('trailing_zeros', 'off')
-		if trailing not in (False, None, 'off'):
+		# Exact zero is exempt. '0' means the value is actually zero, while
+		# '0.00' would read as "close to zero but not quite" - the same
+		# distinction `0` vs `0.0` carries everywhere else in this library.
+		# Padding it away would destroy information rather than stabilise
+		# width, and it would break the "zero renders bare" invariant.
+		if trailing not in (False, None, 'off') and floatValue != 0:
 			intDigits = intLength - bool(params.get('leadingZeroDropped'))
 			# The configured precision, NOT params['precision'] - the latter
 			# has already been clamped down to the value's own decimal count,

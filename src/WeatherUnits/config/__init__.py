@@ -90,6 +90,23 @@ class Config(ConfigParser):
 	def unitPropertiesKeys(self) -> Set[str]:
 		return {i.lower() for i in self['UnitProperties'].keys()}
 
+	def unitPropertiesKeyFor(self, *candidates: str | None) -> str | None:
+		"""The real `[UnitProperties]` key matching any candidate name.
+
+		Case-insensitive, exact, first-match-wins. Callers pass the names a
+		unit might be written as in the config - its class name and its unit
+		symbol - and get back the key as spelled in the file, or None.
+
+		The symbol matters: keys are routinely written as symbols (`inHg`,
+		`mmHg`) rather than class names, and matching on the class name alone
+		meant those lines were silently ignored.
+		"""
+		keys = {key.lower(): key for key in self['UnitProperties'].keys()}
+		for candidate in candidates:
+			if isinstance(candidate, str) and (key := keys.get(candidate.lower())) is not None:
+				return key
+		return None
+
 	@property
 	def groupingCharacter(self) -> bool | str:
 		value = self['UnitDefaults'].get('groupingCharacter', True)
