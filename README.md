@@ -29,13 +29,13 @@ Conversion is as easy as using the desired unit's name or aliases as either an a
 from WeatherUnits.temperature import Fahrenheit
 >>> value = Fahrenheit(32)
 >>> value
-'32º'
+'32°'
 >>> value.withUnit
-'32ºf'
+'32°f'
 >>> value['c'].withUnit
-'0ºc'
+'0°c'
 >>> value.celcius
-'0º'
+'0°'
 ```
 
 ## Using a Config file
@@ -79,13 +79,13 @@ The basic rules are:
 
 - **unit:** Override built in unit string
 - **suffix:** Override built in suffix string._Only used for shortening numbers_
-- **decorator:** Override built in decorator._Only used for º with degrees_
+- **decorator:** Override built in decorator._Only used for ° with degrees_
 - **title:** Title to be used by other display programs
 - **exp:** Override exponent.  I can't imagine why this would be used
 - **showUnit:** Show unit True: 5km False: 5
 - **leadingZero:** Display zero before values less than 1 True: 0.1in False: .1in
 - **trailingZero:** Display zero after decimal point to full precision staying under max True: 1.0in False: 1in True: 4.00cm
-- **unitSpacer:** Determines if there is a space between measurements and their units True: 90º f False: 90ºf
+- **unitSpacer:** Determines if there is a space between measurements and their units True: 90° f False: 90°f
 - **kSeparator:**
 
     |value|example|
@@ -111,7 +111,7 @@ The basic rules are:
 
     |value|example|
     |----|------|
-    |True|180º|
+    |True|180°|
     |False|South|
 
 - **key:** Key to be used for other programs
@@ -135,7 +135,7 @@ from WeatherUnits.base import Measurement, NamedType
 class Temperature(Measurement):  # For static unit types, the class inherits Measurement.
 
     # Shared unit properties are defined here or in a provided config file.
-    _decorator = 'º'
+    _decorator = '°'
 
     # Properties for converting units are defined in the main parent class.
     @property

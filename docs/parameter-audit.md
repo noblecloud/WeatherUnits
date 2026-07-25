@@ -65,7 +65,7 @@ branch (currently covered in `formatting.md`).
 
 ### `decorator` — vague
 
-It is the symbol trailing the number — `º` on temperatures. "Decorator" also
+It is the symbol trailing the number — `°` on temperatures. "Decorator" also
 means something entirely different in Python, which makes the code harder to
 read than it needs to be. Candidates: `symbol`, `valueSuffix` (taken),
 `glyph`.

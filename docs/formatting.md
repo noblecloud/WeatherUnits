@@ -31,9 +31,9 @@ Two convenience properties wrap the common cases:
 
 ```python
 >>> Temperature.Celsius(0).withUnit      # force the unit on
-'0ºc'
+'0°c'
 >>> Temperature.Celsius(0).withoutUnit   # force it off
-'0º'
+'0°'
 ```
 
 ---
@@ -144,7 +144,7 @@ Defaults come from the class, which comes from the config file
 | `showUnit` | per class | render the unit at all | ✅ |
 | `unit` | per class | override the unit string | ✅ |
 | `unitSpacer` | per class | **a string**, not a flag — the text between value and unit | ✅ (see gotcha) |
-| `decorator` | per class | trails the value (`º`) | ✅ |
+| `decorator` | per class | trails the value (`°`) | ✅ |
 | `prefix` / `suffix` | none | wrap the whole result | ✅ |
 | `plural` | `False` | with a non-1 value, use the plural unit/name | ✅ |
 | `unit_type` | none | `name` swaps symbol for class name — **only takes effect together with `plural=True`** | ⚠️ partial |
@@ -166,8 +166,8 @@ Unless you supply `format=`, the template is built as:
 the two common shapes differ:
 
 ```python
->>> f'{Temperature.Fahrenheit(32)}'   # decorator 'º', unitSpacer ''
-'32º'
+>>> f'{Temperature.Fahrenheit(32)}'   # decorator '°', unitSpacer ''
+'32°'
 >>> f'{Wind.MilesPerHour(4.1)}'       # decorator '',  unitSpacer ' '
 '4.1 mph'
 ```
@@ -429,7 +429,7 @@ lookup is not:
 
 ```python
 >>> f'{Temperature.Fahrenheit(72.5):c}'   # fine
-'22º'
+'22°'
 >>> f'{Temperature.Fahrenheit(72.5):C}'
 KeyError: 'pop from an empty set'
 ```

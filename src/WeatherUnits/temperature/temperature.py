@@ -13,8 +13,8 @@ class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 	Kelvin: type
 
 	_showUnit = False
-	_decorator = 'º'
-	_id = 'ºt'
+	_decorator = '°'
+	_id = '°t'
 
 	def __new__(cls, value: float | int | Measurement):
 		if isinstance(value, Temperature) and not isinstance(value, cls):

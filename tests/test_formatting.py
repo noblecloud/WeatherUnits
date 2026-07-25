@@ -35,8 +35,8 @@ class TestZeroValues(TestCase):
 				self.assertEqual(expected, str(measurement))
 
 	def test_zero_temperature_keeps_its_decorator(self):
-		self.assertEqual('0º', str(Temperature.Fahrenheit(0)))
-		self.assertEqual('0º', str(Temperature.Celsius(0)))
+		self.assertEqual('0°', str(Temperature.Fahrenheit(0)))
+		self.assertEqual('0°', str(Temperature.Celsius(0)))
 
 
 class TestPrecisionAndMax(TestCase):
@@ -173,14 +173,68 @@ class TestLeadingZero(TestCase):
 		self.assertEqual('0 in', format(Length.Inch(0), 'leadingZero=False'))
 
 
+class TestDegreeSign(TestCase):
+	"""The degree decorator must be U+00B0, not the ordinal indicator.
+
+	The codebase previously used '°' MASCULINE ORDINAL INDICATOR - a
+	Spanish/Portuguese ordinal marker (1° = "primero") that many fonts draw
+	with an underline, which is how it was noticed. It looks close enough to
+	a degree sign to survive years unremarked, but it is a different
+	character: screen readers announce it as an ordinal rather than
+	"degrees", and it renders inconsistently across fonts.
+
+	The two were also mixed - Temperature and Angle carried U+00BA while
+	Direction's _id already used U+00B0. Pinned here because the difference
+	is invisible in a diff.
+	"""
+
+	# Escapes, not literals: the two glyphs are visually near-identical, so
+	# spelling out the codepoints is the only way this test states its own
+	# intent legibly - and it keeps the file safe to bulk-normalize.
+	DEGREE = '\u00b0'   # DEGREE SIGN
+	ORDINAL = '\u00ba'  # MASCULINE ORDINAL INDICATOR
+
+	def test_temperature_decorator_is_the_degree_sign(self):
+		for cls in (Temperature.Celsius, Temperature.Fahrenheit):
+			with self.subTest(cls=cls.__name__):
+				self.assertEqual(self.DEGREE, cls(0).decorator)
+
+	def test_rendered_temperature_uses_the_degree_sign(self):
+		rendered = str(Temperature.Celsius(0))
+		self.assertIn(self.DEGREE, rendered)
+		self.assertNotIn(self.ORDINAL, rendered)
+
+	def test_angle_and_direction_use_the_degree_sign(self):
+		from WeatherUnits.others import Angle, Direction
+		for cls in (Angle, Direction):
+			with self.subTest(cls=cls.__name__):
+				self.assertEqual(self.DEGREE, cls(0).decorator)
+
+	def test_no_ordinal_indicator_survives_anywhere_in_the_package(self):
+		# Cheap guard against it creeping back in via a copy-paste.
+		import pathlib
+		import WeatherUnits
+		root = pathlib.Path(WeatherUnits.__file__).parent
+		offenders = []
+		for path in list(root.rglob('*.py')) + list(root.rglob('*.ini')):
+			if '__pycache__' in str(path):
+				continue
+			try:
+				if self.ORDINAL in path.read_text():
+					offenders.append(str(path.relative_to(root)))
+			except (UnicodeDecodeError, OSError):
+				continue
+		self.assertEqual([], offenders, f'U+00BA found in: {offenders}')
+
+
 class TestDecoratorAndSpacer(TestCase):
 	"""Two shapes: decorator-no-spacer, and spacer-no-decorator."""
 
 	def test_temperature_uses_a_decorator_and_no_spacer(self):
 		f = Temperature.Fahrenheit(32)
-		self.assertEqual('º', f.decorator)
+		self.assertEqual('°', f.decorator)
 		self.assertEqual('', f.unitSpacer)
-		self.assertEqual('32º', str(f))
+		self.assertEqual('32°', str(f))
 
 	def test_wind_uses_a_spacer_and_no_decorator(self):
 		w = Wind.MilesPerHour(4.1)
@@ -199,14 +253,14 @@ class TestShowUnit(TestCase):
 
 	def test_with_and_without_unit(self):
 		c = Temperature.Celsius(0)
-		self.assertEqual('0º', str(c))
-		self.assertEqual('0ºc', str(c.withUnit))
-		self.assertEqual('0º', str(c.withoutUnit))
+		self.assertEqual('0°', str(c))
+		self.assertEqual('0°c', str(c.withUnit))
+		self.assertEqual('0°', str(c.withoutUnit))
 
 	def test_show_unit_parameter_both_separators(self):
 		c = Temperature.Celsius(0)
-		self.assertEqual('0ºc', format(c, 'showUnit=True'))
-		self.assertEqual('0ºc', format(c, 'showUnit: True'))
+		self.assertEqual('0°c', format(c, 'showUnit=True'))
+		self.assertEqual('0°c', format(c, 'showUnit: True'))
 
 
 class TestFloatTypeCodes(TestCase):

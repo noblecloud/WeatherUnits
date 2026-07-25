@@ -36,8 +36,8 @@ class TestFormatSpecSeparators(TestCase):
 		# override from merely inheriting the default.
 		c = Temperature.Celsius(0)
 		self.assertFalse(c.showUnit)
-		self.assertEqual('0ºc', format(c, 'showUnit: True'))
-		self.assertEqual('0ºc', format(c, 'showUnit=True'))
+		self.assertEqual('0°c', format(c, 'showUnit: True'))
+		self.assertEqual('0°c', format(c, 'showUnit=True'))
 
 	def test_format_template_isolates_the_unit(self):
 		# `format: {unit}` must yield the bare unit symbol, not the whole

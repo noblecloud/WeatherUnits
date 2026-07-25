@@ -88,14 +88,14 @@ class BatteryPercentage(Percentage, limits=(0.0, 1.0)):
 @UnitType
 class Angle(Dimensionless):
 	_precision = 0
-	_decorator = 'º'
+	_decorator = '°'
 	_shorten = True
-	_id = 'º'
+	_id = '°'
 
 
 class Direction(Angle, FiniteField, limits=(0, 360)):
 	_cardinal = True
-	_decorator = 'º'
+	_decorator = '°'
 	_id = '°d'
 	_max = 3
 
