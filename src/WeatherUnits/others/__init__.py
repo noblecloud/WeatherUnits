@@ -174,15 +174,19 @@ class Cardinal:
 			return self.full
 
 	def __format_value__(self, params: Mapping) -> str:
-		# Read `shorten` from the format params, not just the class default,
-		# so `{d:shorten=False}` yields 'South' rather than 'S'. `self.shorten`
-		# stays the fallback for the no-params path (__str__).
+		# Two axes, deliberately independent:
+		#   `shorten` picks the FORM   - letters vs words
+		#   digit_budget picks the DETAIL - how many compass points resolve
+		# Both `abbrivated` and `text` walk the budget internally, so a
+		# narrow panel gets 'N' and a wide one 'North Northeast' without the
+		# caller having to ask. Going straight to `abbrivated`/`full` here
+		# was what made the middle of the ladder unreachable.
 		shorten = getFrom('shorten', *getattr(params, 'maps', (params,)),
 			default=self.shorten, expectedType=(bool, str))
 		if shorten:
 			return self.abbrivated
 		else:
-			return self.full
+			return self.text
 
 	def __repr__(self):
 		return f'Cardinal({self!s} {self.direction: cardinal: False})'
@@ -190,6 +194,10 @@ class Cardinal:
 	@property
 	def direction(self) -> Direction:
 		return self.__direction
+
+	@property
+	def __quarterIndex(self):
+		return int(round(self.direction/90)%4)*4
 
 	@property
 	def __shortIndex(self):
@@ -200,10 +208,20 @@ class Cardinal:
 		return int(round(self.direction/22.5)%16)
 
 	@property
+	def oneLetter(self):
+		"""The 4-point compass: N, E, S, W. Always exactly one character."""
+		return self.__dirsAbbrv[self.__quarterIndex]
+
+	@property
 	def abbrivated(self):
+		# The letter ladder: the character budget picks how many compass
+		# points are resolved. Without the 1-char rung, an 8-point 'NE'
+		# was returned against a 1-character budget.
 		if self.direction.digit_budget > 2:
 			return self.threeLetter
-		return self.twoLetter
+		if self.direction.digit_budget == 2:
+			return self.twoLetter
+		return self.oneLetter
 
 	@property
 	def shortened(self):

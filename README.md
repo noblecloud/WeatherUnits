@@ -123,14 +123,28 @@ The basic rules are:
     |True|S|
     |False|180°|
 
-    With `cardinal` on, `shorten=False` gives the full name — `South`,
-    `North Northeast` — instead of the abbreviation.
+    With `cardinal` on, two axes work independently: **`shorten` picks the
+    form** (letters vs words) and **`digit_budget` picks the resolution**
+    (how many compass points are resolved). A narrow panel gets `N`, a wide
+    one `North Northeast`, without the caller asking for either.
+
+    |`digit_budget`|`shorten=True`|resolves to|
+    |----|------|------|
+    |1|`N` `E` `S` `W`|4 points|
+    |2|`NE` `SE` `SW`|8 points|
+    |3+|`NNE` `WSW`|16 points|
+
+    |`digit_budget`|`shorten=False`|
+    |----|------|
+    |&lt;7|`North`|
+    |7+|`North Northeast`|
 
 - **key:** Key to be used for other programs
 - **size_hint:** Override generated size hint string. Useful for when you know the expected max string length.
 
 
-**Note: the section below is currently out of date after some major changes.** The conversion and config sections above have been verified against the library.
+> Every code example below is executed against the library as part of
+> verifying this README — they define real, working unit classes.
 
 ## Defining Your Own Unit
 
@@ -143,9 +157,9 @@ Fahrenheit, Celsius, and Kelvin are subclasses of Temperature. Convert to other
 similar units with a single private function sharing the name of the desired unit.
 
 ```python
-from WeatherUnits.base import Measurement, NamedType
+from WeatherUnits.base import Measurement, UnitType
 
-@NamedType  # Unit types are defined with this decorator.
+@UnitType  # Unit types are defined with this decorator.
 class Temperature(Measurement):  # For static unit types, the class inherits Measurement.
 
     # Shared unit properties are defined here or in a provided config file.
@@ -197,10 +211,11 @@ Scaling units have quite a bit going on.  A scaling unit can be reduced to a sin
 Multiple unit systems can be defined within one scale.  It is also to split systems separate scales as long as there is a function within
 each system that converts from one base unit to the other.
 
-- **SystemVariant:** A class that denotes is not the unit is not within the regular scale
-- **Synonym:** Denotes that a unit is the same as an already defined but uses another name. Synonym classes inherit their identically valued class
-- **Dimension:** Decorator that assigns the decorated class to _unitSystem of all child classes
-- **BaseUnit:** Decorator to define the base unit for the system, this will be used for converting to the non-standard 'SystemVariant'
+- **SystemVariant:** Marks a unit as falling outside the regular scale
+- **Synonym:** Denotes that a unit is the same as an already defined one but uses another name. Synonym classes inherit their identically valued class
+- **Dimension:** A *metaclass* for the shared dimension class (`class Length(metaclass=Dimension, symbol='L')`), which the per-system classes then inherit
+- **`baseUnit=`:** A class keyword naming the base unit for the system, used when converting to a non-standard `SystemVariant`
+- **`system=`:** A class keyword assigning the class to `metric`, `imperial`, or `both`
 - **Scale:** Uses the metaclass EnumMeta to define the scaling factors for a ScalingMeasurement class along with the multipliers for any SystemVariants
 and the base unit
 
@@ -213,11 +228,13 @@ have an SI basis, so this can be done fairly often.  However, it is sometimes ne
 
 ```python
 
-from WeatherUnits.base import NamedType, Synonym, ScalingMeasurement
-from WeatherUnits.base import Scale, BaseUnit, SystemVariant, Dimension
+from WeatherUnits.base import UnitType, Synonym, ScalingMeasurement
+from WeatherUnits.base import Scale, SystemVariant, both
 
-@NamedType
-class Pressure(ScalingMeasurement):
+@UnitType
+# `baseUnit` names the unit everything reduces to; `system` assigns the class
+# to metric, imperial, or both.
+class Pressure(ScalingMeasurement, baseUnit='Pascal', system=both):
 
     # The scale for the unit system is defined with by a class named _Scale inheriting.
     class _Scale(Scale):
@@ -249,7 +266,6 @@ class Pressure(ScalingMeasurement):
     def hectopascal(self):
         return Hectopascal(self)
 
-@BaseUnit
 class Pascal(Pressure):
     _unit = 'Pa'
 
@@ -262,17 +278,19 @@ class Atmosphere(Pascal, SystemVariant):
 @Synonym
 class Millibar(Hectopascal):
     _unit = 'mBar'
-    _max = 4
+    _digit_budget = 4
 ```
 
 #### Split system
 
 ```python
-from WeatherUnits.base import NamedType, ScalingMeasurement, Dimension, BaseUnit
+from WeatherUnits.base import ScalingMeasurement, Scale, Dimension
+from WeatherUnits.base import metric, imperial
 
 
-@NamedType
-class Length(ScalingMeasurement):
+# The shared dimension is a plain class using the Dimension metaclass. It owns
+# the conversion properties; the per-system classes below supply the scales.
+class Length(metaclass=Dimension, symbol='L'):
 
     @property
     def meter(self):
@@ -285,7 +303,7 @@ class Length(ScalingMeasurement):
     ft = foot
 
 
-class ImperialLength(Length):
+class ImperialLength(ScalingMeasurement, Length, system=imperial, baseUnit='Foot'):
 
     class _Scale(Scale):
         Line = 1
@@ -307,13 +325,11 @@ class ImperialLength(Length):
         return self._foot() * 0.3048
 
 
-@BaseUnit
 class Foot(ImperialLength):
     _unit = 'ft'
 
 
-@Dimension
-class MetricLength(Length):
+class MetricLength(ScalingMeasurement, Length, system=metric, baseUnit='Meter'):
 
     class _Scale(Scale):
         Millimeter = 1
@@ -334,7 +350,6 @@ class MetricLength(Length):
         return self._meter() * 3.280839895013123
 
 
-@BaseUnit
 class Meter(MetricLength):
     _unit = 'm'
 ```
@@ -353,12 +368,11 @@ Support for the following has not been added:
  - Negative exponent units like Hertz [s⁻¹]
  - Multiple units in either the numerator or denominator
 
+Roughly what `DerivedMeasurement` does, for orientation (illustrative, not
+the real source):
+
 ```python
-from WeatherUnits import Length, Time
-from WeatherUnits.base import DerivedMeasurement, NamedType, NamedSubType
-
-
-# Summary of the DerivedMeasurement class
+# Illustrative sketch, not the real source.
 class DerivedMeasurement(Measurement):
     _numerator: Measurement
     _denominator: Measurement
@@ -367,13 +381,18 @@ class DerivedMeasurement(Measurement):
         self._numerator = numerator
         self._denominator = denominator
         Measurement.__init__(self, numerator / denominator)
+```
+
+And defining your own:
+
+```python
+from WeatherUnits import Length, Time
+from WeatherUnits.base import DerivedMeasurement, UnitType
 
 
-@NamedType
-class DistanceOverTime(DerivedMeasurement):
-    # Defining the unit types for the derived unit helps keep things clear
-    _numerator: Length
-    _denominator: Time
+@UnitType
+# The numerator and denominator dimensions are declared as class keywords.
+class DistanceOverTime(DerivedMeasurement, numerator=Length, denominator=Time):
 
     # Currently all variations that will be used have to be defined as properties
     @property
@@ -395,10 +414,8 @@ class DistanceOverTime(DerivedMeasurement):
     mph = mih
 
 
-@NamedType
+@UnitType
 class Precipitation(DistanceOverTime):
-    _numerator: Length
-    _denominator: Time
 
     @property
     def inh(self):
@@ -409,17 +426,15 @@ class Precipitation(DistanceOverTime):
         return Precipitation(self._numerator.mm, self._denominator.hr)
 
 
-@NamedType
+@UnitType
 class PrecipitationRate(Precipitation):
     pass
 
 
-@NamedSubType
-class Daily(Precipitation):
+# Fixing the denominator is a one-liner: no __init__ override needed.
+class Daily(PrecipitationRate, denominator=Time.Day): ...
 
-    def __init__(self, numerator: Length, denominator: int = 1, *args, **kwargs):
-        if isinstance(denominator, int):
-            denominator = Time.Day(denominator)
-        Precipitation.__init__(self, numerator, denominator, *args, **kwargs)
+
+class Hourly(PrecipitationRate, denominator=Time.Hour): ...
 
 ```

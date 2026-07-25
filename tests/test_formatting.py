@@ -348,11 +348,52 @@ class TestDirectionCardinal(TestCase):
 		self.assertEqual('180°', format(d, 'cardinal=False'))
 		self.assertEqual('180°', format(d, 'cardinal: False'))
 
-	def test_shorten_selects_abbreviated_vs_full_name(self):
+	def test_shorten_selects_letters_vs_words(self):
 		from WeatherUnits.others import Direction
 		self.assertEqual('S', format(Direction(180), 'shorten=True'))
 		self.assertEqual('South', format(Direction(180), 'shorten=False'))
-		self.assertEqual('North Northeast', format(Direction(22.5), 'shorten=False'))
+
+	def test_the_character_budget_picks_the_compass_resolution(self):
+		"""Two independent axes: `shorten` picks the form, the budget the detail.
+
+		Formatting used to call `abbrivated`/`full` directly, jumping to the
+		ends of the ladder and leaving every rung between them unreachable -
+		budgets 5 through 8 could never produce the word forms.
+		"""
+		from WeatherUnits.others import Direction
+		expected = {
+			1: ['N', 'N',   'N',  'E', 'S',  'S', 'S',  'W',   'N'],
+			2: ['N', 'N',   'NE', 'E', 'SE', 'S', 'SW', 'W',   'NW'],
+			3: ['N', 'NNE', 'NE', 'E', 'SE', 'S', 'SW', 'WSW', 'NW'],
+		}
+		degrees = (0, 22.5, 45, 90, 135, 180, 225, 247.5, 315)
+		for budget, wanted in expected.items():
+			for deg, want in zip(degrees, wanted):
+				with self.subTest(budget=budget, degrees=deg):
+					d = Direction(deg)
+					d._digit_budget = budget
+					self.assertEqual(want, format(d, 'shorten=True'))
+
+	def test_a_one_character_budget_never_emits_two_characters(self):
+		"""The 4-point rung was missing entirely.
+
+		Below a 3-char budget everything fell to the 8-point `twoLetter`
+		set, so a 1-character budget still returned 'NE'.
+		"""
+		from WeatherUnits.others import Direction
+		for deg in (0, 45, 90, 135, 180, 225, 270, 315):
+			with self.subTest(degrees=deg):
+				d = Direction(deg)
+				d._digit_budget = 1
+				self.assertEqual(1, len(format(d, 'shorten=True')))
+
+	def test_word_forms_widen_with_the_budget(self):
+		from WeatherUnits.others import Direction
+		d = Direction(22.5)
+		d._digit_budget = 3
+		self.assertEqual('North', format(d, 'shorten=False'))
+		d._digit_budget = 7
+		self.assertEqual('North Northeast', format(d, 'shorten=False'))
 
 	def test_default_is_abbreviated_cardinal(self):
 		from WeatherUnits.others import Direction
