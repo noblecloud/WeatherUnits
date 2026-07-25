@@ -895,7 +895,10 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				# costs nothing and the whole budget goes to decimals - which is
 				# what makes a `precision=2, max=2` config coherent: '.01'
 				# rather than an over-budget '0.01' or a useless '0.0'.
-				params['precision'] = max(min(p, int(params['max']) - self.__intDigits(params, floatValue, intLength)), 0)
+				max_ = int(params['max'])
+				intDigits = self.__intDigits(params, floatValue, intLength, max_, p)
+				params['leadingZeroDropped'] = intDigits != intLength
+				params['precision'] = max(min(p, max_ - intDigits), 0)
 
 		# determine if a plural unit should be used
 		if params.get('unit_type', 'unit') == 'name':
@@ -935,7 +938,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		# 		params[k] = int(v)
 
 		params['value'] = value.__format_value__(params)
-		if self.__intDigits(params, floatValue, 1) == 0:
+		if params.get('leadingZeroDropped', False):
 			# leadingZero off for a value between -1 and 1: drop the '0'
 			# before the radix point ('0.01' -> '.01', '-0.5' -> '-.5').
 			# The precision computed above already assumed this, so the
@@ -969,17 +972,42 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return formatString
 
 	@staticmethod
-	def __intDigits(params: Mapping, floatValue: float, intLength: int) -> int:
+	def __intDigits(params: Mapping, floatValue: float, intLength: int, max_: int, precision: int) -> int:
 		"""How many digits the integer part will actually occupy on screen.
 
-		Zero when `leadingZero` is disabled and the value sits between -1 and
-		1: the '0' before the radix point gets stripped after formatting, so
-		charging it against `max` would waste a digit of the budget. Used
-		both to size `precision` and to decide whether to strip.
+		Only ever differs from `intLength` for a value between -1 and 1,
+		where the integer part is the lone '0' before the radix point. That
+		'0' carries no information, so dropping it frees a digit of the
+		`max` budget for a decimal place.
+
+		`leadingZero` is three-state:
+
+		- ``True``   - always keep it
+		- ``False``  - always drop it
+		- ``'auto'`` (default) - **drop it only when keeping it would render
+		  the value as zero, and dropping actually rescues a digit of it.**
+
+		That last condition matters. Keying purely off the configured
+		precision drops the zero whenever the budget is tight, which buys
+		nothing but a trailing zero: 0.5 became '.50' and 0.9697 became
+		'.970' - same digit count, no more information, worse to read. The
+		zero is only worth spending when the alternative is showing nothing
+		at all, so 0.01 at a 2-digit budget becomes '.01' rather than '0.0',
+		while 0.5 keeps its zero and 0.0416 at a 1-digit budget stays '0'
+		(dropping would only give '.0', equally empty).
 		"""
-		if not params.get('leadingZero', True) and 0 < abs(floatValue) < 1:
+		if not 0 < abs(floatValue) < 1:
+			return intLength
+		leadingZero = params.get('leadingZero', 'auto')
+		if leadingZero is True:
+			return intLength
+		if leadingZero is False:
 			return 0
-		return intLength
+		kept = max(min(precision, max_ - intLength), 0)
+		if round(abs(floatValue), kept) != 0:
+			return intLength  # already shows something; nothing to gain
+		dropped = max(min(precision, max_), 0)
+		return 0 if round(abs(floatValue), dropped) != 0 else intLength
 
 	def __format_value__(self, params: Mapping) -> str:
 		return '{value:{fill}{align}{sign}{minwidth}.{precision}{type}}'.format(**params)
@@ -1201,12 +1229,16 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	def leadingZero(self) -> bool:
 		"""Render the '0' before the radix point on values between -1 and 1.
 
-		Config-settable per unit type ([UnitProperties], e.g.
-		`precipitationRate = precision=2, max=2, leadingZero=False`).
-		Disabling it frees a digit of the `max` budget for a decimal place,
-		which is what lets a 2-digit budget show hundredths as '.01'.
+		Three-state, defaulting to ``'auto'``: keep the zero unless keeping it
+		would cost a decimal place. 0.5 stays '0.5'; 0.01 becomes '.01'
+		rather than a useless '0.0', because the zero it drops is the digit
+		the hundredths place needed.
+
+		Force it either way per unit type in [UnitProperties] -
+		``leadingZero=True`` where the zero aids legibility at a distance,
+		``leadingZero=False`` to always reclaim the digit.
 		"""
-		return getattr(self, '_leadingZero', True)
+		return getattr(self, '_leadingZero', 'auto')
 
 	@leadingZero.setter
 	def leadingZero(self, value):

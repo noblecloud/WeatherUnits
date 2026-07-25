@@ -106,23 +106,55 @@ class TestMaxAppliesBelowOne(TestCase):
 
 
 class TestLeadingZero(TestCase):
-	"""`leadingZero` was declared, documented, and never consumed."""
+	"""`leadingZero` was declared, documented, and never consumed.
 
-	def test_leading_zero_is_dropped_when_disabled(self):
-		i = Length.Inch(0.5)
-		self.assertEqual('0.5 in', format(i, 'leadingZero=True'))
-		self.assertEqual('.5 in', format(i, 'leadingZero=False'))
+	Three-state, defaulting to 'auto': keep the zero unless keeping it would
+	cost a decimal place.
+	"""
 
-	def test_dropping_it_frees_a_digit_of_the_budget(self):
-		# The whole point: the '0' costs a digit, so suppressing it buys a
-		# decimal place. This is what makes a `precision=2, max=2` config
-		# coherent instead of contradictory.
-		# precision=2 asks for hundredths; max=2 allows two digits. With the
-		# leading '0' those are contradictory (0.01 needs three), which is
-		# exactly the shape of LevityDash's shipped precipitationRate config.
+	def test_auto_keeps_the_zero_when_it_fits(self):
+		# 0.5 needs two digits with the zero and the budget allows two, so
+		# there is nothing to gain by dropping it.
+		self.assertEqual('0.5', format(Length.Inch(0.5), 'max=2, showUnit=False'))
+		self.assertEqual('0.5', format(Length.Inch(0.5), 'precision=2, max=2, showUnit=False'))
+
+	def test_auto_drops_the_zero_only_when_the_budget_is_short(self):
+		# precision=2 asks for hundredths; with the zero that needs three
+		# digits, so a 2-digit budget reclaims it. At max=3 it fits and the
+		# zero stays. This is the shape of the shipped precipitationRate
+		# config.
 		i = Length.Inch(0.04)
-		self.assertEqual('0.0', format(i, 'precision=2, max=2, showUnit=False'))
-		self.assertEqual('.04', format(i, 'precision=2, max=2, leadingZero=False, showUnit=False'))
+		self.assertEqual('.04', format(i, 'precision=2, max=2, showUnit=False'))
+		self.assertEqual('0.04', format(i, 'precision=2, max=3, showUnit=False'))
+
+	def test_explicit_true_keeps_it_even_when_that_costs_precision(self):
+		i = Length.Inch(0.04)
+		self.assertEqual('0.0', format(i, 'precision=2, max=2, leadingZero=True, showUnit=False'))
+
+	def test_explicit_false_drops_it_even_when_it_would_have_fit(self):
+		self.assertEqual('.5', format(Length.Inch(0.5), 'max=2, leadingZero=False, showUnit=False'))
+
+	def test_zero_is_not_spent_when_dropping_it_rescues_nothing(self):
+		"""Second clause of the auto rule - the easy one to lose.
+
+		At a 1-digit budget, 0.0416 renders '0' with the zero and '.0'
+		without: equally empty. Dropping buys nothing, so the zero stays.
+		An implementation that only asks "would keeping it show zero?"
+		returns '.0' here.
+		"""
+		self.assertEqual('0', format(Length.Inch(0.0416), 'max=1, showUnit=False'))
+
+	def test_zero_is_not_spent_to_buy_a_trailing_digit(self):
+		"""First clause of the auto rule - guards a plausible wrong version.
+
+		Keying off the *configured* precision rather than what the value
+		needs drops the zero whenever `max - intLength < precision`. That
+		spends it on a trailing zero carrying no information: 0.5 renders
+		'.50' and 0.9697 renders '.970' - same digit count, strictly worse
+		to read. Both must keep their leading zero.
+		"""
+		self.assertEqual('0.5', format(Length.Inch(0.5), 'precision=2, max=2, showUnit=False'))
+		self.assertEqual('0.97 mi', str(Length.Foot(5120)))
 
 	def test_negative_sub_one_values_keep_their_sign(self):
 		self.assertEqual('-.5 in', format(Length.Inch(-0.5), 'leadingZero=False'))

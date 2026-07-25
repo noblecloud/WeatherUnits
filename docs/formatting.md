@@ -134,7 +134,7 @@ Defaults come from the class, which comes from the config file
 | `type` | `g` | float type; `g` is renormalized to `f` internally | ✅ |
 | `shorten` | per config | rescale/refit — may change the unit | ✅ |
 | `minwidth` / `fill` / `align` / `sign` | `''` | standard float-spec fields | ✅ |
-| `leadingZero` | `True` | *intended:* show `0` before values < 1 (`0.5` vs `.5`) | ⚠️ **NOT IMPLEMENTED** |
+| `leadingZero` | `'auto'` | the `0` before the radix on values < 1 — `True`/`False`/`'auto'`, see [below](#leadingzero-and-the-borrowed-digit) | ✅ |
 | `trailingZero` | `True` | *intended:* pad decimals to full precision, staying under `max` | ⚠️ **NOT IMPLEMENTED** |
 
 ### Unit and decoration
@@ -227,6 +227,88 @@ Zero always renders bare — no trailing `.0` — across every unit type:
 ('0 inHg', '0 lux', '0 mph')
 ```
 
+`max` applies to values **at or below 1 too**. It did not always — the
+`type='g'` normalization gated its clamping behind `if float(value) > 1`, so
+`0.004` rendered `'0.00'` at `max=3`, `max=2` *and* `max=1` alike. If you
+are reading old behavior into a bug report, check whether it predates that.
+
+---
+
+## `leadingZero` and the borrowed digit
+
+The `0` in `0.5` carries no information — it is a legibility convention.
+But it **costs a digit of the `max` budget**, and that digit is sometimes
+the difference between showing a value and showing nothing.
+
+`leadingZero` is three-state:
+
+| value | behavior |
+|---|---|
+| `True` | always keep the zero |
+| `False` | always drop it |
+| `'auto'` *(default)* | decide per value — see the rule below |
+
+### The `auto` rule
+
+> **Drop the leading zero only when keeping it would render the value as
+> zero, AND dropping it actually rescues a digit of the value.**
+
+Both clauses are load-bearing. This rule is easy to "simplify" into
+something that looks equivalent and is not — two such attempts are recorded
+below precisely so they don't get re-attempted.
+
+```python
+>>> from WeatherUnits import Length
+>>> format(Length.Inch(0.5),  'max=2, showUnit=False')                 # nothing to gain
+'0.5'
+>>> format(Length.Inch(0.04), 'precision=2, max=2, showUnit=False')    # else it's '0.0'
+'.04'
+>>> format(Length.Inch(0.04), 'precision=2, max=3, showUnit=False')    # fits with the zero
+'0.04'
+>>> format(Length.Foot(5120), 'showUnit=False')                        # 0.9697 mi
+'0.97'
+```
+
+| value | budget | renders | why |
+|---|---|---|---|
+| `0.5` | `max=2` | `0.5` | already meaningful — clause 1 fails, keep |
+| `0.97` (5120 ft) | `max=3` | `0.97` | already meaningful — keep |
+| `0.01` | `max=2` | `.01` | keeping gives `0.0`; dropping rescues it |
+| `0.04` | `max=3` | `0.04` | fits with the zero — keep |
+| `0.0416` | `max=1` | `0` | keeping gives `0`, dropping gives `.0` — **equally empty, so clause 2 fails and the zero stays** |
+| `0` | any | `0` | no fractional part to expose |
+
+### Two wrong rules that look right
+
+**"Drop it whenever the budget is tight."** Unconditional suppression makes
+every sub-1 value lose its zero — `0.5 mph` becomes `.5 mph` across the
+whole app, which is not what anyone wanted.
+
+**"Drop it when `max - intLength < precision`."** Keys off the *configured*
+precision rather than what the value actually needs, so it spends the zero
+to buy a **trailing** digit that carries nothing:
+
+```
+0.5    -> '.50'    same digit count, no more information
+0.9697 -> '.970'   same
+```
+
+That is why the implementation compares `round(value, kept)` against
+`round(value, dropped)` rather than comparing precisions: the question is
+never "does it fit" but "**does dropping it show me something I could not
+otherwise see**".
+
+### Interaction with `max`
+
+Dropping the zero is what makes an otherwise contradictory config coherent.
+`precision=2, max=2` asks for hundredths inside a two-digit budget — with
+the zero, `0.01` needs three. LevityDash ships exactly that pairing for
+precipitation, and `auto` resolves it to `.01`.
+
+Note this competes with any annotation: a `≲`-style marker also costs a
+character, so within a fixed width you can have the precision *or* the
+marker, not both.
+
 ### ⚠️ The `30.00` gap
 
 `30.0` renders as `'30'`, so a live pressure readout drifts between `29.9`,
@@ -300,10 +382,10 @@ any format spec overrides the config. Per-instance assignment
 (`m.precision = 2`) works through the same layer.
 
 Declared in the config templates but **never consumed**: `trailingZero`,
-`leadingZero`, `forcePrecision`, `sizeHint`, `exp`, `slide` (the ini says
-"not yet implemented"), `kSeparator`, `groupingChar`,
-`combineUnitAndSuffix`, and `degrees`. The first three are the ones with
-real display consequences — see [the `30.00` gap](#-the-3000-gap).
+`forcePrecision`, `sizeHint`, `exp`, `slide` (the ini says "not yet
+implemented"), `kSeparator`, `groupingChar`, `combineUnitAndSuffix`, and
+`degrees`. The first two are the ones with real display consequences — see
+[the `30.00` gap](#-the-3000-gap).
 
 ---
 
