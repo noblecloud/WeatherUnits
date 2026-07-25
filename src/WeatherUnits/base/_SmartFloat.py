@@ -64,7 +64,7 @@ class FormatSpec:
 	# must keep being coerced.
 	never_boolean: ClassVar[Set[str]] = {'type', 'fill', 'align'}
 	limit = re.compile(r'\[(?P<max>([+-]?[\d.]+)|\*)?:(?P<min>([+-]?[\d.]+)|\*)?]')
-	precision = re.compile("""	
+	precision = re.compile(r"""
 	(^)?(?(1)|(?<=:))
 	(?P<format_spec>
 		(?P<align>(?P<fill>.)?[<^>])?
@@ -78,7 +78,7 @@ class FormatSpec:
 	)
 	(?=:|$)
 	""", re.VERBOSE)
-	params = re.compile("""
+	params = re.compile(r"""
   (^)?(?(1)|,\s)(
     (?P<keyquote>[\'\"`]?)    # optional start quote
     (?P<key>\S+?)             # key
