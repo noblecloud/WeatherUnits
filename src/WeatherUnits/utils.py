@@ -361,10 +361,16 @@ def getFrom(
 	if findAll:
 		found = []
 	for obj, subKey in product(objs, key):
+		# NB: the miss sentinel here must be UnsetKwarg, NOT `default`. Using
+		# `default` makes the first object short-circuit the whole search --
+		# a miss returns the caller's default, which then passes the
+		# is-not-unset/type checks below and returns immediately, so every
+		# remaining object is unreachable. `default` is only correct once the
+		# search is exhausted (see the return at the end).
 		if isinstance(obj, Mapping):
-			value = obj.get(subKey, default)
+			value = obj.get(subKey, UnsetKwarg)
 		else:
-			value = getattr(obj, subKey, default)
+			value = getattr(obj, subKey, UnsetKwarg)
 		if value is not UnsetKwarg and value not in ignore and isinstance(value, expectedType):
 			if pop and (_pop := getattr(obj, 'pop', None)) is not None:
 				_pop(subKey)

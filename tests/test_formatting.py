@@ -301,3 +301,59 @@ class TestShortenAndBestFit(TestCase):
 		# used to ignore `max`. It rendered '0.970 mi': four digit characters
 		# on Length's 3-digit budget, the last carrying no information.
 		self.assertEqual('0.97 mi', str(Length.Foot(5120)))       # unit refit
+
+
+class TestDimensionlessSpacing(TestCase):
+	"""A unit spacer before an empty unit is a separator between nothing.
+
+	`__format_template__` gated the spacer on `unit is not False`, which an
+	empty string passes, so every dimensionless value carried a trailing
+	space: 'S ', '5 ', '180° '. Invisible in a terminal, visible the moment
+	the string is centred in a dashboard panel or compared for equality.
+	"""
+
+	def test_dimensionless_values_have_no_trailing_space(self):
+		from WeatherUnits import Light
+		from WeatherUnits.others import Angle, Direction
+		for measurement, expected in (
+			(Direction(180), 'S'),
+			(Angle(45), '45°'),
+			(Light.UVI(5), '5'),
+		):
+			with self.subTest(measurement=repr(measurement)):
+				self.assertEqual(expected, str(measurement))
+
+	def test_units_that_do_exist_keep_their_spacer(self):
+		self.assertEqual('4.1 mph', str(Wind.MilesPerHour(4.1)))
+		self.assertEqual('100 lux', str(Light.Lux(100)))
+
+
+class TestDirectionCardinal(TestCase):
+	"""`cardinal` and `shorten` were both inert on Direction.
+
+	Two independent causes, both worth pinning:
+
+	1. `getFrom` used the caller's `default` as the per-object miss
+	   sentinel, so the *first* mapping searched returned it and every
+	   later mapping was unreachable. `cardinal=False` in a spec could
+	   never beat the class's own `show_cardinal`.
+	2. `Cardinal.__format_value__` read `self.shorten` and ignored the
+	   params entirely, so a spec could not ask for the full name.
+	"""
+
+	def test_cardinal_false_renders_degrees(self):
+		from WeatherUnits.others import Direction
+		d = Direction(180)
+		self.assertEqual('S', format(d, 'cardinal=True'))
+		self.assertEqual('180°', format(d, 'cardinal=False'))
+		self.assertEqual('180°', format(d, 'cardinal: False'))
+
+	def test_shorten_selects_abbreviated_vs_full_name(self):
+		from WeatherUnits.others import Direction
+		self.assertEqual('S', format(Direction(180), 'shorten=True'))
+		self.assertEqual('South', format(Direction(180), 'shorten=False'))
+		self.assertEqual('North Northeast', format(Direction(22.5), 'shorten=False'))
+
+	def test_default_is_abbreviated_cardinal(self):
+		from WeatherUnits.others import Direction
+		self.assertEqual('S', str(Direction(180)))

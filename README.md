@@ -123,9 +123,8 @@ The basic rules are:
     |True|S|
     |False|180°|
 
-    ⚠️ Currently `Direction` renders `'S '` (with a trailing space) at *both*
-    settings — the parameter has no effect and the space is a bug. The table
-    above is the intent.
+    With `cardinal` on, `shorten=False` gives the full name — `South`,
+    `North Northeast` — instead of the abbreviation.
 
 - **key:** Key to be used for other programs
 - **size_hint:** Override generated size hint string. Useful for when you know the expected max string length.

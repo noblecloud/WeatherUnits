@@ -1024,7 +1024,12 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			formatTemplate.append(f'{valueSuffix}')
 		if params.get('unit_symbol', None):
 			formatTemplate.append('{unit_symbol}')
-		if params.get('show_unit', self.show_unit) and params.get('unit', self.unit) is not False:
+		# An empty unit is not the same as an omitted one: `'' is not False`
+		# passed the old check, so dimensionless units (Angle, Direction)
+		# emitted the spacer before an empty string and rendered '180° '
+		# with a trailing space. Nothing to separate means no separator.
+		unit = params.get('unit', self.unit)
+		if params.get('show_unit', self.show_unit) and unit is not False and unit:
 			if params.get('unit_spacer', self.unit_spacer):
 				formatTemplate.append('{unit_spacer}')
 			formatTemplate.append('{unit}')

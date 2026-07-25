@@ -5,8 +5,9 @@ class TestLight(TestCase):
 	def test_uvi(self):
 		uvi = Light.UVI(5)
 		self.assertEqual(float(uvi), 5)
-		# Index units currently don't show unit string by default
-		self.assertEqual(str(uvi.withUnit), '5 ')
+		# Index units have no unit string, so .withUnit has nothing to add --
+		# and no spacer is emitted for an empty unit.
+		self.assertEqual(str(uvi.withUnit), '5')
 
 	def test_illuminance_irradiance_conversion(self):
 		# Based on the code: Irradiance = Illuminance / 120

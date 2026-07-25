@@ -174,7 +174,12 @@ class Cardinal:
 			return self.full
 
 	def __format_value__(self, params: Mapping) -> str:
-		if self.shorten:
+		# Read `shorten` from the format params, not just the class default,
+		# so `{d:shorten=False}` yields 'South' rather than 'S'. `self.shorten`
+		# stays the fallback for the no-params path (__str__).
+		shorten = getFrom('shorten', *getattr(params, 'maps', (params,)),
+			default=self.shorten, expectedType=(bool, str))
+		if shorten:
 			return self.abbrivated
 		else:
 			return self.full

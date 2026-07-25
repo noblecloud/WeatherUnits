@@ -23,7 +23,9 @@ class TestDerived(TestCase):
 		from WeatherUnits import Direction
 		mph.direction = Direction(180)
 		self.assertEqual(float(mph.direction), 180)
-		self.assertEqual(str(mph.direction), 'S ')
+		# No trailing space: Direction is dimensionless, and a unit spacer
+		# before an empty unit is a separator between nothing and nothing.
+		self.assertEqual(str(mph.direction), 'S')
 
 	def test_manual_derived(self):
 		from WeatherUnits import DerivedMeasurement
