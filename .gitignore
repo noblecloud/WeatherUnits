@@ -3,3 +3,10 @@
 /build/
 *.egg-info/
 .envrc
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# macOS
+.DS_Store
