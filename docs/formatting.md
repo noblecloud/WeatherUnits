@@ -128,7 +128,9 @@ Defaults come from the class, which comes from the config file
 | Key | Default | Effect | Status |
 |---|---|---|---|
 | `precision` | per class | decimal places, **capped by `max`** | ✅ |
-| `max` | per class | **total significant digits**, not decimals | ✅ |
+| `max` | per class | **total displayed digits** — the width budget `shorten` rescales to fit | ✅ |
+| `forcePrecision` | `False` | *intended:* always show decimals out to `precision` | ⚠️ **NOT IMPLEMENTED** |
+| `sizeHint` | per class | *intended:* override the generated size-hint string | ⚠️ **NOT IMPLEMENTED** |
 | `type` | `g` | float type; `g` is renormalized to `f` internally | ✅ |
 | `shorten` | per config | rescale/refit — may change the unit | ✅ |
 | `minwidth` / `fill` / `align` / `sign` | `''` | standard float-spec fields | ✅ |
@@ -187,9 +189,23 @@ Use `precision=` / `type=` instead.
 
 ## precision, max and rounding
 
-`max` is a **total significant-digit budget**, and `precision` is derived
-per value from that value's own decimal content, then capped by `max`. It is
-not a fixed number of decimal places.
+**`max` is a display-width budget — the total number of digits that may be
+shown while still showing the decimal** (`config/template.ini`). It is not a
+decimal-place count, and it is not merely a cap: together with `shorten` it
+decides *when a value gets rescaled to fit*, by changing the unit or adding
+a `k`/`m` suffix.
+
+```python
+>>> Light.Lux(1000)          # 4 digits > budget -> rescaled
+'1.00k lux'
+>>> Length.Foot(5120)        # too wide in feet -> refit to miles
+'0.970 mi'
+>>> Length.Meter(1234.5)
+'1.234 km'
+```
+
+`precision` then fills whatever room `max` leaves, derived per value from
+that value's own decimal content.
 
 ```python
 >>> Pressure.InchOfMercury(29.92)   # 3 digits fit → 1 decimal
@@ -222,10 +238,16 @@ it, because precision is capped by the value's own decimals:
 '30.0 inHg'
 ```
 
-**`trailingZero` is the intended mechanism** — *"display zero after decimal
-point to full precision staying under max"* (`config/template.ini`) — and it
-is not implemented. Until it is, there is no way to pin a fixed decimal
-width.
+**Two declared-but-unimplemented options are the intended mechanism**, both
+from `config/template.ini`:
+
+| Option | Intent |
+|---|---|
+| `trailingZero` | *"display zero after decimal point to full precision staying under max"* |
+| `forcePrecision` | *"decimals are always displayed within the precision amount"* |
+
+Neither is consumed by any code. Until one lands there is no way to pin a
+fixed decimal width — which is why a pressure readout drifts in width.
 
 ---
 
@@ -277,9 +299,11 @@ Because class defaults sit *below* spec parameters in the precedence chain,
 any format spec overrides the config. Per-instance assignment
 (`m.precision = 2`) works through the same layer.
 
-Declared in the config templates but **never consumed**: `exp`, `slide`
-(the ini says "not yet implemented"), `kSeparator`, `sizeHint`,
-`forcePrecision`, `groupingChar`, `combineUnitAndSuffix`, and `degrees`.
+Declared in the config templates but **never consumed**: `trailingZero`,
+`leadingZero`, `forcePrecision`, `sizeHint`, `exp`, `slide` (the ini says
+"not yet implemented"), `kSeparator`, `groupingChar`,
+`combineUnitAndSuffix`, and `degrees`. The first three are the ones with
+real display consequences — see [the `30.00` gap](#-the-3000-gap).
 
 ---
 

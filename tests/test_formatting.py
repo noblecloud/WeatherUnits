@@ -6,9 +6,11 @@ renders every dashboard value through this library) actually see. Before
 this file there were 19 string assertions in the whole suite, only 5 of them
 involving decimals.
 
-See docs/formatting.md for the model these assertions encode: `max` is a
-total significant-digit budget, and `precision` is derived per value from
-that value's own decimal content, then capped by `max`.
+See docs/formatting.md for the model these assertions encode: `max` is the
+total number of *displayed digits* - a width budget that, together with
+`shorten`, decides when a value is rescaled to fit (changing the unit or
+adding a k/m suffix). `precision` fills whatever room `max` leaves, derived
+per value from that value's own decimal content.
 
 Assertions here reflect the **US config** (config/us.ini); `shorten` in
 particular differs under si.ini.
@@ -64,12 +66,13 @@ class TestPrecisionAndMax(TestCase):
 		A value of exactly 30.0 renders as '30', so a live pressure readout
 		drifts between '29.9', '30' and '30.1'. Raising precision/max does
 		not help, because precision is capped by the value's own decimals.
-		The intended mechanism is `trailingZero` ("display zero after
-		decimal point to full precision staying under max",
-		config/template.ini), which is declared but never consumed.
+		Two declared-but-unconsumed options in config/template.ini are the
+		intended mechanism: `trailingZero` ("display zero after decimal
+		point to full precision staying under max") and `forcePrecision`
+		("decimals are always displayed within the precision amount").
 
-		When trailingZero is implemented, this test SHOULD fail - update it
-		to the intended '30.00 inHg' rather than working around it.
+		When either is implemented, this test SHOULD fail - update it to the
+		intended '30.00 inHg' rather than working around it.
 		"""
 		self.assertEqual('30 inHg', str(Pressure.InchOfMercury(30.0)))
 		self.assertEqual('30.0 inHg', format(Pressure.InchOfMercury(30.0), 'precision=2, max=5'))
@@ -144,3 +147,10 @@ class TestShortenAndBestFit(TestCase):
 	def test_scale_factor_suffixes(self):
 		self.assertEqual('1.05k lux', str(Light.Lux(1054)))
 		self.assertEqual('1.0246m lux', str(Light.Lux(1024581)))
+
+	def test_values_are_rescaled_to_fit_the_max_digit_budget(self):
+		# `max` is a display-width budget: when a value needs more digits
+		# than it allows, `shorten` rescales to fit - either by suffix or by
+		# refitting to a larger unit.
+		self.assertEqual('1.00k lux', str(Light.Lux(1000)))       # suffix
+		self.assertEqual('0.970 mi', str(Length.Foot(5120)))      # unit refit
