@@ -15,11 +15,9 @@ Easily convert typical weather units from one unit to another with automatic loc
 ## How to use
 
 > 📐 **[Formatting reference →](docs/formatting.md)** — the format-spec
-> mini-language, every parameter, how `precision`/`max` interact, and the
+> mini-language, every parameter, how `precision`/`digit_budget` interact, and the
 > known gotchas. Verified against the library; start there for anything
 > display-related.
-
-**Note: The rest of the following documentation is currently out of date after some major changes**
 
 ### Unit Conversion
 
@@ -34,7 +32,7 @@ from WeatherUnits.temperature import Fahrenheit
 '32°f'
 >>> value['c'].withUnit
 '0°c'
->>> value.celcius
+>>> value.celsius
 '0°'
 ```
 
@@ -59,46 +57,57 @@ The basic rules are:
 4) Values without an '=' will be read as None and denote being unset
 
 #### Properties
-- **precision:**  The number of digits allowed to be displayed past the decimal but will not exceed max Example number:
+- **precision:**  The number of digits allowed to be displayed past the decimal but will not exceed `digit_budget`. Example number:
 
     |example|3.14159m|
     |-------|--------|
-    |0|3m|
-    |1|3.1m|
-    |2|3.14m|
-    |3|3.141m|
+    |0|3 m|
+    |1|3.1 m|
+    |2|3.14 m|
+    |3|3.142 m|
 
-- **max:**  The total number of digits that can be displayed while still showing the decimal.  If shorten is True, numbers would be reduced by factors of 10³
+    (The last decimal is *rounded*, not truncated.)
+
+- **digit_budget:**  The total number of digits that can be displayed while still showing the decimal.  When the value doesn't fit, `shorten` decides how it is rescaled — either refitting to a different unit or dividing and appending a 10³ suffix.
 
     |example|415.25mm|
     |-----|-------|
-    |2|0.4k mm|
-    |3|415mm|
-    |4|415.3mm|
-    |5|415.25mm|
+    |2|41.53 cm|
+    |3|415.2 mm|
+    |4|415.2 mm|
+    |5|415.2 mm|
+
+    ⚠️ Note the budget **caps but does not grant**: raising it above 3 does
+    not buy more decimals here, because `precision` is separately capped by
+    the class default and by the value's own decimal content. The
+    intuitive `4 → 415.3mm, 5 → 415.25mm` progression requires raising
+    `precision` too. See [the formatting reference](docs/formatting.md).
 
 - **unit:** Override built in unit string
 - **suffix:** Override built in suffix string._Only used for shortening numbers_
-- **decorator:** Override built in decorator._Only used for ° with degrees_
+- **unit_symbol:** Override built in symbol trailing the value._Only used for ° with degrees_
 - **title:** Title to be used by other display programs
 - **exp:** Override exponent.  I can't imagine why this would be used
-- **showUnit:** Show unit True: 5km False: 5
-- **leadingZero:** Display zero before values less than 1 True: 0.1in False: .1in
-- **trailingZero:** Display zero after decimal point to full precision staying under max True: 1.0in False: 1in True: 4.00cm
-- **unitSpacer:** Determines if there is a space between measurements and their units True: 90° f False: 90°f
-- **kSeparator:**
+- **show_unit:** Show unit True: 5km False: 5
+- **leading_zero:** Display zero before values less than 1. `True`: 0.1in  `False`: .1in  `auto` (default): keeps the zero unless keeping it would cost the value its last meaningful digit — see [the formatting reference](docs/formatting.md) for the exact rule
+- **trailing_zero:** Display zero after decimal point to full precision staying under `digit_budget` True: 1.0in False: 1in True: 4.00cm  _Not yet implemented_
+- **unit_spacer:** The text placed between the value and its unit. ⚠️ **This is a string, not a flag** — `False` removes it (`90°f`), but `True` inserts the literal word (`90°Truef`). Leave it unset for the class default (a space), or give it the string you want.
+- **k_separator:** The character separating powers of 10³ — the `,` in `1,000`.  _Not yet implemented_
 
     |value|example|
     |----|------|
     |True|1,000ft|
     |False|1000ft|
 
-- **shorten:** Shortens values to fit within the max display amount
+- **shorten:** Rescales a value that doesn't fit the `digit_budget`. Does one of two things depending on the unit type: refits to a neighbouring unit, or divides and appends a 10³ suffix.
 
     |value|example|
     |----|------|
-    |True|1k s|
+    |True|16.67min|
     |False|1000s|
+
+    (`Time.Second(1000)` — here it refits the unit. `Light.Lux(1000)` takes
+    the other branch and gives `1.00k lux`.)
 
 - **slide:** Scale units for the appropriate values. _Not yet implemented_
 
@@ -107,16 +116,22 @@ The basic rules are:
     |True|1km|
     |False|1000m|
 
-- **cardinal:** Show degrees as cardinal direction. **_Shorten_** _decides full vs abbreviated name_
+- **cardinal:** Show degrees as a cardinal direction rather than a number. **_shorten_** _decides full vs abbreviated name_
 
     |value|example|
     |----|------|
-    |True|180°|
-    |False|South|
+    |True|S|
+    |False|180°|
+
+    ⚠️ Currently `Direction` renders `'S '` (with a trailing space) at *both*
+    settings — the parameter has no effect and the space is a bug. The table
+    above is the intent.
 
 - **key:** Key to be used for other programs
-- **sizeHint:** Override generated size hint string. Useful for when you know the expected max string length.
+- **size_hint:** Override generated size hint string. Useful for when you know the expected max string length.
 
+
+**Note: the section below is currently out of date after some major changes.** The conversion and config sections above have been verified against the library.
 
 ## Defining Your Own Unit
 
@@ -135,7 +150,7 @@ from WeatherUnits.base import Measurement, NamedType
 class Temperature(Measurement):  # For static unit types, the class inherits Measurement.
 
     # Shared unit properties are defined here or in a provided config file.
-    _decorator = '°'
+    _unit_symbol = '°'
 
     # Properties for converting units are defined in the main parent class.
     @property
