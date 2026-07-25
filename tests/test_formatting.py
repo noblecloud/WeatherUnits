@@ -83,6 +83,64 @@ class TestPrecisionAndMax(TestCase):
 		)
 
 
+class TestMaxAppliesBelowOne(TestCase):
+	"""`max` used to be inert for values <= 1.
+
+	The type='g' normalization gated its clamping block behind
+	`if float(value) > 1`, so the sub-1 branch passed the configured
+	precision through unclamped and a 1-digit budget still rendered 3 digits.
+	"""
+
+	def test_budget_clamps_decimals_on_small_values(self):
+		i = Length.Inch(0.0416)
+		self.assertEqual('0', format(i, 'max=1, showUnit=False'))
+		self.assertEqual('0.0', format(i, 'max=2, showUnit=False'))
+		self.assertEqual('0.0', format(i, 'max=3, showUnit=False'))
+
+	def test_default_rendering_is_unaffected(self):
+		# The default budget already matched what these rendered, so nothing
+		# users see at default settings changed.
+		self.assertEqual('0.5 in', str(Length.Inch(0.5)))
+		self.assertEqual('0 in', str(Length.Inch(0)))
+		self.assertEqual('100 lux', str(Light.Lux(100)))
+
+
+class TestLeadingZero(TestCase):
+	"""`leadingZero` was declared, documented, and never consumed."""
+
+	def test_leading_zero_is_dropped_when_disabled(self):
+		i = Length.Inch(0.5)
+		self.assertEqual('0.5 in', format(i, 'leadingZero=True'))
+		self.assertEqual('.5 in', format(i, 'leadingZero=False'))
+
+	def test_dropping_it_frees_a_digit_of_the_budget(self):
+		# The whole point: the '0' costs a digit, so suppressing it buys a
+		# decimal place. This is what makes a `precision=2, max=2` config
+		# coherent instead of contradictory.
+		# precision=2 asks for hundredths; max=2 allows two digits. With the
+		# leading '0' those are contradictory (0.01 needs three), which is
+		# exactly the shape of LevityDash's shipped precipitationRate config.
+		i = Length.Inch(0.04)
+		self.assertEqual('0.0', format(i, 'precision=2, max=2, showUnit=False'))
+		self.assertEqual('.04', format(i, 'precision=2, max=2, leadingZero=False, showUnit=False'))
+
+	def test_negative_sub_one_values_keep_their_sign(self):
+		self.assertEqual('-.5 in', format(Length.Inch(-0.5), 'leadingZero=False'))
+
+	def test_values_at_or_above_one_are_untouched(self):
+		for value in (1.0, 1.25, 12.75):
+			with self.subTest(value=value):
+				self.assertEqual(
+					format(Length.Inch(value), 'leadingZero=True'),
+					format(Length.Inch(value), 'leadingZero=False'),
+				)
+
+	def test_zero_is_untouched(self):
+		# Exactly zero has no fractional part to expose; stripping would
+		# leave a bare '.'.
+		self.assertEqual('0 in', format(Length.Inch(0), 'leadingZero=False'))
+
+
 class TestDecoratorAndSpacer(TestCase):
 	"""Two shapes: decorator-no-spacer, and spacer-no-decorator."""
 
@@ -153,4 +211,7 @@ class TestShortenAndBestFit(TestCase):
 		# than it allows, `shorten` rescales to fit - either by suffix or by
 		# refitting to a larger unit.
 		self.assertEqual('1.00k lux', str(Light.Lux(1000)))       # suffix
-		self.assertEqual('0.970 mi', str(Length.Foot(5120)))      # unit refit
+		# 5120 ft best-fits to 0.9697 mi, which is sub-1 - the branch that
+		# used to ignore `max`. It rendered '0.970 mi': four digit characters
+		# on Length's 3-digit budget, the last carrying no information.
+		self.assertEqual('0.97 mi', str(Length.Foot(5120)))       # unit refit

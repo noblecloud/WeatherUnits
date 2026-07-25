@@ -884,7 +884,18 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 						params['precision'] = intLength or 1
 			else:
 				params['type'] = 'f'
-				params['precision'] = p
+				# `max` is a display-width budget (total digits shown) and it
+				# applies here too - this branch previously used `p` unclamped,
+				# so `max` was inert for every value <= 1 and 0.004 rendered
+				# '0.00' at max=3, max=2 AND max=1 alike.
+				#
+				# A sub-1 value normally spends intLength digits on its integer
+				# part (the leading '0'), leaving max - intLength for decimals.
+				# When leadingZero is off that '0' is never rendered, so it
+				# costs nothing and the whole budget goes to decimals - which is
+				# what makes a `precision=2, max=2` config coherent: '.01'
+				# rather than an over-budget '0.01' or a useless '0.0'.
+				params['precision'] = max(min(p, int(params['max']) - self.__intDigits(params, floatValue, intLength)), 0)
 
 		# determine if a plural unit should be used
 		if params.get('unit_type', 'unit') == 'name':
@@ -924,8 +935,12 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		# 		params[k] = int(v)
 
 		params['value'] = value.__format_value__(params)
-		# if 0 < floatValue < 1 and not params['value'].startswith('0.0'):
-		# 	params['value'] = params['value'].lstrip('0')
+		if self.__intDigits(params, floatValue, 1) == 0:
+			# leadingZero off for a value between -1 and 1: drop the '0'
+			# before the radix point ('0.01' -> '.01', '-0.5' -> '-.5').
+			# The precision computed above already assumed this, so the
+			# digit it frees has gone to a decimal place.
+			params['value'] = params['value'].replace('0.', '.', 1)
 
 		formattedValue = formatString.format(**params)
 
@@ -952,6 +967,19 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			value = getattr(obj, attr, obj)
 			formatString = formatString.replace(f'{{{obj}.{attr}}}', str(value))
 		return formatString
+
+	@staticmethod
+	def __intDigits(params: Mapping, floatValue: float, intLength: int) -> int:
+		"""How many digits the integer part will actually occupy on screen.
+
+		Zero when `leadingZero` is disabled and the value sits between -1 and
+		1: the '0' before the radix point gets stripped after formatting, so
+		charging it against `max` would waste a digit of the budget. Used
+		both to size `precision` and to decide whether to strip.
+		"""
+		if not params.get('leadingZero', True) and 0 < abs(floatValue) < 1:
+			return 0
+		return intLength
 
 	def __format_value__(self, params: Mapping) -> str:
 		return '{value:{fill}{align}{sign}{minwidth}.{precision}{type}}'.format(**params)
@@ -986,7 +1014,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	@property
 	def defaultFormatParams(self):
 		return {
-			'leadingZero':  True,
+			'leadingZero':  self.leadingZero,
 			'trailingZero': True,
 			'align':        '',
 			'fill':         '',
@@ -1168,6 +1196,21 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	@showUnit.setter
 	def showUnit(self, value):
 		self._showUnit = value
+
+	@property
+	def leadingZero(self) -> bool:
+		"""Render the '0' before the radix point on values between -1 and 1.
+
+		Config-settable per unit type ([UnitProperties], e.g.
+		`precipitationRate = precision=2, max=2, leadingZero=False`).
+		Disabling it frees a digit of the `max` budget for a decimal place,
+		which is what lets a 2-digit budget show hundredths as '.01'.
+		"""
+		return getattr(self, '_leadingZero', True)
+
+	@leadingZero.setter
+	def leadingZero(self, value):
+		self._leadingZero = value
 
 	@property
 	def decorator(self) -> str:
