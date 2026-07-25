@@ -12,8 +12,8 @@ class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 	Fahrenheit: type
 	Kelvin: type
 
-	_showUnit = False
-	_decorator = '°'
+	_show_unit = False
+	_unit_symbol = '°'
 	_id = '°t'
 
 	def __new__(cls, value: float | int | Measurement):

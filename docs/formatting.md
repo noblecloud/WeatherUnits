@@ -21,7 +21,7 @@ How a measurement becomes a string.
 
 >>> f'{speed}'                  # class defaults
 '4.1 mph'
->>> f'{speed:showUnit=False}'   # a parameter
+>>> f'{speed:show_unit=False}'   # a parameter
 '4.1'
 >>> f'{speed:ms}'               # a conversion
 '0.0 mi/ms'
@@ -58,8 +58,8 @@ All three parts are optional:
 | `.2f` | float spec only |
 | `mph` | conversion only |
 | `mph:.2f` | conversion + float spec |
-| `showUnit=False` | one parameter |
-| `precision=2, max=5` | several parameters |
+| `show_unit=False` | one parameter |
+| `precision=2, digit_budget=5` | several parameters |
 
 Parameters accept **either separator** — `key=value` or `key: value`. They
 are equivalent *for ordinary word values*; see the [`:` caveat](#the--caveat)
@@ -103,9 +103,9 @@ Because the float spec is claimed *before* parameters (step 2), a
 ```python
 >>> from WeatherUnits import Length
 >>> i = Length.Inch(51)
->>> f'{i:unitSpacer=_}'    # '=' → parsed as a parameter
+>>> f'{i:unit_spacer=_}'    # '=' → parsed as a parameter
 '51_in'
->>> f'{i:unitSpacer: _}'   # ':' → ' _' eaten by the float-spec regex
+>>> f'{i:unit_spacer: _}'   # ':' → ' _' eaten by the float-spec regex
 ' 51 in'
 ```
 
@@ -129,22 +129,22 @@ Defaults come from the class, which comes from the config file
 |---|---|---|---|
 | `precision` | per class | decimal places, **capped by `max`** | ✅ |
 | `max` | per class | **total displayed digits** — the width budget `shorten` rescales to fit | ✅ |
-| `forcePrecision` | `False` | *intended:* always show decimals out to `precision` | ⚠️ **NOT IMPLEMENTED** |
-| `sizeHint` | per class | *intended:* override the generated size-hint string | ⚠️ **NOT IMPLEMENTED** |
+| `force_precision` | `False` | *intended:* always show decimals out to `precision` | ⚠️ **NOT IMPLEMENTED** |
+| `size_hint` | per class | *intended:* override the generated size-hint string | ⚠️ **NOT IMPLEMENTED** |
 | `type` | `g` | float type; `g` is renormalized to `f` internally | ✅ |
 | `shorten` | per config | rescale/refit — may change the unit | ✅ |
 | `minwidth` / `fill` / `align` / `sign` | `''` | standard float-spec fields | ✅ |
-| `leadingZero` | `'auto'` | the `0` before the radix on values < 1 — `True`/`False`/`'auto'`, see [below](#leadingzero-and-the-borrowed-digit) | ✅ |
-| `trailingZero` | `True` | *intended:* pad decimals to full precision, staying under `max` | ⚠️ **NOT IMPLEMENTED** |
+| `leading_zero` | `'auto'` | the `0` before the radix on values < 1 — `True`/`False`/`'auto'`, see [below](#leadingzero-and-the-borrowed-digit) | ✅ |
+| `trailing_zero` | `True` | *intended:* pad decimals to full precision, staying under `max` | ⚠️ **NOT IMPLEMENTED** |
 
 ### Unit and decoration
 
 | Key | Default | Effect | Status |
 |---|---|---|---|
-| `showUnit` | per class | render the unit at all | ✅ |
+| `show_unit` | per class | render the unit at all | ✅ |
 | `unit` | per class | override the unit string | ✅ |
-| `unitSpacer` | per class | **a string**, not a flag — the text between value and unit | ✅ (see gotcha) |
-| `decorator` | per class | trails the value (`°`) | ✅ |
+| `unit_spacer` | per class | **a string**, not a flag — the text between value and unit | ✅ (see gotcha) |
+| `unit_symbol` | per class | trails the value (`°`) | ✅ |
 | `prefix` / `suffix` | none | wrap the whole result | ✅ |
 | `plural` | `False` | with a non-1 value, use the plural unit/name | ✅ |
 | `unit_type` | none | `name` swaps symbol for class name — **only takes effect together with `plural=True`** | ⚠️ partial |
@@ -159,16 +159,16 @@ Defaults come from the class, which comes from the config file
 Unless you supply `format=`, the template is built as:
 
 ```
-{prefix}{value}{valueSuffix}{decorator}{unitSpacer}{unit}{suffix}
+{prefix}{value}{valueSuffix}{unit_symbol}{unit_spacer}{unit}{suffix}
 ```
 
-`{unitSpacer}{unit}` are appended only when `showUnit` is true. That is why
+`{unit_spacer}{unit}` are appended only when `show_unit` is true. That is why
 the two common shapes differ:
 
 ```python
->>> f'{Temperature.Fahrenheit(32)}'   # decorator '°', unitSpacer ''
+>>> f'{Temperature.Fahrenheit(32)}'   # unit_symbol '°', unit_spacer ''
 '32°'
->>> f'{Wind.MilesPerHour(4.1)}'       # decorator '',  unitSpacer ' '
+>>> f'{Wind.MilesPerHour(4.1)}'       # unit_symbol '',  unit_spacer ' '
 '4.1 mph'
 ```
 
@@ -229,18 +229,18 @@ Zero always renders bare — no trailing `.0` — across every unit type:
 
 `max` applies to values **at or below 1 too**. It did not always — the
 `type='g'` normalization gated its clamping behind `if float(value) > 1`, so
-`0.004` rendered `'0.00'` at `max=3`, `max=2` *and* `max=1` alike. If you
+`0.004` rendered `'0.00'` at `digit_budget=3`, `digit_budget=2` *and* `digit_budget=1` alike. If you
 are reading old behavior into a bug report, check whether it predates that.
 
 ---
 
-## `leadingZero` and the borrowed digit
+## `leading_zero` and the borrowed digit
 
 The `0` in `0.5` carries no information — it is a legibility convention.
 But it **costs a digit of the `max` budget**, and that digit is sometimes
 the difference between showing a value and showing nothing.
 
-`leadingZero` is three-state:
+`leading_zero` is three-state:
 
 | value | behavior |
 |---|---|
@@ -259,23 +259,23 @@ below precisely so they don't get re-attempted.
 
 ```python
 >>> from WeatherUnits import Length
->>> format(Length.Inch(0.5),  'max=2, showUnit=False')                 # nothing to gain
+>>> format(Length.Inch(0.5),  'digit_budget=2, show_unit=False')                 # nothing to gain
 '0.5'
->>> format(Length.Inch(0.04), 'precision=2, max=2, showUnit=False')    # else it's '0.0'
+>>> format(Length.Inch(0.04), 'precision=2, digit_budget=2, show_unit=False')    # else it's '0.0'
 '.04'
->>> format(Length.Inch(0.04), 'precision=2, max=3, showUnit=False')    # fits with the zero
+>>> format(Length.Inch(0.04), 'precision=2, digit_budget=3, show_unit=False')    # fits with the zero
 '0.04'
->>> format(Length.Foot(5120), 'showUnit=False')                        # 0.9697 mi
+>>> format(Length.Foot(5120), 'show_unit=False')                        # 0.9697 mi
 '0.97'
 ```
 
 | value | budget | renders | why |
 |---|---|---|---|
-| `0.5` | `max=2` | `0.5` | already meaningful — clause 1 fails, keep |
-| `0.97` (5120 ft) | `max=3` | `0.97` | already meaningful — keep |
-| `0.01` | `max=2` | `.01` | keeping gives `0.0`; dropping rescues it |
-| `0.04` | `max=3` | `0.04` | fits with the zero — keep |
-| `0.0416` | `max=1` | `0` | keeping gives `0`, dropping gives `.0` — **equally empty, so clause 2 fails and the zero stays** |
+| `0.5` | `digit_budget=2` | `0.5` | already meaningful — clause 1 fails, keep |
+| `0.97` (5120 ft) | `digit_budget=3` | `0.97` | already meaningful — keep |
+| `0.01` | `digit_budget=2` | `.01` | keeping gives `0.0`; dropping rescues it |
+| `0.04` | `digit_budget=3` | `0.04` | fits with the zero — keep |
+| `0.0416` | `digit_budget=1` | `0` | keeping gives `0`, dropping gives `.0` — **equally empty, so clause 2 fails and the zero stays** |
 | `0` | any | `0` | no fractional part to expose |
 
 ### Two wrong rules that look right
@@ -301,7 +301,7 @@ otherwise see**".
 ### Interaction with `max`
 
 Dropping the zero is what makes an otherwise contradictory config coherent.
-`precision=2, max=2` asks for hundredths inside a two-digit budget — with
+`precision=2, digit_budget=2` asks for hundredths inside a two-digit budget — with
 the zero, `0.01` needs three. LevityDash ships exactly that pairing for
 precipitation, and `auto` resolves it to `.01`.
 
@@ -316,7 +316,7 @@ marker, not both.
 it, because precision is capped by the value's own decimals:
 
 ```python
->>> f'{Pressure.InchOfMercury(30.0):precision=2, max=5}'
+>>> f'{Pressure.InchOfMercury(30.0):precision=2, digit_budget=5}'
 '30.0 inHg'
 ```
 
@@ -325,8 +325,8 @@ from `config/template.ini`:
 
 | Option | Intent |
 |---|---|
-| `trailingZero` | *"display zero after decimal point to full precision staying under max"* |
-| `forcePrecision` | *"decimals are always displayed within the precision amount"* |
+| `trailing_zero` | *"display zero after decimal point to full precision staying under max"* |
+| `force_precision` | *"decimals are always displayed within the precision amount"* |
 
 Neither is consumed by any code. Until one lands there is no way to pin a
 fixed decimal width — which is why a pressure readout drifts in width.
@@ -358,7 +358,7 @@ before you rely on the rendered unit:
 ```
 
 `shorten` defaults to `False` under `us.ini` and `True` under `si.ini`, with
-per-type overrides (e.g. `illuminance = max=4, shorten=True`).
+per-type overrides (e.g. `illuminance = digit_budget=4, shorten=True`).
 
 ---
 
@@ -371,7 +371,7 @@ time directly.
 - `[UnitProperties]` applies per measurement type:
 
   ```ini
-  temperature = precision=0, max=3, unitSpacer=False, shorten=False, showUnit=False
+  temperature = precision=0, digit_budget=3, unit_spacer=False, shorten=False, show_unit=False
   ```
 
   Each key becomes a `_`-prefixed class attribute (`Temperature._precision`),
@@ -381,9 +381,9 @@ Because class defaults sit *below* spec parameters in the precedence chain,
 any format spec overrides the config. Per-instance assignment
 (`m.precision = 2`) works through the same layer.
 
-Declared in the config templates but **never consumed**: `trailingZero`,
-`forcePrecision`, `sizeHint`, `exp`, `slide` (the ini says "not yet
-implemented"), `kSeparator`, `groupingChar`, `combineUnitAndSuffix`, and
+Declared in the config templates but **never consumed**: `trailing_zero`,
+`force_precision`, `size_hint`, `exp`, `slide` (the ini says "not yet
+implemented"), `k_separator`, `grouping_char`, `combine_unit_and_suffix`, and
 `degrees`. The first two are the ones with real display consequences — see
 [the `30.00` gap](#-the-3000-gap).
 
@@ -400,7 +400,7 @@ implemented"), `kSeparator`, `groupingChar`, `combineUnitAndSuffix`, and
 | `__format_class__` | never overridden anywhere; call site is commented out |
 
 Notable implementations: **`Percentage`** scales by 100 and bumps precision;
-**`Direction`** adds cardinal handling and drops `{decorator}` when showing a
+**`Direction`** adds cardinal handling and drops `{unit_symbol}` when showing a
 cardinal; **`Time`** pre-processes `simple`, `simple+`, `ago`, and timestamp
 specs before delegating upward. **Derived units** (`Wind`, `Precipitation`,
 …) override no formatting at all — they differ only in `unit`, which is
@@ -412,7 +412,7 @@ composed as `numerator/denominator`, enabling `f'{wind:km/hr}'`.
 
 **Boolean-looking values are coerced.** `'f'`, `'n'`, `'t'`, `'y'`, `'no'`,
 `'on'`, `'hide'` and friends are parsed as booleans. That is usually what you
-want (`showUnit=n`), but it means a single-letter *value* can be swallowed.
+want (`show_unit=n`), but it means a single-letter *value* can be swallowed.
 `type`, `fill` and `align` are exempt, because they are pasted verbatim into
 the float format spec where a bool is always wrong — before that exemption,
 `type=f` raised `ValueError: Invalid format specifier '.2False'`.
@@ -420,7 +420,7 @@ the float format spec where a bool is always wrong — before that exemption,
 Keys that are **not** exempt take `False` meaningfully — it disables them:
 
 ```python
->>> f'{Wind.MilesPerHour(4.1):unitSpacer=False}'
+>>> f'{Wind.MilesPerHour(4.1):unit_spacer=False}'
 '4.1mph'
 ```
 
@@ -442,13 +442,13 @@ so a cardinal can't be turned off:
 ('S ', 'S ')
 ```
 
-**`unitSpacer` is a string, not a flag.** `unitSpacer=True` renders the
+**`unit_spacer` is a string, not a flag.** `unit_spacer=True` renders the
 literal word:
 
 ```python
->>> f'{Temperature.Kelvin(273.15):unitSpacer=True}'
+>>> f'{Temperature.Kelvin(273.15):unit_spacer=True}'
 '273Truek'
->>> f'{Temperature.Kelvin(273.15):unitSpacer=_}'
+>>> f'{Temperature.Kelvin(273.15):unit_spacer=_}'
 '273_k'
 ```
 

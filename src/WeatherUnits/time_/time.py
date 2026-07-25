@@ -86,7 +86,7 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 			if self.day > 100:
 				format_spec = f'{{year}} {format_spec}'
 		elif format_spec.startswith('simple'):
-			extras['unitSpacer'] = ' '
+			extras['unit_spacer'] = ' '
 			if format_spec[-1] == '+':
 				extras['unit_type'] = 'name'
 			if format_spec := precisionSpec['format_spec']:
@@ -263,7 +263,7 @@ class Hour(Time):
 
 class Day(Time, plural_name='days'):
 	_unit = 'd'
-	_max = 2
+	_digit_budget = 2
 
 
 class Week(Time):

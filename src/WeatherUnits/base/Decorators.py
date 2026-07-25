@@ -24,7 +24,7 @@ def strToDict(string: str, cls: type) -> type:
 
 	def parseString(item: str):
 		key, value = item.split('=')
-		# expectedTypes = {'max': int, 'precision': int, 'unitSpacer': stringToBool, 'shorten': stringToBool, 'thousandsSeparator': stringToBool, 'cardinal': stringToBool, 'degrees': stringToBool}
+		# expectedTypes = {'max': int, 'precision': int, 'unit_spacer': stringToBool, 'shorten': stringToBool, 'thousandsSeparator': stringToBool, 'cardinal': stringToBool, 'degrees': stringToBool}
 		if value.isnumeric():
 			value = float(value)
 			if value.is_integer():

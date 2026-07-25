@@ -59,7 +59,7 @@ class FormatSpec:
 	# where a bool is always wrong. Without this, single-letter values that
 	# happen to be truthy/falsy words get coerced - `type=f` (float) and
 	# `type=n` (locale-aware number) both became False and produced
-	# '.2False'. Deliberately narrow: keys like unitSpacer/decorator/prefix/
+	# '.2False'. Deliberately narrow: keys like unit_spacer/decorator/prefix/
 	# suffix/unit DO take False meaningfully (it disables them), so they
 	# must keep being coerced.
 	never_boolean: ClassVar[Set[str]] = {'type', 'fill', 'align'}
@@ -85,8 +85,8 @@ class FormatSpec:
     (?P=keyquote)							# end quote
 	)
 	\s*[=:]\s*                # separator: '=' or ':' (both are written in
-	                          # the wild - `showUnit=False` vs the
-	                          # `showUnit: True` / `cardinal: False` style
+	                          # the wild - `show_unit=False` vs the
+	                          # `show_unit: True` / `cardinal: False` style
 	                          # used by .withUnit and Direction.__str__.
 	                          # Only ':' was ever unsupported, so those
 	                          # specs silently parsed as nothing and the
@@ -466,8 +466,8 @@ class MetaUnitClass(type):
 		return getattr(self, '_name', self.__name__)
 
 	@property
-	def decorator(cls):
-		return cls._decorator
+	def unit_symbol(cls):
+		return cls._unit_symbol
 
 	@property
 	def suffix(cls):
@@ -478,7 +478,7 @@ class MetaUnitClass(type):
 		return (
 			cls.__dict__.get('_id', None)
 			or getattr(cls, '_unit', None)
-			or getattr(cls, '_decorator', None)
+			or getattr(cls, '_unit_symbol', None)
 			or getattr(cls, '_suffix', None)
 			or getattr(cls, '_id', None)
 			or getattr(cls, 'unit', None)
@@ -581,31 +581,31 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	_limits = -inf, inf
 	_precision: int = 3
 	valuePrecision: int
-	_max: int = 4
+	_digit_budget: int = 4
 	_unit: Optional[str]
 	_suffix: Optional[str]
-	_decorator: Optional[str]
-	_unitSpacer: Optional[Union[bool, str]]
+	_unit_symbol: Optional[str]
+	_unit_spacer: Optional[Union[bool, str]]
 	_title: Optional[str]
-	_showUnit: Optional[bool]
+	_show_unit: Optional[bool]
 	_shorten: Optional[bool]
-	_kSeparator: Optional[str]
+	_k_separator: Optional[str]
 	_key: Optional[Union[str, Set[Union[str, Tuple[str]]]]]
-	_sizeHint: Optional[str]
+	_size_hint: Optional[str]
 	_acceptedTypes: ClassVar[tuple] = (float, int, Decimal)
 	__unitDict__: ChainMap[str, Type]
 	__transferable__: set[str] = {
-		'leadingZero',
-		'trailingZero',
+		'leading_zero',
+		'trailing_zero',
 		'align',
 		'fill',
 		'sign',
 		'minwidth',
 		'type',
-		'decorator',
-		'unitSpacer',
+		'unit_symbol',
+		'unit_spacer',
 		'unit',
-		'showUnit',
+		'show_unit',
 		'suffix',
 	}
 
@@ -667,19 +667,19 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		if suffix is None:
 			suffix = getattr(self, '_suffix', '')
 		if decorator is None:
-			decorator = self.decorator
+			decorator = self.unit_symbol
 		if spacer is None:
-			spacer = getattr(self, '_unitSpacer', None)
+			spacer = getattr(self, '_unit_spacer', None)
 		if spacer is None:
-			spacer = ' ' if self._unit and not self.decorator else ''
+			spacer = ' ' if self._unit and not self.unit_symbol else ''
 		elif spacer is True:
 			spacer = getattr(self, '_spacer', ' ')
 		elif spacer is False:
 			spacer = ''
 		if unit is None:
-			unit = self.showUnit
+			unit = self.show_unit
 		if maxLength is None:
-			maxLength = getattr(self, '_max', 4)
+			maxLength = getattr(self, '_digit_budget', 4)
 		if formatSpec is None:
 			formatSpec = getattr(self, '_format', 'g')
 		if shorten is None:
@@ -718,7 +718,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		else:
 			unitString = ''
 		spacer = spacer if spacer else ''
-		return f'{prefix}{valueFloat:{formatSpec}}{valueSuffix}{suffix}{decorator}{spacer}{unitString}'
+		return f'{prefix}{valueFloat:{formatSpec}}{valueSuffix}{suffix}{unit_symbol}{spacer}{unitString}'
 
 	def __str__(self):
 		return f'{self}'
@@ -795,7 +795,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		params.maps.insert(2, params.default)
 
 		intLength, valuePrecision = value.intFloatLength(floatValue)
-		max_len = params.get('max', value._max)
+		max_len = params.get('digit_budget', value._digit_budget)
 		shortened = False
 		if params.get('shorten', False):
 			starting_len = len(str(int(floatValue)))
@@ -868,7 +868,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		if params['type'] == 'g':
 			p = int(params['precision'])
 			if float(value) > 1:
-				max_ = int(params['max'])
+				max_ = int(params['digit_budget'])
 				params['value'] = floatValue = round(floatValue, min(p, valuePrecision))
 				if p:
 					totalLength = intLength + min(p, valuePrecision)
@@ -891,11 +891,11 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				#
 				# A sub-1 value normally spends intLength digits on its integer
 				# part (the leading '0'), leaving max - intLength for decimals.
-				# When leadingZero is off that '0' is never rendered, so it
+				# When leading_zero is off that '0' is never rendered, so it
 				# costs nothing and the whole budget goes to decimals - which is
 				# what makes a `precision=2, max=2` config coherent: '.01'
 				# rather than an over-budget '0.01' or a useless '0.0'.
-				max_ = int(params['max'])
+				max_ = int(params['digit_budget'])
 				intDigits = self.__intDigits(params, floatValue, intLength, max_, p)
 				params['leadingZeroDropped'] = intDigits != intLength
 				params['precision'] = max(min(p, max_ - intDigits), 0)
@@ -939,7 +939,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 		params['value'] = value.__format_value__(params)
 		if params.get('leadingZeroDropped', False):
-			# leadingZero off for a value between -1 and 1: drop the '0'
+			# leading_zero off for a value between -1 and 1: drop the '0'
 			# before the radix point ('0.01' -> '.01', '-0.5' -> '-.5').
 			# The precision computed above already assumed this, so the
 			# digit it frees has gone to a decimal place.
@@ -980,7 +980,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		'0' carries no information, so dropping it frees a digit of the
 		`max` budget for a decimal place.
 
-		`leadingZero` is three-state:
+		`leading_zero` is three-state:
 
 		- ``True``   - always keep it
 		- ``False``  - always drop it
@@ -998,10 +998,10 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		"""
 		if not 0 < abs(floatValue) < 1:
 			return intLength
-		leadingZero = params.get('leadingZero', 'auto')
-		if leadingZero is True:
+		leading_zero = params.get('leading_zero', 'auto')
+		if leading_zero is True:
 			return intLength
-		if leadingZero is False:
+		if leading_zero is False:
 			return 0
 		kept = max(min(precision, max_ - intLength), 0)
 		if round(abs(floatValue), kept) != 0:
@@ -1022,11 +1022,11 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			formatTemplate.append('{value}')
 		if valueSuffix := params.get('valueSuffix', None):
 			formatTemplate.append(f'{valueSuffix}')
-		if params.get('decorator', None):
-			formatTemplate.append('{decorator}')
-		if params.get('showUnit', self.showUnit) and params.get('unit', self.unit) is not False:
-			if params.get('unitSpacer', self.unitSpacer):
-				formatTemplate.append('{unitSpacer}')
+		if params.get('unit_symbol', None):
+			formatTemplate.append('{unit_symbol}')
+		if params.get('show_unit', self.show_unit) and params.get('unit', self.unit) is not False:
+			if params.get('unit_spacer', self.unit_spacer):
+				formatTemplate.append('{unit_spacer}')
 			formatTemplate.append('{unit}')
 		if params.get('suffix', None):
 			formatTemplate.append('{suffix}')
@@ -1035,15 +1035,15 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	@property
 	def defaultFormat(self) -> str:
-		if self.showUnit:
-			return "{value}{decorator}{unitSpacer}{unit}"
-		return "{value}{decorator}"
+		if self.show_unit:
+			return "{value}{unit_symbol}{unit_spacer}{unit}"
+		return "{value}{unit_symbol}"
 
 	@property
 	def defaultFormatParams(self):
 		return {
-			'leadingZero':  self.leadingZero,
-			'trailingZero': True,
+			'leading_zero':  self.leading_zero,
+			'trailing_zero': True,
 			'align':        '',
 			'fill':         '',
 			'sign':         '',
@@ -1051,12 +1051,12 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			'precision':    self.precision,
 			'value':        self,
 			'type':         'g',
-			'decorator':    self.decorator,
-			'unitSpacer':   self.unitSpacer,
+			'unit_symbol':    self.unit_symbol,
+			'unit_spacer':   self.unit_spacer,
 			'unit':         self.unit,
-			'showUnit':     self.showUnit,
+			'show_unit':     self.show_unit,
 			'suffix':       self.suffix,
-			'max':          self.max,
+			'digit_budget': self.digit_budget,
 			'limits':       self._limits,
 			'shorten':      self.shorten,
 		}
@@ -1077,14 +1077,14 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			attrs['denominator'] = denominator
 		if suffix := getattr(self, 'suffix', None):
 			attrs['suffix'] = suffix
-		if decorator := getattr(self, 'decorator', None):
-			attrs['decorator'] = decorator
+		if decorator := getattr(self, 'unit_symbol', None):
+			attrs['unit_symbol'] = decorator
 		if maxLength := getattr(self, 'max', None):
 			attrs['maxLength'] = maxLength
 		if precision := getattr(self, '_precision', None):
 			attrs['precision'] = precision
-		if showUnit := getattr(self, 'showUnit', None):
-			attrs['showUnit'] = showUnit
+		if show_unit := getattr(self, 'show_unit', None):
+			attrs['show_unit'] = show_unit
 		if shorten := getattr(self, 'shorten', None):
 			attrs['shorten'] = shorten
 		if (limits := getattr(self, '_limits', None)) and limits != (-inf, inf):
@@ -1092,7 +1092,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return attrs
 
 	def __repr_value__(self) -> str:
-		return f'{self: format={"{value}{decorator}"}, type=g, shorten=False}'
+		return f'{self: format={"{value}{unit_symbol}"}, type=g, shorten=False}'
 
 	if DEBUG:
 
@@ -1142,11 +1142,11 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	@property
 	def withUnit(self) -> str:
-		return f'{self:showUnit: True}'
+		return f'{self:show_unit: True}'
 
 	@property
 	def withoutUnit(self) -> str:
-		return f'{self:showUnit=False}'
+		return f'{self:show_unit=False}'
 
 	@property
 	def unit(self) -> str:
@@ -1218,15 +1218,15 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		self._key = value
 
 	@property
-	def showUnit(self) -> bool:
-		return getattr(self, '_showUnit', True)
+	def show_unit(self) -> bool:
+		return getattr(self, '_show_unit', True)
 
-	@showUnit.setter
-	def showUnit(self, value):
-		self._showUnit = value
+	@show_unit.setter
+	def show_unit(self, value):
+		self._show_unit = value
 
 	@property
-	def leadingZero(self) -> bool:
+	def leading_zero(self) -> bool:
 		"""Render the '0' before the radix point on values between -1 and 1.
 
 		Three-state, defaulting to ``'auto'``: keep the zero unless keeping it
@@ -1235,18 +1235,18 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		the hundredths place needed.
 
 		Force it either way per unit type in [UnitProperties] -
-		``leadingZero=True`` where the zero aids legibility at a distance,
-		``leadingZero=False`` to always reclaim the digit.
+		``leading_zero=True`` where the zero aids legibility at a distance,
+		``leading_zero=False`` to always reclaim the digit.
 		"""
-		return getattr(self, '_leadingZero', 'auto')
+		return getattr(self, '_leading_zero', 'auto')
 
-	@leadingZero.setter
-	def leadingZero(self, value):
-		self._leadingZero = value
+	@leading_zero.setter
+	def leading_zero(self, value):
+		self._leading_zero = value
 
 	@property
-	def decorator(self) -> str:
-		return getattr(self, '_decorator', empty)
+	def unit_symbol(self) -> str:
+		return getattr(self, '_unit_symbol', empty)
 
 	@property
 	def precision(self) -> int:
@@ -1262,12 +1262,12 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return 'g'
 
 	@property
-	def max(self) -> int:
-		return self._max
+	def digit_budget(self) -> int:
+		return self._digit_budget
 
-	@max.setter
-	def max(self, value: int):
-		self._max = value
+	@digit_budget.setter
+	def digit_budget(self, value: int):
+		self._digit_budget = value
 
 	@property
 	def shorten(self) -> bool:
@@ -1278,12 +1278,12 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		self._shorten = value
 
 	@property
-	def unitSpacer(self):
-		spacer = getattr(self, '_unitSpacer', False)
+	def unit_spacer(self):
+		spacer = getattr(self, '_unit_spacer', False)
 		if isinstance(spacer, str):
 			return spacer
 		return " " if spacer else ""
 
-	@unitSpacer.setter
-	def unitSpacer(self, value):
-		self._unitSpacer = value
+	@unit_spacer.setter
+	def unit_spacer(self, value):
+		self._unit_spacer = value

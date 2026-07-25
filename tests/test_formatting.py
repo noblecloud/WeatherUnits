@@ -67,19 +67,19 @@ class TestPrecisionAndMax(TestCase):
 		drifts between '29.9', '30' and '30.1'. Raising precision/max does
 		not help, because precision is capped by the value's own decimals.
 		Two declared-but-unconsumed options in config/template.ini are the
-		intended mechanism: `trailingZero` ("display zero after decimal
-		point to full precision staying under max") and `forcePrecision`
+		intended mechanism: `trailing_zero` ("display zero after decimal
+		point to full precision staying under max") and `force_precision`
 		("decimals are always displayed within the precision amount").
 
 		When either is implemented, this test SHOULD fail - update it to the
 		intended '30.00 inHg' rather than working around it.
 		"""
 		self.assertEqual('30 inHg', str(Pressure.InchOfMercury(30.0)))
-		self.assertEqual('30.0 inHg', format(Pressure.InchOfMercury(30.0), 'precision=2, max=5'))
-		# trailingZero currently has no effect either way
+		self.assertEqual('30.0 inHg', format(Pressure.InchOfMercury(30.0), 'precision=2, digit_budget=5'))
+		# trailing_zero currently has no effect either way
 		self.assertEqual(
-			format(Pressure.InchOfMercury(30.0), 'trailingZero=True'),
-			format(Pressure.InchOfMercury(30.0), 'trailingZero=False'),
+			format(Pressure.InchOfMercury(30.0), 'trailing_zero=True'),
+			format(Pressure.InchOfMercury(30.0), 'trailing_zero=False'),
 		)
 
 
@@ -93,9 +93,9 @@ class TestMaxAppliesBelowOne(TestCase):
 
 	def test_budget_clamps_decimals_on_small_values(self):
 		i = Length.Inch(0.0416)
-		self.assertEqual('0', format(i, 'max=1, showUnit=False'))
-		self.assertEqual('0.0', format(i, 'max=2, showUnit=False'))
-		self.assertEqual('0.0', format(i, 'max=3, showUnit=False'))
+		self.assertEqual('0', format(i, 'digit_budget=1, show_unit=False'))
+		self.assertEqual('0.0', format(i, 'digit_budget=2, show_unit=False'))
+		self.assertEqual('0.0', format(i, 'digit_budget=3, show_unit=False'))
 
 	def test_default_rendering_is_unaffected(self):
 		# The default budget already matched what these rendered, so nothing
@@ -106,7 +106,7 @@ class TestMaxAppliesBelowOne(TestCase):
 
 
 class TestLeadingZero(TestCase):
-	"""`leadingZero` was declared, documented, and never consumed.
+	"""`leading_zero` was declared, documented, and never consumed.
 
 	Three-state, defaulting to 'auto': keep the zero unless keeping it would
 	cost a decimal place.
@@ -115,24 +115,24 @@ class TestLeadingZero(TestCase):
 	def test_auto_keeps_the_zero_when_it_fits(self):
 		# 0.5 needs two digits with the zero and the budget allows two, so
 		# there is nothing to gain by dropping it.
-		self.assertEqual('0.5', format(Length.Inch(0.5), 'max=2, showUnit=False'))
-		self.assertEqual('0.5', format(Length.Inch(0.5), 'precision=2, max=2, showUnit=False'))
+		self.assertEqual('0.5', format(Length.Inch(0.5), 'digit_budget=2, show_unit=False'))
+		self.assertEqual('0.5', format(Length.Inch(0.5), 'precision=2, digit_budget=2, show_unit=False'))
 
 	def test_auto_drops_the_zero_only_when_the_budget_is_short(self):
 		# precision=2 asks for hundredths; with the zero that needs three
-		# digits, so a 2-digit budget reclaims it. At max=3 it fits and the
+		# digits, so a 2-digit budget reclaims it. At digit_budget=3 it fits and the
 		# zero stays. This is the shape of the shipped precipitationRate
 		# config.
 		i = Length.Inch(0.04)
-		self.assertEqual('.04', format(i, 'precision=2, max=2, showUnit=False'))
-		self.assertEqual('0.04', format(i, 'precision=2, max=3, showUnit=False'))
+		self.assertEqual('.04', format(i, 'precision=2, digit_budget=2, show_unit=False'))
+		self.assertEqual('0.04', format(i, 'precision=2, digit_budget=3, show_unit=False'))
 
 	def test_explicit_true_keeps_it_even_when_that_costs_precision(self):
 		i = Length.Inch(0.04)
-		self.assertEqual('0.0', format(i, 'precision=2, max=2, leadingZero=True, showUnit=False'))
+		self.assertEqual('0.0', format(i, 'precision=2, digit_budget=2, leading_zero=True, show_unit=False'))
 
 	def test_explicit_false_drops_it_even_when_it_would_have_fit(self):
-		self.assertEqual('.5', format(Length.Inch(0.5), 'max=2, leadingZero=False, showUnit=False'))
+		self.assertEqual('.5', format(Length.Inch(0.5), 'digit_budget=2, leading_zero=False, show_unit=False'))
 
 	def test_zero_is_not_spent_when_dropping_it_rescues_nothing(self):
 		"""Second clause of the auto rule - the easy one to lose.
@@ -142,7 +142,7 @@ class TestLeadingZero(TestCase):
 		An implementation that only asks "would keeping it show zero?"
 		returns '.0' here.
 		"""
-		self.assertEqual('0', format(Length.Inch(0.0416), 'max=1, showUnit=False'))
+		self.assertEqual('0', format(Length.Inch(0.0416), 'digit_budget=1, show_unit=False'))
 
 	def test_zero_is_not_spent_to_buy_a_trailing_digit(self):
 		"""First clause of the auto rule - guards a plausible wrong version.
@@ -153,28 +153,28 @@ class TestLeadingZero(TestCase):
 		'.50' and 0.9697 renders '.970' - same digit count, strictly worse
 		to read. Both must keep their leading zero.
 		"""
-		self.assertEqual('0.5', format(Length.Inch(0.5), 'precision=2, max=2, showUnit=False'))
+		self.assertEqual('0.5', format(Length.Inch(0.5), 'precision=2, digit_budget=2, show_unit=False'))
 		self.assertEqual('0.97 mi', str(Length.Foot(5120)))
 
 	def test_negative_sub_one_values_keep_their_sign(self):
-		self.assertEqual('-.5 in', format(Length.Inch(-0.5), 'leadingZero=False'))
+		self.assertEqual('-.5 in', format(Length.Inch(-0.5), 'leading_zero=False'))
 
 	def test_values_at_or_above_one_are_untouched(self):
 		for value in (1.0, 1.25, 12.75):
 			with self.subTest(value=value):
 				self.assertEqual(
-					format(Length.Inch(value), 'leadingZero=True'),
-					format(Length.Inch(value), 'leadingZero=False'),
+					format(Length.Inch(value), 'leading_zero=True'),
+					format(Length.Inch(value), 'leading_zero=False'),
 				)
 
 	def test_zero_is_untouched(self):
 		# Exactly zero has no fractional part to expose; stripping would
 		# leave a bare '.'.
-		self.assertEqual('0 in', format(Length.Inch(0), 'leadingZero=False'))
+		self.assertEqual('0 in', format(Length.Inch(0), 'leading_zero=False'))
 
 
 class TestDegreeSign(TestCase):
-	"""The degree decorator must be U+00B0, not the ordinal indicator.
+	"""The degree unit_symbol must be U+00B0, not the ordinal indicator.
 
 	The codebase previously used '°' MASCULINE ORDINAL INDICATOR - a
 	Spanish/Portuguese ordinal marker (1° = "primero") that many fonts draw
@@ -197,7 +197,7 @@ class TestDegreeSign(TestCase):
 	def test_temperature_decorator_is_the_degree_sign(self):
 		for cls in (Temperature.Celsius, Temperature.Fahrenheit):
 			with self.subTest(cls=cls.__name__):
-				self.assertEqual(self.DEGREE, cls(0).decorator)
+				self.assertEqual(self.DEGREE, cls(0).unit_symbol)
 
 	def test_rendered_temperature_uses_the_degree_sign(self):
 		rendered = str(Temperature.Celsius(0))
@@ -208,7 +208,7 @@ class TestDegreeSign(TestCase):
 		from WeatherUnits.others import Angle, Direction
 		for cls in (Angle, Direction):
 			with self.subTest(cls=cls.__name__):
-				self.assertEqual(self.DEGREE, cls(0).decorator)
+				self.assertEqual(self.DEGREE, cls(0).unit_symbol)
 
 	def test_no_ordinal_indicator_survives_anywhere_in_the_package(self):
 		# Cheap guard against it creeping back in via a copy-paste.
@@ -228,25 +228,25 @@ class TestDegreeSign(TestCase):
 
 
 class TestDecoratorAndSpacer(TestCase):
-	"""Two shapes: decorator-no-spacer, and spacer-no-decorator."""
+	"""Two shapes: unit_symbol-no-spacer, and spacer-no-unit_symbol."""
 
 	def test_temperature_uses_a_decorator_and_no_spacer(self):
 		f = Temperature.Fahrenheit(32)
-		self.assertEqual('°', f.decorator)
-		self.assertEqual('', f.unitSpacer)
+		self.assertEqual('°', f.unit_symbol)
+		self.assertEqual('', f.unit_spacer)
 		self.assertEqual('32°', str(f))
 
 	def test_wind_uses_a_spacer_and_no_decorator(self):
 		w = Wind.MilesPerHour(4.1)
-		self.assertEqual('', w.decorator)
-		self.assertEqual(' ', w.unitSpacer)
+		self.assertEqual('', w.unit_symbol)
+		self.assertEqual(' ', w.unit_spacer)
 		self.assertEqual('4.1 mph', str(w))
 
 	def test_unit_spacer_is_a_string_not_a_flag(self):
-		# `unitSpacer=True` renders the literal word - documented gotcha.
+		# `unit_spacer=True` renders the literal word - documented gotcha.
 		k = Temperature.Kelvin(273.15)
-		self.assertEqual('273_k', format(k, 'unitSpacer=_'))
-		self.assertEqual('273Truek', format(k, 'unitSpacer=True'))
+		self.assertEqual('273_k', format(k, 'unit_spacer=_'))
+		self.assertEqual('273Truek', format(k, 'unit_spacer=True'))
 
 
 class TestShowUnit(TestCase):
@@ -259,8 +259,8 @@ class TestShowUnit(TestCase):
 
 	def test_show_unit_parameter_both_separators(self):
 		c = Temperature.Celsius(0)
-		self.assertEqual('0°c', format(c, 'showUnit=True'))
-		self.assertEqual('0°c', format(c, 'showUnit: True'))
+		self.assertEqual('0°c', format(c, 'show_unit=True'))
+		self.assertEqual('0°c', format(c, 'show_unit: True'))
 
 
 class TestFloatTypeCodes(TestCase):
@@ -277,8 +277,8 @@ class TestFloatTypeCodes(TestCase):
 
 	def test_keys_that_are_not_exempt_still_take_false(self):
 		# False must keep meaning "disable this" for these.
-		self.assertEqual('4.1mph', format(Wind.MilesPerHour(4.1), 'unitSpacer=False'))
-		self.assertEqual('4.1', format(Wind.MilesPerHour(4.1), 'showUnit=False'))
+		self.assertEqual('4.1mph', format(Wind.MilesPerHour(4.1), 'unit_spacer=False'))
+		self.assertEqual('4.1', format(Wind.MilesPerHour(4.1), 'show_unit=False'))
 
 
 class TestShortenAndBestFit(TestCase):

@@ -151,7 +151,7 @@ class PoundsPerSquareInch(Pascal):
 @Synonym
 class Millibar(Hectopascal):
 	_unit = 'mBar'
-	_max = 4
+	_digit_budget = 4
 
 
 Pressure.Pascal = Pascal
