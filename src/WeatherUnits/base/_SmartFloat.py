@@ -55,6 +55,14 @@ class TypedLimits(Limits):
 class FormatSpec:
 	truthy_values: ClassVar[Set[str]] = {'true', 't', 'yes', 'y', 'on', 'shown', 'show'}
 	falsy_values: ClassVar[Set[str]] = {'false', 'f', 'no', 'n', 'off', 'hidden', 'hide'}
+	# Parameters pasted verbatim into __format_value__'s float format spec,
+	# where a bool is always wrong. Without this, single-letter values that
+	# happen to be truthy/falsy words get coerced - `type=f` (float) and
+	# `type=n` (locale-aware number) both became False and produced
+	# '.2False'. Deliberately narrow: keys like unitSpacer/decorator/prefix/
+	# suffix/unit DO take False meaningfully (it disables them), so they
+	# must keep being coerced.
+	never_boolean: ClassVar[Set[str]] = {'type', 'fill', 'align'}
 	limit = re.compile(r'\[(?P<max>([+-]?[\d.]+)|\*)?:(?P<min>([+-]?[\d.]+)|\*)?]')
 	precision = re.compile("""	
 	(^)?(?(1)|(?<=:))
@@ -746,6 +754,13 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		for key, value in specParams.items():
 			if number := FormatSpec.getNumber(value, strict=True):
 				specParams[key] = number
+			elif key in FormatSpec.never_boolean:
+				# Left as the literal string: several single-letter format
+				# codes collide with the boolean words below - 'f' and 'n'
+				# are both in falsy_values, so `type=f` used to coerce to
+				# False and reach __format_value__ as '.2False', raising
+				# ValueError. These keys never take a boolean value.
+				continue
 			elif (boolValue := FormatSpec.getBool(value, strict=None)) is not None:
 				specParams[key] = boolValue if boolValue is not None else empty
 

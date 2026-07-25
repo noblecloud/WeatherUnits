@@ -14,7 +14,12 @@ Easily convert typical weather units from one unit to another with automatic loc
 
 ## How to use
 
-**Note: The following documentation is currently out of date after some major changes**
+> 📐 **[Formatting reference →](docs/formatting.md)** — the format-spec
+> mini-language, every parameter, how `precision`/`max` interact, and the
+> known gotchas. Verified against the library; start there for anything
+> display-related.
+
+**Note: The rest of the following documentation is currently out of date after some major changes**
 
 ### Unit Conversion
 
