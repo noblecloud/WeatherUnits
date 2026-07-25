@@ -124,20 +124,21 @@ The basic rules are:
     |False|180°|
 
     With `cardinal` on, two axes work independently: **`shorten` picks the
-    form** (letters vs words) and **`digit_budget` picks the resolution**
-    (how many compass points are resolved). A narrow panel gets `N`, a wide
-    one `North Northeast`, without the caller asking for either.
+    form** (letters vs words) and **`digit_budget` picks the detail**.
 
-    |`digit_budget`|`shorten=True`|resolves to|
-    |----|------|------|
-    |1|`N` `E` `S` `W`|4 points|
-    |2|`NE` `SE` `SW`|8 points|
-    |3+|`NNE` `WSW`|16 points|
+    The budget counts **compass components**, and the atom it counts depends
+    on the form — a letter when abbreviated, a word when spelled out. So the
+    same budget carries the same amount of information either way:
 
-    |`digit_budget`|`shorten=False`|
-    |----|------|
-    |&lt;7|`North`|
-    |7+|`North Northeast`|
+    |`digit_budget`|`shorten=True`|`shorten=False`|resolves to|
+    |----|------|------|------|
+    |1|`W`|`West`|4 points|
+    |2|`SW`|`South West`|8 points|
+    |3|`WSW`|`West South West`|16 points|
+
+    The budget is a **cap, not a quota**: a heading that lands on a cardinal
+    doesn't pad to fill it. At a 2-component budget, 202.5° gives `S` /
+    `South`, not a stretched two-component form.
 
 - **key:** Key to be used for other programs
 - **size_hint:** Override generated size hint string. Useful for when you know the expected max string length.

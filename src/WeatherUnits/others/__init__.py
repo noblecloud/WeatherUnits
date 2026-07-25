@@ -156,11 +156,28 @@ class Direction(Angle, FiniteField, limits=(0, 360)):
 
 
 class Cardinal:
+	"""A compass heading, rendered at whatever detail the budget allows.
+
+	`digit_budget` counts **compass components**, and the atom it counts
+	depends on the form: a letter when abbreviated, a word when spelled out.
+	So the same budget means the same amount of information either way.
+
+	  budget | shorten=True | shorten=False
+	  -------|--------------|--------------------
+	     1   | N            | North
+	     2   | NE           | North East
+	     3   | SSW          | South South West
+
+	The word forms are *derived* from the abbreviations rather than kept in
+	a parallel list. A hardcoded list drifts out of alignment: the previous
+	one spelled the 2-component 'NE' as the single word 'Northeast' and the
+	3-component 'SSW' as the 2-word 'South Southwest', so word count never
+	matched the budget and the two forms disagreed about how much detail
+	they were showing.
+	"""
 	__slots__ = '__direction'
 	__dirsAbbrv = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
-	__dirsFull = ['North', 'North Northeast', 'Northeast', 'East Northeast', 'East', 'East Southeast', 'Southeast',
-		'South Southeast', 'South', 'South Southwest', 'Southwest', 'West Southwest', 'West',
-		'West Northwest', 'Northwest', 'North Northwest']
+	__components = {'N': 'North', 'E': 'East', 'S': 'South', 'W': 'West'}
 	__direction: Direction
 	direction: Direction
 
@@ -171,22 +188,19 @@ class Cardinal:
 		if self.shorten:
 			return self.abbrivated
 		else:
-			return self.full
+			return self.spelled
 
 	def __format_value__(self, params: Mapping) -> str:
-		# Two axes, deliberately independent:
-		#   `shorten` picks the FORM   - letters vs words
-		#   digit_budget picks the DETAIL - how many compass points resolve
-		# Both `abbrivated` and `text` walk the budget internally, so a
-		# narrow panel gets 'N' and a wide one 'North Northeast' without the
-		# caller having to ask. Going straight to `abbrivated`/`full` here
-		# was what made the middle of the ladder unreachable.
+		# Two independent axes:
+		#   `shorten`     picks the FORM   - letters vs words
+		#   digit_budget  picks the DETAIL - how many compass components
+		# Both forms read the same budget through the same index ladder, so
+		# they always name the same heading and differ only in spelling.
 		shorten = getFrom('shorten', *getattr(params, 'maps', (params,)),
 			default=self.shorten, expectedType=(bool, str))
 		if shorten:
 			return self.abbrivated
-		else:
-			return self.text
+		return self.spelled
 
 	def __repr__(self):
 		return f'Cardinal({self!s} {self.direction: cardinal: False})'
@@ -207,49 +221,50 @@ class Cardinal:
 	def __longIndex(self):
 		return int(round(self.direction/22.5)%16)
 
+	def _indexFor(self, components: int) -> int:
+		"""The compass index at a given number of components.
+
+		One index ladder, shared by both forms, so letters and words always
+		name the same heading at the same budget.
+		"""
+		if components <= 1:
+			return self.__quarterIndex     # 4-point:  N  E  S  W
+		if components == 2:
+			return self.__shortIndex       # 8-point:  NE SE SW NW
+		return self.__longIndex            # 16-point: NNE ESE SSW WNW
+
+	def letters(self, components: int) -> str:
+		return self.__dirsAbbrv[self._indexFor(components)]
+
+	def words(self, components: int) -> str:
+		"""Spelled out, one word per component - 'SSW' -> 'South South West'."""
+		return ' '.join(self.__components[c] for c in self.letters(components))
+
 	@property
 	def oneLetter(self):
 		"""The 4-point compass: N, E, S, W. Always exactly one character."""
-		return self.__dirsAbbrv[self.__quarterIndex]
-
-	@property
-	def abbrivated(self):
-		# The letter ladder: the character budget picks how many compass
-		# points are resolved. Without the 1-char rung, an 8-point 'NE'
-		# was returned against a 1-character budget.
-		if self.direction.digit_budget > 2:
-			return self.threeLetter
-		if self.direction.digit_budget == 2:
-			return self.twoLetter
-		return self.oneLetter
-
-	@property
-	def shortened(self):
-		if self.direction.digit_budget < 5:
-			return self.abbrivated
-		return self.singleWord
+		return self.letters(1)
 
 	@property
 	def twoLetter(self):
-		return self.__dirsAbbrv[self.__shortIndex]
+		return self.letters(2)
 
 	@property
 	def threeLetter(self):
-		return self.__dirsAbbrv[self.__longIndex]
+		return self.letters(3)
 
 	@property
-	def singleWord(self):
-		return self.__dirsFull[self.__shortIndex]
+	def abbrivated(self):
+		return self.letters(self.direction.digit_budget)
 
 	@property
-	def text(self):
-		if self.direction.digit_budget < 7:
-			return self.singleWord
-		return self.full
+	def spelled(self):
+		return self.words(self.direction.digit_budget)
 
 	@property
 	def full(self):
-		return self.__dirsFull[self.__longIndex]
+		"""Every component spelled out, regardless of budget."""
+		return self.words(3)
 
 	@property
 	def shorten(self):

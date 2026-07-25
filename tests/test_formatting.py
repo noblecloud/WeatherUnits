@@ -387,13 +387,67 @@ class TestDirectionCardinal(TestCase):
 				d._digit_budget = 1
 				self.assertEqual(1, len(format(d, 'shorten=True')))
 
-	def test_word_forms_widen_with_the_budget(self):
+	def test_a_word_counts_as_a_digit(self):
+		"""The budget counts compass *components*, whatever the atom.
+
+		A letter when abbreviated, a word when spelled out - so the same
+		budget carries the same amount of information in either form.
+		The old parallel word list broke this: it spelled the 2-component
+		'NE' as the single word 'Northeast' and the 3-component 'SSW' as
+		the 2-word 'South Southwest'.
+		"""
 		from WeatherUnits.others import Direction
-		d = Direction(22.5)
-		d._digit_budget = 3
-		self.assertEqual('North', format(d, 'shorten=False'))
-		d._digit_budget = 7
-		self.assertEqual('North Northeast', format(d, 'shorten=False'))
+		# 238 deg is the useful probe: it resolves to a different heading at
+		# every rung, so all three budgets are genuinely exercised.
+		expected = {
+			1: ('W',   'West'),
+			2: ('SW',  'South West'),
+			3: ('WSW', 'West South West'),
+		}
+		for budget, (letters, words) in expected.items():
+			d = Direction(238)
+			d._digit_budget = budget
+			with self.subTest(budget=budget):
+				self.assertEqual(letters, format(d, 'shorten=True'))
+				self.assertEqual(words, format(d, 'shorten=False'))
+				self.assertEqual(budget, len(words.split()))
+
+	def test_the_budget_is_a_cap_not_a_quota(self):
+		"""A heading that lands on a cardinal doesn't pad to fill the budget.
+
+		202.5 deg is SSW, but at a 2-component budget the nearest 8-point
+		heading is plain 'S' - one letter against a budget of two. Nothing
+		should stretch it to two.
+		"""
+		from WeatherUnits.others import Direction
+		d = Direction(202.5)
+		d._digit_budget = 2
+		self.assertEqual('S', format(d, 'shorten=True'))
+		self.assertEqual('South', format(d, 'shorten=False'))
+
+		for deg in range(0, 360, 15):
+			for budget in (1, 2, 3):
+				d = Direction(deg)
+				d._digit_budget = budget
+				with self.subTest(degrees=deg, budget=budget):
+					self.assertLessEqual(len(format(d, 'shorten=True')), budget)
+					self.assertLessEqual(len(format(d, 'shorten=False').split()), budget)
+
+	def test_both_forms_name_the_same_heading(self):
+		"""Letters and words must never disagree about which way the wind blows."""
+		from WeatherUnits.others import Direction
+		initial = {'N': 'North', 'E': 'East', 'S': 'South', 'W': 'West'}
+		for deg in range(0, 360, 15):
+			for budget in (1, 2, 3):
+				d = Direction(deg)
+				d._digit_budget = budget
+				with self.subTest(degrees=deg, budget=budget):
+					letters = format(d, 'shorten=True')
+					words = format(d, 'shorten=False')
+					self.assertEqual(
+						[initial[c] for c in letters], words.split(),
+						f'{letters!r} and {words!r} disagree',
+					)
 
 	def test_default_is_abbreviated_cardinal(self):
 		from WeatherUnits.others import Direction
