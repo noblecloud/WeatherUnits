@@ -20,12 +20,6 @@ These are blocked on a judgment call, not on effort.
 
 ## Ready to pick up
 
-- **[unitproperties-binding.md](unitproperties-binding.md)** — per-unit
-  `[UnitProperties]` keys silently never bind: a key is matched against the
-  class name only, so unit-symbol keys like `inHg`/`mmHg` are ignored and
-  their `precision`/`digit_budget` never reach the class. ⚠️ Fixing it
-  activates config lines that have been inert since they were written, so it
-  changes rendered output in both repos.
 - **[format-playground.md](format-playground.md)** — interactive demo page
   with sliders for every formatting parameter. Runs the real library in the
   browser via Pyodide (the package has zero runtime dependencies), so it
@@ -57,7 +51,7 @@ Small, self-contained, no decisions needed.
   and by the value's own decimal content. Documented in the README with a
   ⚠️; unclear whether that's the intent or a second gap.
 - **`[UnitProperties]` only half-binds to derived unit classes.**
-  `precision` reaches `Hourly[in/hr]`, `digit_budget` does not. Found from
-  the LevityDash side; likely the same root cause as
-  [unitproperties-binding.md](unitproperties-binding.md), which is now
-  diagnosed.
+  `precision` reaches `Hourly[in/hr]`, `digit_budget` does not. The
+  symbol-key binding bug ([unitproperties-binding.md](unitproperties-binding.md))
+  is fixed and was probably part of this; worth re-checking whether anything
+  remains.

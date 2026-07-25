@@ -1,7 +1,16 @@
 # `[UnitProperties]` keys silently never bind for unit symbols
 
+> ✅ **RESOLVED 2026-07-25.** Kept as the record of what was wrong and what
+> changed. Lookup is now exact, case-insensitive, and covers both the class
+> name and the class's own `_unit`; a refit now carries the target unit's
+> config with it. Verified against a 264-row render snapshot: 10 rows
+> changed, all `MillimeterOfMercury` under the default `si.ini`. With
+> LevityDash's config the effect is its `inHg` line finally applying, so a
+> pressure readout renders `29.90 / 30.00 / 30.10` instead of
+> `29.9 / 30 / 30.1`.
+
 **Found:** 2026-07-25, while checking whether `trailing_zeros` could be set
-from a config file. It cannot — and neither can `precision` or
+from a config file. It could not — and neither could `precision` or
 `digit_budget`, for any unit whose config key is a unit *symbol*.
 
 ## Symptom
