@@ -66,7 +66,7 @@ Small, self-contained, no decisions needed.
   `precision=2` and `digit_budget=2`, and renders `.04 in/hr`.
 
 - **[human-friendly-time.md](human-friendly-time.md)** — durations should
-  rescale on heuristics rather than digit budget ( is compact and
-  useless). The heuristic formatter already exists in `Time.__format__`;
+  rescale on heuristics rather than digit budget (`33 hrs` is compact
+  and useless). The heuristic formatter already exists in `Time.__format__`;
   its `timestamp` spec carries the magnitude-escalation logic and currently
   raises TypeError.
