@@ -50,8 +50,8 @@ Small, self-contained, no decisions needed.
   decimals, because `precision` is separately capped by the class default
   and by the value's own decimal content. Documented in the README with a
   ⚠️; unclear whether that's the intent or a second gap.
-- **`[UnitProperties]` only half-binds to derived unit classes.**
-  `precision` reaches `Hourly[in/hr]`, `digit_budget` does not. The
-  symbol-key binding bug ([unitproperties-binding.md](unitproperties-binding.md))
-  is fixed and was probably part of this; worth re-checking whether anything
-  remains.
+- ~~**`[UnitProperties]` only half-binds to derived unit classes.**~~
+  **Resolved** by the symbol-key binding fix
+  ([unitproperties-binding.md](unitproperties-binding.md)). Verified
+  2026-07-26: under LevityDash's config, `Hourly[Length]` now receives both
+  `precision=2` and `digit_budget=2`, and renders `.04 in/hr`.
