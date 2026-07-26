@@ -64,3 +64,9 @@ Small, self-contained, no decisions needed.
   ([unitproperties-binding.md](unitproperties-binding.md)). Verified
   2026-07-26: under LevityDash's config, `Hourly[Length]` now receives both
   `precision=2` and `digit_budget=2`, and renders `.04 in/hr`.
+
+- **[human-friendly-time.md](human-friendly-time.md)** — durations should
+  rescale on heuristics rather than digit budget ( is compact and
+  useless). The heuristic formatter already exists in `Time.__format__`;
+  its `timestamp` spec carries the magnitude-escalation logic and currently
+  raises TypeError.
