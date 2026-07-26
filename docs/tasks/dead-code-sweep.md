@@ -10,7 +10,10 @@
 > `SmartFloat._string` — each now carries an `INTENTIONALLY KEPT` note at
 > the code recording why, so the next reader doesn't re-propose deleting it.
 >
-> **Still open:** `Config.groupingCharacter` (see item 5).
+> **Item 5** resolved separately: the property is deleted and the
+> customization moved to a config override resolved once at load
+> (`grouping_character` / `radix_character` in `[UnitDefaults]`),
+> rather than a lookup on every rendered value.
 >
 > Verified: 264-row render snapshot unchanged, 141 WeatherUnits tests
 > (up from 132), 189 LevityDash.
@@ -163,7 +166,7 @@ I want to keep this as a callable function so that there are is than one way to 
 
 ---
 
-## 5. `Config.groupingCharacter` — **STILL OPEN**
+## 5. `Config.groupingCharacter` — **DELETED, override moved to load time**
 
 `config/__init__.py:111`
 
@@ -230,6 +233,13 @@ Its only in-tree caller, `Direction.decoratedInt`, passed `forceUnit=`/
 as `_string(unit=False, formatSpec='.0f')`. `_string` also inherited the
 trailing-space bug on dimensionless units and got the same one-line fix as
 `__format_template__`.
+
+**Item 5's outcome:** the separators are a property of the locale — they
+change when someone moves country, not between values — so a per-render
+branch would buy nothing. `GROUPING_CHAR`/`RADIX_CHAR` now take an optional
+`[UnitDefaults]` override at config load, and the unused property is gone.
+That keeps the customization the author wanted without the `if` on the
+rendering path.
 
 **`_getUnitTypes`** (`_Measurement.py`, beside the deleted `_getUnit`) was
 left in place — the annotation named `_getUnit` only. It is also uncalled,

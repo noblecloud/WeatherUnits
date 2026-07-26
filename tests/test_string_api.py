@@ -78,3 +78,27 @@ class TestDecoratedInt(TestCase):
 		# so it raised TypeError for anyone who called it.
 		self.assertEqual('180°', Direction(180.4).decoratedInt)
 		self.assertEqual('46°', Direction(45.6).decoratedInt)
+
+
+class TestSeparatorOverrides(TestCase):
+	"""`grouping_character` / `radix_character` come from the config, once.
+
+	They are a property of the locale - they change when someone moves
+	country, not between values - so they are resolved at config load rather
+	than consulted while rendering. The old `Config.groupingCharacter`
+	property was the per-render form of this and was never read by anything;
+	it is gone.
+	"""
+
+	def test_defaults_come_from_the_locale(self):
+		from WeatherUnits.config import GROUPING_CHAR, RADIX_CHAR
+		# Whatever the locale says, both must be single non-empty characters -
+		# they are interpolated into FormatSpec.number's character classes,
+		# where an empty value would silently change what that regex matches.
+		self.assertEqual(1, len(GROUPING_CHAR))
+		self.assertEqual(1, len(RADIX_CHAR))
+		self.assertNotEqual(GROUPING_CHAR, RADIX_CHAR)
+
+	def test_the_removed_property_is_really_gone(self):
+		from WeatherUnits.config import config
+		self.assertFalse(hasattr(type(config), 'groupingCharacter'))

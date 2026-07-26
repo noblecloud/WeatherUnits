@@ -108,11 +108,6 @@ class Config(ConfigParser):
 		return None
 
 	@property
-	def groupingCharacter(self) -> bool | str:
-		value = self['UnitDefaults'].get('groupingCharacter', True)
-		return convertString(value)
-
-	@property
 	def unitDefaults(self):
 		return {f'_{prop}': convertString(value) for prop, value in config['UnitDefaults'].items()}
 
@@ -204,3 +199,14 @@ try:
 except AttributeError:
 	RADIX_CHAR = '.'
 	GROUPING_CHAR = ','
+
+# Optional config overrides, resolved ONCE here rather than consulted while
+# rendering. These characters are a property of the locale - they change when
+# someone moves country, not between values - so paying for a lookup on every
+# formatted number would buy nothing. Set them in [UnitDefaults] to override
+# what the locale reports.
+if config.has_section('UnitDefaults'):
+	if _grouping := config['UnitDefaults'].get('grouping_character', None):
+		GROUPING_CHAR = _grouping
+	if _radix := config['UnitDefaults'].get('radix_character', None):
+		RADIX_CHAR = _radix
