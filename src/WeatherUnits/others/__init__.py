@@ -109,21 +109,10 @@ class Direction(Angle, FiniteField, limits=(0, 360)):
 
 	@property
 	def decoratedInt(self) -> str:
-		return super()._string(forceUnit=False, asInt=True)
-
-	@property
-	def __cardinalFormat(self):
-		return '{value}'
-
-	@property
-	def __valueFormat(self):
-		return "{value}{unit_symbol}"
-
-	@property
-	def defaultFormat(self) -> str:
-		if self._cardinal:
-			return self.__cardinalFormat
-		return self.__valueFormat
+		# `forceUnit=`/`asInt=` were never parameters of _string - this raised
+		# TypeError for anyone who called it. Expressed against the real
+		# signature: no unit, integer precision, decorator kept.
+		return super()._string(unit=False, formatSpec='.0f')
 
 	@property
 	def defaultFormatParams(self):

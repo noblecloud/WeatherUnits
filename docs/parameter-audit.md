@@ -105,12 +105,20 @@ here so they survive the next person who reads "never consumed" as "unused".
 documents the rule and the two plausible simplifications of it that are both
 wrong.
 
-Also dead in the same area, and genuinely debris rather than unfinished
-features: `FormatSpec.limit` (compiled, never applied), `__format_class__`
-(never overridden, its only call site commented out), `defaultFormat`
-(superseded by `__format_template__`), and `SmartFloat._string` (legacy
-formatter whose one remaining caller passes arguments it no longer accepts —
-it would `TypeError` if reached).
+Also unused in the same area — but **mostly not debris**, which the sweep
+established by asking rather than assuming (see
+[`tasks/dead-code-sweep.md`](tasks/dead-code-sweep.md)):
+
+| item | outcome |
+|---|---|
+| `FormatSpec.limit` | **kept** — the `[max:min]` clamp syntax is still wanted |
+| `__format_class__` | **kept** — per-class custom formatting is still wanted |
+| `SmartFloat._string` | **kept** — a deliberate second formatting path taking keywords instead of a spec string. Was silently broken by the rename; now repaired and tested |
+| `defaultFormat` | **deleted** — superseded by `__format_template__` |
+| `_getUnit` | **deleted** — superseded by `localizedUnit` → `loadUnitLocalization` |
+
+Only two of five turned out to be debris. The lesson is the same one the
+parameters above teach: uncalled is not the same as unwanted.
 
 ---
 

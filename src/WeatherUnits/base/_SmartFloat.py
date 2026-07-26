@@ -63,6 +63,12 @@ class FormatSpec:
 	# suffix/unit DO take False meaningfully (it disables them), so they
 	# must keep being coerced.
 	never_boolean: ClassVar[Set[str]] = {'type', 'fill', 'align'}
+	# UNUSED, INTENTIONALLY KEPT. Nothing reads `.limit`, so the bracket
+	# syntax it describes - `{value:[100:0]}`, clamping at format time - is
+	# not accepted anywhere yet. Kept because implementing it is still wanted;
+	# the exact intent is no longer remembered, so treat the pattern as the
+	# specification: an optional max and an optional min, either of which may
+	# be `*` to mean "unbounded on this side".
 	limit = re.compile(r'\[(?P<max>([+-]?[\d.]+)|\*)?:(?P<min>([+-]?[\d.]+)|\*)?]')
 	precision = re.compile(r"""
 	(^)?(?(1)|(?<=:))
@@ -668,20 +674,34 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		shorten: bool = None,
 		prefix: str = None,
 		suffix: str = None,
-		decorator: str = None,
+		unit_symbol: str = None,
 		spacer: Union[bool, str] = None,
 		unit: bool = None,
 		maxLength: int = None,
 		formatSpec: str = None,
 	) -> str:
+		"""Render directly from keyword arguments, bypassing the spec parser.
+
+		INTENTIONALLY KEPT as a second way to format a value. `__format__` is
+		the primary path and takes a spec *string*, which has to be parsed and
+		validated; this takes the same knobs as plain keywords, which is the
+		cheaper call when the caller already has them as values - e.g. a
+		plugin schema carrying its own conversion/formatting settings.
+
+		No production caller today, so it is easy to break silently: the
+		snake_case rename turned this method's local `decorator` into
+		`unit_symbol` in the f-string but not in the parameter list, and every
+		call raised `NameError` until it was noticed. `tests/test_string_api.py`
+		exists so that cannot happen again.
+		"""
 		if shorten is None:
 			shorten = getattr(self, '_shorten', False)
 		if prefix is None:
 			prefix = getattr(self, '_prefix', '')
 		if suffix is None:
 			suffix = getattr(self, '_suffix', '')
-		if decorator is None:
-			decorator = self.unit_symbol
+		if unit_symbol is None:
+			unit_symbol = self.unit_symbol
 		if spacer is None:
 			spacer = getattr(self, '_unit_spacer', None)
 		if spacer is None:
@@ -731,7 +751,10 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			unitString = self.unit
 		else:
 			unitString = ''
-		spacer = spacer if spacer else ''
+		# No unit means nothing to separate from, so no separator - same rule
+		# as __format_template__. Without this a dimensionless value rendered
+		# '180° ' with a trailing space.
+		spacer = spacer if (spacer and unitString) else ''
 		return f'{prefix}{valueFloat:{formatSpec}}{valueSuffix}{suffix}{unit_symbol}{spacer}{unitString}'
 
 	def __str__(self):
@@ -1007,6 +1030,21 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return formattedValue
 
 	def __format_class__(self, formatSpec: str, formatParams: Mapping) -> dict:
+		"""Per-class hook to adjust format params before rendering.
+
+		UNUSED, INTENTIONALLY KEPT. No subclass overrides it and its only
+		call site is commented out (see `# params = value.__format_class__(...)`
+		above), so today it is a no-op returning its input unchanged.
+
+		Kept because the capability is wanted: a unit class should be able to
+		apply its own formatting rules without every caller knowing about
+		them. `Direction` is the shape of the use case - it currently reaches
+		the same end by overriding `__format_value__` and `__format_template__`
+		separately, which this hook would have covered in one place.
+
+		To revive: uncomment the call site and have it merge the returned
+		mapping into `params`.
+		"""
 		return formatParams
 
 	def __replace_format_attrs__(self, formatString: str, formatParams: Mapping) -> str:
@@ -1128,12 +1166,6 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			formatTemplate.append('{suffix}')
 
 		return ''.join(formatTemplate)
-
-	@property
-	def defaultFormat(self) -> str:
-		if self.show_unit:
-			return "{value}{unit_symbol}{unit_spacer}{unit}"
-		return "{value}{unit_symbol}"
 
 	@property
 	def defaultFormatParams(self):

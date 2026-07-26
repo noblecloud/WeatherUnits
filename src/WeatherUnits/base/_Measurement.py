@@ -904,17 +904,6 @@ class DerivedMeasurement(Measurement, metaclass=DerivedMeasurementMeta):
 		else:
 			return super(DerivedMeasurement, self)._convert(other)
 
-	# TODO: Implement into child classes
-	# DEAD: nothing calls this. Left in place rather than deleted because the
-	# TODO is a real intent, but note it is doubly broken if ever revived - it
-	# hardcodes the `LocalUnits` section name (configs also use `Units`,
-	# `Units_<locale>` or `WeatherUnits`; `config.localUnits` resolves
-	# whichever exists) and keys on `str(self._type)`, which for a derived
-	# unit is 'Wind[<Length>/<Time>]' rather than the config's `wind`.
-	# `localizedUnit` -> `loadUnitLocalization` is the path that works.
-	def _getUnit(self) -> List[str]:
-		return config['LocalUnits'][str(self._type)].split('/')
-
 	def _getUnitTypes(self):
 		return self._numerator.type, self._denominator.type
 
