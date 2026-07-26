@@ -443,7 +443,16 @@ class DerivedMeasurementMeta(MetaUnitClass):
 
 	def __new__(mcs, name, bases, attrs, numerator: Type[Measurement] = None, denominator: Type[Measurement] = None, **kwargs):
 		if numerator is None:
-			numerator = next((j for i in bases if (j := getattr(i, 'numerator', None)) is not None), None)
+			# Prefer a CONCRETE numerator over a generic one. Inheriting from
+			# both a unit type and a concrete unit - `class MilesPerHour(Wind,
+			# DistanceOverTime.MilesPerHour)` - put the generic `<Length>` from
+			# Wind ahead of `Mile` from the concrete base purely because Wind
+			# is listed first, so the class no longer knew it was miles.
+			candidates = [j for i in bases if (j := getattr(i, 'numerator', None)) is not None]
+			numerator = next(
+				(c for c in candidates if not getattr(c, 'isGeneric', False)),
+				next(iter(candidates), None),
+			)
 		if numerator:
 			attrs['_numerator'] = numerator
 			annotations = attrs.get('__annotations__', {})
@@ -451,7 +460,15 @@ class DerivedMeasurementMeta(MetaUnitClass):
 			attrs['__annotations__'] = annotations
 
 		if denominator is None:
-			denominator = next((base_d for base in bases if (base_d := getattr(base, 'denominator', None)) is not Measurement and base_d is not None), None)
+			# Same concrete-over-generic preference as the numerator above.
+			d_candidates = [
+				base_d for base in bases
+				if (base_d := getattr(base, 'denominator', None)) is not Measurement and base_d is not None
+			]
+			denominator = next(
+				(c for c in d_candidates if not getattr(c, 'isGeneric', False)),
+				next(iter(d_candidates), None),
+			)
 		if denominator:
 			attrs['_denominator'] = denominator
 			annotations = attrs.get('__annotations__', {})
@@ -888,6 +905,13 @@ class DerivedMeasurement(Measurement, metaclass=DerivedMeasurementMeta):
 			return super(DerivedMeasurement, self)._convert(other)
 
 	# TODO: Implement into child classes
+	# DEAD: nothing calls this. Left in place rather than deleted because the
+	# TODO is a real intent, but note it is doubly broken if ever revived - it
+	# hardcodes the `LocalUnits` section name (configs also use `Units`,
+	# `Units_<locale>` or `WeatherUnits`; `config.localUnits` resolves
+	# whichever exists) and keys on `str(self._type)`, which for a derived
+	# unit is 'Wind[<Length>/<Time>]' rather than the config's `wind`.
+	# `localizedUnit` -> `loadUnitLocalization` is the path that works.
 	def _getUnit(self) -> List[str]:
 		return config['LocalUnits'][str(self._type)].split('/')
 

@@ -38,3 +38,17 @@ class MilesPerHour(Wind, DistanceOverTime.MilesPerHour):
 
 class MetersPerSecond(Wind, DistanceOverTime.MetersPerSecond):
 	...
+
+
+# Attach the concrete units to Wind, the same way rate.py attaches its own.
+# Without this, `Wind.MilesPerHour` resolves by ordinary inheritance to
+# DistanceOverTime's class, whose type is 'Distance Over Time' rather than
+# 'Wind'. Localization looks the unit type up in the config by that name, so
+# it found no `wind` key, returned None, and every wind reading stayed in its
+# source unit - a `wind = mph` config still displayed m/s.
+Wind.PerSecond = PerSecond
+Wind.PerMinute = PerMinute
+Wind.PerHour = PerHour
+Wind.MilesPerHour = MilesPerHour
+Wind.MetersPerSecond = MetersPerSecond
+Wind.MetersPerHour = MetersPerSecond
