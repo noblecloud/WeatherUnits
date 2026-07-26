@@ -20,6 +20,12 @@ These are blocked on a judgment call, not on effort.
 
 ## Ready to pick up
 
+> **The cleanup gate is clear.** Everything that was blocking "show it to
+> people and then decide the name" has landed: the README executes, the
+> parameter surface is snake_case and documented, the dead code is resolved,
+> and the config actually binds. What remains below is either a decision or
+> a new feature, not tidying.
+
 - **[format-playground.md](format-playground.md)** — interactive demo page
   with sliders for every formatting parameter. Runs the real library in the
   browser via Pyodide (the package has zero runtime dependencies), so it
@@ -36,16 +42,18 @@ Small, self-contained, no decisions needed.
   [parameter-audit.md](../parameter-audit.md) §3 — these are unfinished
   features, **not** debris, and should not be deleted on the strength of
   "nothing reads it".
-- **`groupingCharacter` casing straggler.** `config/__init__.py:95` still
-  reads a camelCase key. It appears in no shipped `.ini`, so the read always
-  falls through to its default — harmless today, wrong after the snake_case
-  rename.
-- **Dead code in the formatting area.** `FormatSpec.limit` (compiled, never
-  applied), `__format_class__` (never overridden, its only call site
-  commented out), `defaultFormat` (superseded by `__format_template__`), and
-  `SmartFloat._string` (its one remaining caller passes arguments it no
-  longer accepts — it would `TypeError` if reached). Unlike the parameters
-  above, this really is debris.
+- ~~**`groupingCharacter` casing straggler.**~~ **Resolved 2026-07-26.**
+  Rather than renamed: the separators are a property of the locale, not of a
+  value, so `GROUPING_CHAR`/`RADIX_CHAR` now take an optional
+  `grouping_character` / `radix_character` override from `[UnitDefaults]`,
+  resolved once at config load. The unused property is gone.
+- ~~**Dead code in the formatting area.**~~ **Resolved 2026-07-26** — see
+  [dead-code-sweep.md](dead-code-sweep.md). Only 2 of 5 candidates were
+  actually debris. `FormatSpec.limit`, `__format_class__` and
+  `SmartFloat._string` are wanted and kept, each annotated at the code;
+  `defaultFormat` and `_getUnit` are deleted. `_string` turned out to be
+  *broken* rather than merely unused (the rename had left a `NameError` in
+  it) and is now repaired and covered by `tests/test_string_api.py`.
 - **`digit_budget` caps but does not grant.** Raising it does not buy more
   decimals, because `precision` is separately capped by the class default
   and by the value's own decimal content. Documented in the README with a
