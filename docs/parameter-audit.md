@@ -30,13 +30,14 @@ that are being actively maintained, and there are none in the wild yet.
 | size-class keys | `Tiny` `Small` `Medium` `Large` `Huge` (deliberate — a different namespace) |
 | unit names in `[UnitProperties]` | as spelled (`inHg`, `mmHg`, `precipitationRate`) — these are *unit identifiers*, not params |
 
-### ⚠️ One straggler
+### ~~One straggler~~ — resolved
 
-`config/__init__.py:95` still reads `self['UnitDefaults'].get('groupingCharacter', True)`
-— a camelCase key. It is not present in any shipped `.ini`, so the read
-always falls through to the default and nothing observable depends on it.
-It should become `grouping_character` when the surrounding dead code
-(§3) is dealt with.
+`Config.groupingCharacter` was the last camelCase key. It read nothing any
+`.ini` shipped and was itself read by nobody, so rather than renaming it the
+customization moved to where it belongs: `GROUPING_CHAR`/`RADIX_CHAR` take an
+optional `grouping_character` / `radix_character` override from
+`[UnitDefaults]`, resolved **once at config load** instead of on every
+rendered value. The separators are a property of the locale, not of a value.
 
 ### Failure modes worth remembering
 
@@ -159,7 +160,6 @@ throughout LevityDash, and the `docs/change-logs/` history.
    `off | precision | fill | <int>`, closing the width-drift gap.
 2. **Implement or drop the rest of §3** — now that intents are recorded, each
    is a small self-contained piece of work.
-3. **`grouping_character` straggler** (§1).
-4. **Decide the library name** (§4).
-5. **Write the public docs**, against a surface that no longer needs
+3. **Decide the library name** (§4).
+4. **Write the public docs**, against a surface that no longer needs
    apologising for.
