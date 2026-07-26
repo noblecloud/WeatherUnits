@@ -30,7 +30,8 @@ These are blocked on a judgment call, not on effort.
   with sliders for every formatting parameter. Runs the real library in the
   browser via Pyodide (the package has zero runtime dependencies), so it
   can't drift from actual behaviour the way hand-written examples did.
-  Wants the naming decision settled first.
+  **Not blocked on the name** — the name appears only in the title, and a
+  live page is a better thing to show someone than a description of one.
 
 ## Loose ends
 

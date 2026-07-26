@@ -1,7 +1,9 @@
 # Interactive formatting playground
 
-**Status:** idea, not scheduled. Wants the naming decision settled first —
-the page will carry the library's name all over it.
+**Status:** ready to build. Previously parked behind the naming decision,
+which is now weeks out — and the dependency ran the wrong way anyway: the
+name appears only in the title, while the page itself is the most useful
+thing to put in front of someone who is being asked about the name.
 
 ## What
 
