@@ -18,6 +18,7 @@ particular differs under si.ini.
 from unittest import TestCase
 
 from WeatherUnits import Length, Light, Mass, Pressure, Temperature, Wind
+from WeatherUnits.base._SmartFloat import FormatSpec, SmartFloat
 
 
 class TestZeroValues(TestCase):
@@ -617,3 +618,244 @@ class TestTrueZero(TestCase):
 		z = Pressure.MillimeterOfMercury(0.0)
 		z.true_zero = False
 		self.assertEqual('0.00 mmHg', str(z))
+
+class TestKeywordPrecisionMatchesStringPrecision(TestCase):
+	"""`v.__format__('', precision=N)` must mean what `format(v, 'precision=N')` means.
+
+	These are supposed to be two spellings of one request. They were not.
+	The `trailing_zeros` branch read the caller's precision from
+	`params.specParams`, but the keyword spelling never lands there - it
+	goes into `extras`, the first map of the ChainMap - so by the time
+	trailing_zeros asked, the asked-for value had been overwritten by the
+	clamping above it and only the configured precision was left.
+
+	So a caller asking for no decimals got the configured precision's
+	padding instead: `InchOfMercury(30.0).__format__('', precision=0)`
+	rendered '30.00 inHg'. The string form was unaffected, which is what
+	hid it - the two spellings disagreed only under `trailing_zeros`, and
+	only for a unit whose config sets it.
+
+	Fixed by capturing the caller's precision as `params.explicitPrecision`
+	before anything can overwrite `extras`. Pinned here in both spellings,
+	plus the configured-precision path the option exists to override.
+
+	Which unit carries the padding depends on the loaded config: us.ini
+	pads inHg, si.ini pads mmHg (si.ini:38, us.ini:39). Both are asserted,
+	so this test bites under either config rather than quietly going
+	inert on whichever one happens to be loaded.
+	"""
+
+	# The units whose config sets trailing_zeros, one per config.
+	PADDED_UNITS = (Pressure.InchOfMercury, Pressure.MillimeterOfMercury)
+
+	def test_keyword_form_is_not_padded_to_the_configured_precision(self):
+		for unit in self.PADDED_UNITS:
+			for value, expected in ((28.0, '28'), (30.0, '30')):
+				with self.subTest(unit=unit.__name__, value=value):
+					rendered = unit(value).__format__('', precision=0)
+					self.assertNotIn(
+						'.',
+						rendered.split()[0],
+						f'{rendered!r} should carry no decimals',
+					)
+
+	def test_it_agrees_with_the_string_form(self):
+		for unit in self.PADDED_UNITS:
+			for value in (28.0, 30.0, 29.92):
+				with self.subTest(unit=unit.__name__, value=value):
+					self.assertEqual(
+						format(unit(value), 'precision=0'),
+						unit(value).__format__('', precision=0),
+					)
+
+	def test_the_string_form_is_unaffected(self):
+		# The half that always worked; pinned so the fix cannot break it.
+		self.assertEqual('30 mmHg', format(Pressure.MillimeterOfMercury(30.0), 'precision=0'))
+
+	def test_a_keyword_precision_still_outranks_the_class_default(self):
+		# The option's whole purpose: an explicit precision overrides the
+		# configured one for the padding decision.
+		self.assertEqual('30.5 mmHg', Pressure.MillimeterOfMercury(30.5).__format__('', precision=1))
+
+	def test_without_a_caller_precision_the_configured_one_still_governs(self):
+		# The fallback branch is unchanged: no explicit precision means the
+		# config decides, as it did before. Which unit it applies to depends
+		# on the config - us.ini pads inHg to 2 places, si.ini pads mmHg.
+		# Asserted through whichever unit this config actually pads, so the
+		# guard holds under both.
+		for unit in self.PADDED_UNITS:
+			with self.subTest(unit=unit.__name__):
+				self.assertEqual(
+					format(unit(30.0), 'precision=0'),
+					format(unit(30.0), 'precision=0, trailing_zeros=precision'),
+				)
+
+
+class TestCompactFormat(TestCase):
+	"""`compact=True` asks for the unit's *label* convention, not a reading.
+
+	A pressure dial labelled at 28, 29, 30 inHg shows whole inches, while the
+	reading itself wants `29.92`. Those are two renderings of one unit, so the
+	difference belongs to the unit rather than to any caller, and no consumer
+	should be hand-formatting around it. `compact=True` expands to the unit's
+	`_compact_format`, which by default drops the padding zeros a reading
+	needs.
+
+	Ranked below every explicit key on purpose: `compact, precision=2` still
+	gets 2 decimals, because asking to be compact is not asking to override the
+	caller. It sits above the config, which is the only reason it can work at
+	all - `[UnitProperties]` writes onto `defaultFormatParams`, so anything
+	ranked below that map would lose to `trailing_zeros=precision` and `compact`
+	would be a silent no-op.
+	"""
+
+	def paddedUnit(self):
+		"""The unit whose config sets trailing_zeros=precision.
+
+		Which one that is depends on the loaded config - us.ini pads inHg,
+		si.ini pads mmHg (us.ini:39, si.ini:38) - so these tests ask the config
+		rather than naming a unit. Naming one made half of them inert.
+		"""
+		for unit in (Pressure.InchOfMercury, Pressure.MillimeterOfMercury):
+			if unit(30.0).defaultFormatParams.get('trailing_zeros') == 'precision':
+				return unit
+		self.fail('no configured unit carries trailing_zeros=precision')
+
+	def test_a_padded_reading_loses_its_zeros(self):
+		unit = self.paddedUnit()
+		self.assertEqual('28', format(unit(28.0), 'compact=True, show_unit=False'))
+		self.assertEqual('30', format(unit(30.0), 'compact=True, show_unit=False'))
+
+	def test_the_same_reading_pads_without_the_flag(self):
+		# The whole point: one unit, one config, two renderings.
+		unit = self.paddedUnit()
+		self.assertEqual('30.00', format(unit(30.0), 'show_unit=False'))
+		self.assertEqual('30', format(unit(30.0), 'compact=True, show_unit=False'))
+
+	def test_a_reading_without_padding_is_unchanged(self):
+		# 29.5 is not padding - it is the value. Compact must not truncate it,
+		# on a padded unit or any other.
+		for unit in (Pressure.InchOfMercury, Pressure.MillimeterOfMercury):
+			with self.subTest(unit=unit.__name__):
+				self.assertEqual('29.5', format(unit(29.5), 'compact=True, show_unit=False'))
+
+	def test_an_explicit_precision_is_still_a_cap(self):
+		# Compact removes *padding*; it does not override the precision the
+		# caller named. `precision=2` still allows a second decimal, so 30.0
+		# keeps the one it has - it just does not grow to '30.00'. Naming a
+		# precision under compact must not be silently widened or ignored.
+		unit = self.paddedUnit()
+		self.assertEqual('30.0', format(unit(30.0), 'compact=True, precision=2, show_unit=False'))
+		# 30.5 keeps exactly the one decimal it needs - and no second one
+		# invented to fill the precision, which is the whole point of compact.
+		self.assertEqual('30.5', format(unit(30.5), 'compact=True, precision=2, show_unit=False'))
+
+	def test_it_composes_with_other_parameters(self):
+		unit = self.paddedUnit()
+		self.assertEqual('28', format(unit(28.0), 'compact=True, show_unit=False'))
+		self.assertEqual(f'28 {unit._unit}', format(unit(28.0), 'compact=True'))
+
+	def test_the_keyword_spelling_works_too(self):
+		unit = self.paddedUnit()
+		self.assertEqual(
+			format(unit(30.0), 'compact=True, show_unit=False'),
+			unit(30.0).__format__('', compact=True, show_unit=False),
+		)
+
+	def mBar(self, spec):
+		"""Render a Hectopascal as mBar, which is stable across configs.
+
+		`pressure` in the config decides what a pressure value is localised to
+		- us.ini says inHg, si.ini says mmHg - so a plain Hectopascal renders
+		as `759.96 mmHg` under one and `1013.2 inHg` under the other, and
+		never reaches its own convention. Asking for `convert=millibar` pins
+		the display unit; mBar renders the same under both configs, and
+		Millibar is a @Synonym of Hectopascal so it is the same convention.
+
+		Asymmetric on purpose: `convert=hectopascal` does NOT pin it - the
+		localisation still wins - so the class name is not usable here even
+		though the unit symbol is.
+		"""
+		return format(Pressure.Hectopascal(1013.2), f'convert=millibar, {spec}')
+
+	def test_a_unit_can_declare_a_different_convention(self):
+		"""hPa is shown as whole numbers, so it declares that on the class.
+
+		The default - drop padding zeros - is right for inches and wrong here:
+		1013.2 is a reading, but a dial face reads 1000, 1010, 1020. This is
+		the override path the default cannot cover, and the reason the
+		convention lives on the unit rather than in one global setting.
+		"""
+		self.assertEqual('1013', self.mBar('compact=True, show_unit=False'))
+		# Millibar directly: a @Synonym of Hectopascal, so it shares the
+		# convention by inheritance rather than by a second declaration.
+		self.assertEqual(
+			'1013',
+			format(Pressure.Millibar(1013.2), 'compact=True, show_unit=False'),
+		)
+
+	def test_a_declared_convention_differs_from_the_default(self):
+		# Guards that the override is actually load-bearing: if the default
+		# ever grows to drop decimals on its own, this stops testing anything.
+		self.assertNotEqual(dict(SmartFloat._compact_format), dict(Pressure.Hectopascal._compact_format))
+		self.assertNotEqual(self.mBar('show_unit=False'), self.mBar('compact=True, show_unit=False'))
+
+	def test_the_declared_convention_is_scoped_to_compact(self):
+		# Declaring _compact_format must not change how the unit reads. This
+		# is the ranking that keeps config governing readings.
+		self.assertEqual('1013.2', self.mBar('show_unit=False'))
+		self.assertEqual('1013', self.mBar('compact=True, show_unit=False'))
+
+	def test_a_unit_can_keep_its_zeros(self):
+		"""The rain case: `0.25 0.50` - here the zeros ARE the convention.
+
+		Defaulting to as little information as possible is right for pressure
+		and wrong for precipitation, which is why this is a per-unit
+		declaration rather than a global setting.
+		"""
+		from WeatherUnits.derived.precipitation import PrecipitationRate
+
+		rate = PrecipitationRate.Hourly(Length.Inch(0.25))
+		self.assertIn('.25', format(rate, 'compact=True'))
+
+	def test_the_default_compact_format_is_just_no_padding(self):
+		self.assertEqual({'trailing_zeros': 'off'}, dict(SmartFloat._compact_format))
+
+
+class TestParameterSeparatorSpacing(TestCase):
+	"""A bare comma separates parameters as well as a comma and a space.
+
+	`FormatSpec.params` required `,\s`, so `precision=0,show_unit=False`
+	parsed as ONE parameter: the trailing `(?=,|$)` lookahead stopped at the
+	comma, the value swallowed the rest, and `show_unit` was dropped with no
+	error. The spec silently did less than it said - the worst failure mode
+	here is, because the caller sees a plausible string and no complaint.
+
+	Predates the compact format; found through it, because `compact=True` is
+	the first flag in this library written without an `=value`, so it is the
+	first spec where a caller naturally writes the tight form.
+	"""
+
+	def test_a_bare_comma_separates(self):
+		for spec in ('precision=0,show_unit=False', 'precision=0, show_unit=False'):
+			with self.subTest(spec=spec):
+				parsed = {i['key']: i['value'] for i in FormatSpec.params.finditer(spec)}
+				self.assertEqual({'precision': '0', 'show_unit': 'False'}, parsed)
+
+	def test_it_holds_for_more_than_two(self):
+		parsed = {i['key']: i['value'] for i in FormatSpec.params.finditer('precision=0,show_unit=False,leading_zero=False')}
+		self.assertEqual({'precision': '0', 'show_unit': 'False', 'leading_zero': 'False'}, parsed)
+
+	def test_order_does_not_matter(self):
+		parsed = {i['key']: i['value'] for i in FormatSpec.params.finditer('show_unit=False,precision=0')}
+		self.assertEqual({'show_unit': 'False', 'precision': '0'}, parsed)
+
+	def test_the_rendering_agrees_either_way(self):
+		# The behaviour, not just the parse: both spellings must render the
+		# same string. `compact=True` is what exposed this.
+		for unit in (Pressure.InchOfMercury, Pressure.MillimeterOfMercury):
+			with self.subTest(unit=unit.__name__):
+				self.assertEqual(
+					format(unit(29.92), 'compact=True, precision=0, show_unit=False'),
+					format(unit(29.92), 'compact=True,precision=0,show_unit=False'),
+				)
