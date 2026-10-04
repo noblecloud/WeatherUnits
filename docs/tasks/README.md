@@ -99,8 +99,8 @@ parsing. [missing-values-and-locale.md](missing-values-and-locale.md) and
 
 - **[conversion-core.md](conversion-core.md)** — four conversion paths become
   one: a reference (SI) unit per dimension, `to_reference` / `from_reference`
-  per unit, declaration keywords, generated accessors. Phase 0 (physical-constant
-  tests) is ready; the declaration spelling needs sign-off before phase 2.
+  per unit, class-body attributes for declarations, generated accessors. Phase 0
+  (physical-constant tests) is ready; the declaration spelling is decided.
 - **[derived-units-and-algebra.md](derived-units-and-algebra.md)** — the
   denominator does two jobs (unit and window); split them. Then exponent-vector
   dimension algebra (`^3`), type-preserving operators. Depends on phase 1 above.

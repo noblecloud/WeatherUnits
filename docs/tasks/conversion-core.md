@@ -1,6 +1,6 @@
 # One conversion path: a reference unit per dimension
 
-**Status:** design. Phase 0 is ready. Get sign-off on the declaration spelling (below) before building past phase 1.
+**Status:** design. Phase 0 is ready. The declaration spelling is decided (below).
 **Base:** `dev`. Step one: `git checkout -B feat/conversion-core dev`.
 **Model:** phase 0 and the phase 2 migration suit Sonnet. Phase 1 is the design-heavy one.
 
@@ -44,21 +44,42 @@ The README's own "Defining Your Own Unit" section (README.md ~172-230) shows the
   - `displays_same()` (name provisional) stays a display-level check.
 - **Generated accessors** (`.kmh`, `.fahrenheit`, `['km/h']`) come from the registry. No hand-written property per target.
 
-### Proposed declaration spelling (not signed off)
+### Declaration spelling (decided: maintainer, 2026-10-04)
 
-Present this to the maintainer before migrating every unit.
+A unit is a class. Its configuration is class attributes in the class body, one per line. The metaclass reads those attributes from the body; they are not class keyword arguments. Existing keyword arguments such as `system=` may stay where the code already uses them.
 
 ```python
-class Kelvin(Temperature, unit='K', reference=True): ...
-class Celsius(Temperature, unit='°C', offset=273.15, aliases=('c', 'degC')): ...
-class Fahrenheit(Temperature, unit='°F', offset=459.67, factor=5/9, aliases=('f', 'degF')): ...
-# reference = (value + offset) * factor
+class Kelvin(Temperature):
+	unit = 'K'
+	reference = True
 
-class ImperialLength(ScalingMeasurement, Length, system=imperial, baseUnit='Foot', equals=Meter(0.3048)): ...
-class Knot(Speed, unit='kn', aliases=('kt',), equals=NauticalMile / Hour): ...
+
+class Celsius(Temperature):
+	unit = '°C'
+	offset = 273.15
+	aliases = 'c', 'degC'
+
+
+class Fahrenheit(Temperature):
+	unit = '°F'
+	offset = 459.67
+	factor = 5 / 9
+	aliases = 'f', 'degF'
+	# reference = (value + offset) * factor
+
+
+class ImperialLength(ScalingMeasurement, Length, system=imperial):
+	baseUnit = 'Foot'
+	equals = Meter(0.3048)
+
+
+class Knot(Speed):
+	unit = 'kn'
+	aliases = 'kt',
+	equals = NauticalMile / Hour
 ```
 
-The last line needs the algebra from [derived-units-and-algebra.md](derived-units-and-algebra.md). Until then, spell a knot as `factor=1852/3600`.
+The `Knot` form needs the algebra from [derived-units-and-algebra.md](derived-units-and-algebra.md). Until then, spell a knot with `factor = 1852 / 3600`.
 
 ## Phases
 
@@ -86,9 +107,9 @@ Conversions must not depend on the loaded config. Pin it as described in [missin
 - No user-visible changes to class definitions.
 - The phase 0 tests and the existing suite must both be green. `convert_array(32 °F → °C)` gives exactly 0.
 
-### Phase 2: declaration keywords and generated accessors
+### Phase 2: declaration attributes and generated accessors
 
-- Add the keywords (`reference=`, `offset=`, `factor=`, `equals=`, `aliases=`) and the generated accessors.
+- Teach the metaclass to read the class attributes (`reference`, `offset`, `factor`, `equals`, `aliases`) from the class body, and generate the accessors.
 - Migrate the built-in units. Delete the redundant hand-written properties.
 - Rewrite the README's unit-definition section around the new spelling.
 
