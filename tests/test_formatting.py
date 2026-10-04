@@ -619,6 +619,7 @@ class TestTrueZero(TestCase):
 		z.true_zero = False
 		self.assertEqual('0.00 mmHg', str(z))
 
+
 class TestKeywordPrecisionMatchesStringPrecision(TestCase):
 	"""`v.__format__('', precision=N)` must mean what `format(v, 'precision=N')` means.
 
