@@ -18,7 +18,22 @@ These are blocked on a judgment call, not on effort.
 | ~~**`trailing_zero` vs `force_precision`**~~ | **Resolved 2026-07-25.** Both replaced by a single `trailing_zeros` taking `off \| precision \| fill \| <int>`, always capped by the budget. Default stays `off`, so no existing output changed. |
 | ~~**`shorten=False` on `Direction`**~~ | **Resolved 2026-07-25.** The budget counts compass *components*; the atom is a letter when abbreviated and a word when spelled out. Both forms now read one shared index ladder, so they always name the same heading. Word forms are derived from the abbreviations rather than kept in a parallel list — the old list had `NE` spelling as the single word `Northeast`, so word count never matched the budget. |
 
+## Bugs — ready to pick up (found 2026-10-04)
+
+- **[same-dimension-regressions.md](same-dimension-regressions.md)** — `8f1ce65`
+  broke metric↔imperial comparison and arithmetic (`Meter(1) + Foot(1)` raises,
+  `Celsius(0) == Fahrenheit(32)` is False, mixed temperatures sort wrong) and left
+  `==` tolerant while `hash` is not. Equality semantics are decided; see the brief.
+- **[missing-values-and-locale.md](missing-values-and-locale.md)** — NaN becomes the
+  upper limit (`Humidity(nan)` shows `100%`); the import crashes when the locale is
+  unrecognised; the test suite's verdict depends on the host locale (19 failures
+  under `us.ini`).
+
 ## Ready to pick up
+
+- **[small-fixes.md](small-fixes.md)** — four independent items: Kelvin's symbol
+  is `'k'` (should be `'K'`), the `heatIndex` guard reads `300 > K < 318`,
+  `wu.auto(value, unit)` crashes, and there is no `py.typed`.
 
 > **The cleanup gate is clear.** Everything that was blocking "show it to
 > people and then decide the name" has landed: the README executes, the
@@ -70,3 +85,31 @@ Small, self-contained, no decisions needed.
   and useless). The heuristic formatter already exists in `Time.__format__`;
   its `timestamp` spec carries the magnitude-escalation logic and currently
   raises TypeError.
+
+## Design
+
+Decided direction, not yet built. Purpose: easy, automatic conversion for
+normalising and humanising data from any API; units declared with a class,
+everything else automatic.
+
+Dependency order: [same-dimension-regressions.md](same-dimension-regressions.md)
+(the minimal fix) -> conversion-core -> derived-units-and-algebra -> compound
+parsing. [missing-values-and-locale.md](missing-values-and-locale.md) and
+[small-fixes.md](small-fixes.md) are independent.
+
+- **[conversion-core.md](conversion-core.md)** — four conversion paths become
+  one: a reference (SI) unit per dimension, `to_reference` / `from_reference`
+  per unit, class-body attributes for declarations, generated accessors. Phase 0
+  (physical-constant tests) is ready; the declaration spelling is decided.
+- **[derived-units-and-algebra.md](derived-units-and-algebra.md)** — the
+  denominator does two jobs (unit and window); split them. Then exponent-vector
+  dimension algebra (`^3`), type-preserving operators. Depends on phase 1 above.
+- **[unit-parsing.md](unit-parsing.md)** — strict `wu.parse`, scoped lookup,
+  `UnknownUnit` / `AmbiguousUnit`, explicit `wu.suggest`. The strict half can
+  start now; compound units wait on the algebra.
+
+## Backlog
+
+- **[ideas.md](ideas.md)** — knots, Beaufort, irradiance, PPFD/DLI, VPD, EC/TDS,
+  Home Assistant normalisation, `to_dict`/`from_dict`, volume. Maintainer
+  prioritises.
