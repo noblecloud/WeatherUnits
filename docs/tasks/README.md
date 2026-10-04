@@ -18,6 +18,17 @@ These are blocked on a judgment call, not on effort.
 | ~~**`trailing_zero` vs `force_precision`**~~ | **Resolved 2026-07-25.** Both replaced by a single `trailing_zeros` taking `off \| precision \| fill \| <int>`, always capped by the budget. Default stays `off`, so no existing output changed. |
 | ~~**`shorten=False` on `Direction`**~~ | **Resolved 2026-07-25.** The budget counts compass *components*; the atom is a letter when abbreviated and a word when spelled out. Both forms now read one shared index ladder, so they always name the same heading. Word forms are derived from the abbreviations rather than kept in a parallel list — the old list had `NE` spelling as the single word `Northeast`, so word count never matched the budget. |
 
+## Bugs — ready to pick up (found 2026-10-04)
+
+- **[same-dimension-regressions.md](same-dimension-regressions.md)** — `8f1ce65`
+  broke metric↔imperial comparison and arithmetic (`Meter(1) + Foot(1)` raises,
+  `Celsius(0) == Fahrenheit(32)` is False, mixed temperatures sort wrong) and left
+  `==` tolerant while `hash` is not. Equality semantics are decided; see the brief.
+- **[missing-values-and-locale.md](missing-values-and-locale.md)** — NaN becomes the
+  upper limit (`Humidity(nan)` shows `100%`); the import crashes when the locale is
+  unrecognised; the test suite's verdict depends on the host locale (19 failures
+  under `us.ini`).
+
 ## Ready to pick up
 
 > **The cleanup gate is clear.** Everything that was blocking "show it to
