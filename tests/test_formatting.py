@@ -617,3 +617,74 @@ class TestTrueZero(TestCase):
 		z = Pressure.MillimeterOfMercury(0.0)
 		z.true_zero = False
 		self.assertEqual('0.00 mmHg', str(z))
+
+class TestKeywordPrecisionMatchesStringPrecision(TestCase):
+	"""`v.__format__('', precision=N)` must mean what `format(v, 'precision=N')` means.
+
+	These are supposed to be two spellings of one request. They were not.
+	The `trailing_zeros` branch read the caller's precision from
+	`params.specParams`, but the keyword spelling never lands there - it
+	goes into `extras`, the first map of the ChainMap - so by the time
+	trailing_zeros asked, the asked-for value had been overwritten by the
+	clamping above it and only the configured precision was left.
+
+	So a caller asking for no decimals got the configured precision's
+	padding instead: `InchOfMercury(30.0).__format__('', precision=0)`
+	rendered '30.00 inHg'. The string form was unaffected, which is what
+	hid it - the two spellings disagreed only under `trailing_zeros`, and
+	only for a unit whose config sets it.
+
+	Fixed by capturing the caller's precision as `params.explicitPrecision`
+	before anything can overwrite `extras`. Pinned here in both spellings,
+	plus the configured-precision path the option exists to override.
+
+	Which unit carries the padding depends on the loaded config: us.ini
+	pads inHg, si.ini pads mmHg (si.ini:38, us.ini:39). Both are asserted,
+	so this test bites under either config rather than quietly going
+	inert on whichever one happens to be loaded.
+	"""
+
+	# The units whose config sets trailing_zeros, one per config.
+	PADDED_UNITS = (Pressure.InchOfMercury, Pressure.MillimeterOfMercury)
+
+	def test_keyword_form_is_not_padded_to_the_configured_precision(self):
+		for unit in self.PADDED_UNITS:
+			for value, expected in ((28.0, '28'), (30.0, '30')):
+				with self.subTest(unit=unit.__name__, value=value):
+					rendered = unit(value).__format__('', precision=0)
+					self.assertNotIn(
+						'.',
+						rendered.split()[0],
+						f'{rendered!r} should carry no decimals',
+					)
+
+	def test_it_agrees_with_the_string_form(self):
+		for unit in self.PADDED_UNITS:
+			for value in (28.0, 30.0, 29.92):
+				with self.subTest(unit=unit.__name__, value=value):
+					self.assertEqual(
+						format(unit(value), 'precision=0'),
+						unit(value).__format__('', precision=0),
+					)
+
+	def test_the_string_form_is_unaffected(self):
+		# The half that always worked; pinned so the fix cannot break it.
+		self.assertEqual('30 mmHg', format(Pressure.MillimeterOfMercury(30.0), 'precision=0'))
+
+	def test_a_keyword_precision_still_outranks_the_class_default(self):
+		# The option's whole purpose: an explicit precision overrides the
+		# configured one for the padding decision.
+		self.assertEqual('30.5 mmHg', Pressure.MillimeterOfMercury(30.5).__format__('', precision=1))
+
+	def test_without_a_caller_precision_the_configured_one_still_governs(self):
+		# The fallback branch is unchanged: no explicit precision means the
+		# config decides, as it did before. Which unit it applies to depends
+		# on the config - us.ini pads inHg to 2 places, si.ini pads mmHg.
+		# Asserted through whichever unit this config actually pads, so the
+		# guard holds under both.
+		for unit in self.PADDED_UNITS:
+			with self.subTest(unit=unit.__name__):
+				self.assertEqual(
+					format(unit(30.0), 'precision=0'),
+					format(unit(30.0), 'precision=0, trailing_zeros=precision'),
+				)

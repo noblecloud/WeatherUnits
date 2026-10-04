@@ -828,6 +828,12 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		params = ChainMap(extras, specParams, params)
 		params.extras = extras
 		params.specParams = specParams
+		# The caller's own precision, from either spelling - `format(v,
+		# 'precision=0')` or `v.__format__('', precision=0)`. Captured now:
+		# `extras` is the first map, so every `params['precision'] = ...`
+		# below writes into it and the asked-for value is gone by the time
+		# trailing_zeros needs it.
+		params.explicitPrecision = extras.get('precision', specParams.get('precision'))
 		params.default = value.defaultFormatParams
 		params.maps.insert(2, params.default)
 
@@ -969,7 +975,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			# has already been clamped down to the value's own decimal count,
 			# which is exactly the clamp this option exists to override. An
 			# explicit `precision=` in the spec outranks the class default.
-			configured = params.specParams.get('precision')
+			configured = params.explicitPrecision
 			if configured is None:
 				configured = getattr(value, '_precision', None)
 			params['precision'] = self.__resolveTrailingZeros(
