@@ -85,7 +85,7 @@ class FormatSpec:
 	(?=:|$)
 	""", re.VERBOSE)
 	params = re.compile(r"""
-  (^)?(?(1)|,\s)(
+  (^)?(?(1)|,\s*)(
     (?P<keyquote>[\'\"`]?)    # optional start quote
     (?P<key>\S+?)             # key
     (?P=keyquote)							# end quote
@@ -97,6 +97,13 @@ class FormatSpec:
 	                          # Only ':' was ever unsupported, so those
 	                          # specs silently parsed as nothing and the
 	                          # whole parameter was dropped.
+	                          #
+	                          # `,\s*`, not `,\s`: a bare comma separates
+	                          # as well as a comma and a space, and demanding
+	                          # the space meant `precision=0,show_unit=False`
+	                          # parsed as ONE parameter - the second was
+	                          # dropped silently, so the spec did less than
+	                          # it said, with no error.
 	(
     (?P<valquote>[\'\"`]?)     # optional start quote
     (?P<value>.*?)             # literal value

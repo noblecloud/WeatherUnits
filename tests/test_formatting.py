@@ -18,7 +18,7 @@ particular differs under si.ini.
 from unittest import TestCase
 
 from WeatherUnits import Length, Light, Mass, Pressure, Temperature, Wind
-from WeatherUnits.base._SmartFloat import SmartFloat
+from WeatherUnits.base._SmartFloat import FormatSpec, SmartFloat
 
 
 class TestZeroValues(TestCase):
@@ -762,6 +762,50 @@ class TestCompactFormat(TestCase):
 			unit(30.0).__format__('', compact=True, show_unit=False),
 		)
 
+	def mBar(self, spec):
+		"""Render a Hectopascal as mBar, which is stable across configs.
+
+		`pressure` in the config decides what a pressure value is localised to
+		- us.ini says inHg, si.ini says mmHg - so a plain Hectopascal renders
+		as `759.96 mmHg` under one and `1013.2 inHg` under the other, and
+		never reaches its own convention. Asking for `convert=millibar` pins
+		the display unit; mBar renders the same under both configs, and
+		Millibar is a @Synonym of Hectopascal so it is the same convention.
+
+		Asymmetric on purpose: `convert=hectopascal` does NOT pin it - the
+		localisation still wins - so the class name is not usable here even
+		though the unit symbol is.
+		"""
+		return format(Pressure.Hectopascal(1013.2), f'convert=millibar, {spec}')
+
+	def test_a_unit_can_declare_a_different_convention(self):
+		"""hPa is shown as whole numbers, so it declares that on the class.
+
+		The default - drop padding zeros - is right for inches and wrong here:
+		1013.2 is a reading, but a dial face reads 1000, 1010, 1020. This is
+		the override path the default cannot cover, and the reason the
+		convention lives on the unit rather than in one global setting.
+		"""
+		self.assertEqual('1013', self.mBar('compact=True, show_unit=False'))
+		# Millibar directly: a @Synonym of Hectopascal, so it shares the
+		# convention by inheritance rather than by a second declaration.
+		self.assertEqual(
+			'1013',
+			format(Pressure.Millibar(1013.2), 'compact=True, show_unit=False'),
+		)
+
+	def test_a_declared_convention_differs_from_the_default(self):
+		# Guards that the override is actually load-bearing: if the default
+		# ever grows to drop decimals on its own, this stops testing anything.
+		self.assertNotEqual(dict(SmartFloat._compact_format), dict(Pressure.Hectopascal._compact_format))
+		self.assertNotEqual(self.mBar('show_unit=False'), self.mBar('compact=True, show_unit=False'))
+
+	def test_the_declared_convention_is_scoped_to_compact(self):
+		# Declaring _compact_format must not change how the unit reads. This
+		# is the ranking that keeps config governing readings.
+		self.assertEqual('1013.2', self.mBar('show_unit=False'))
+		self.assertEqual('1013', self.mBar('compact=True, show_unit=False'))
+
 	def test_a_unit_can_keep_its_zeros(self):
 		"""The rain case: `0.25 0.50` - here the zeros ARE the convention.
 
@@ -776,3 +820,42 @@ class TestCompactFormat(TestCase):
 
 	def test_the_default_compact_format_is_just_no_padding(self):
 		self.assertEqual({'trailing_zeros': 'off'}, dict(SmartFloat._compact_format))
+
+
+class TestParameterSeparatorSpacing(TestCase):
+	"""A bare comma separates parameters as well as a comma and a space.
+
+	`FormatSpec.params` required `,\s`, so `precision=0,show_unit=False`
+	parsed as ONE parameter: the trailing `(?=,|$)` lookahead stopped at the
+	comma, the value swallowed the rest, and `show_unit` was dropped with no
+	error. The spec silently did less than it said - the worst failure mode
+	here is, because the caller sees a plausible string and no complaint.
+
+	Predates the compact format; found through it, because `compact=True` is
+	the first flag in this library written without an `=value`, so it is the
+	first spec where a caller naturally writes the tight form.
+	"""
+
+	def test_a_bare_comma_separates(self):
+		for spec in ('precision=0,show_unit=False', 'precision=0, show_unit=False'):
+			with self.subTest(spec=spec):
+				parsed = {i['key']: i['value'] for i in FormatSpec.params.finditer(spec)}
+				self.assertEqual({'precision': '0', 'show_unit': 'False'}, parsed)
+
+	def test_it_holds_for_more_than_two(self):
+		parsed = {i['key']: i['value'] for i in FormatSpec.params.finditer('precision=0,show_unit=False,leading_zero=False')}
+		self.assertEqual({'precision': '0', 'show_unit': 'False', 'leading_zero': 'False'}, parsed)
+
+	def test_order_does_not_matter(self):
+		parsed = {i['key']: i['value'] for i in FormatSpec.params.finditer('show_unit=False,precision=0')}
+		self.assertEqual({'show_unit': 'False', 'precision': '0'}, parsed)
+
+	def test_the_rendering_agrees_either_way(self):
+		# The behaviour, not just the parse: both spellings must render the
+		# same string. `compact=True` is what exposed this.
+		for unit in (Pressure.InchOfMercury, Pressure.MillimeterOfMercury):
+			with self.subTest(unit=unit.__name__):
+				self.assertEqual(
+					format(unit(29.92), 'compact=True, precision=0, show_unit=False'),
+					format(unit(29.92), 'compact=True,precision=0,show_unit=False'),
+				)

@@ -107,6 +107,11 @@ class Decapascal(Pressure):
 @Medium
 class Hectopascal(Pressure):
 	_unit = 'hPa'
+	# The compact default - drop padding zeros - is right for inches and
+	# wrong here: hPa is conventionally shown as whole numbers. 1013.2 is a
+	# reading; on a dial face it reads 1000, 1010, 1020. So the convention
+	# is declared here, on the unit that has it, rather than in config.
+	_compact_format = {'precision': 0}
 
 
 @Large
@@ -152,6 +157,10 @@ class PoundsPerSquareInch(Pascal):
 class Millibar(Hectopascal):
 	_unit = 'mBar'
 	_digit_budget = 4
+	# No _compact_format here: Millibar is a @Synonym of Hectopascal, so it
+	# inherits the whole-number dial convention along with everything else
+	# Hectopascal declares. Re-stating it would be a second place to keep in
+	# step for no gain.
 
 
 Pressure.Pascal = Pascal
