@@ -47,7 +47,14 @@ The two jobs the denominator does:
 - **Rate and accumulation are explicit arithmetic:** `Millimeter(6) / Hour(3)` gives 2 mm/h, and a rate times `Hour(3)` gives 6 mm.
 - A value that must remember its window (rain in the last 24 h, a daily `precipitation_sum`) carries an optional `period` (`timedelta`) beside the existing `timestamp` metadata (`Measurement.__init__` takes title/key/timestamp/category). It is not a stored denominator, and conversion never touches it.
 
-**Open question for the maintainer:** does anything rely on getting the window back, e.g. showing "6 mm" from a 2 mm/h value? Grep LevityDash (`grep -rn "\.numerator\|\.denominator" ../LevityDash/src`) before deleting it, and report the hits.
+**Keep amount-over-interval as an input form.** `Hourly(Millimeter(1), Minute(5))` gives 12 mm/h and stays valid. It means "amount over interval, give me the rate". This is the real reason the (numerator, denominator) pair exists: schemas build `comboCls(value, period)` from "amount over the report interval" (`lib/plugins/categories.py` ~210-225, in `/home/user/LevityDash`; WeatherFlow `'sourceUnit': ['mm', '@period']`, `WeatherFlow/__init__.py` ~70-71). Only the stored magnitudes go.
+
+**Closed: does anything read the window back? No** (researched 2026-10-04).
+
+- Storing both values has been there since `4b4026b` (2021-02-08), the initial commit. No commit message mentions a window, accumulation or period.
+- It is not recoverable today anyway: `Hourly(Millimeter(1), Minute(5))` is 12 mm/hr with `.n` = 1 mm and `.d` = 0.1 hr. The interval is rescaled into the class's denominator unit.
+- LevityDash's only instance readers (`observation.py` ~737-738 and ~764-765, `Graph.py` ~927-928) use the classes and force a denominator of 1.
+- Inside WeatherUnits, every reader (`rate.py`, `precipitation.py`, `__getitem__`, `localize`, `_convert`, `nArr`/`dArr`) converts units or reads `.unit`. None needs a magnitude other than the implied 1. The stored pair is how the first `localized` converted each part separately.
 
 ### The normalising hazard (document in the README)
 
@@ -63,6 +70,12 @@ API data reports rates and accumulations with the same number and different mean
 ### Follow-ups for LevityDash (list them, do not do them)
 
 Once this lands, the three workarounds above become `valueCls(value)`, and the codec fallback in `decode_measurement` goes.
+
+Also list, do not fix: these are accumulations typed as rates. Re-type them once accumulation types exist.
+
+- WeatherFlow `precip_accum_local_day` (`WeatherFlow/__init__.py` ~73) is typed `precipitationDaily`, a daily rate, but it is a running total since midnight. `precip_accum_last_1hr` (~72) is the same shape.
+- `calculateMissing` in commit `c2a3692` (2021-10-09) summed hourly rate observations into `precipitationAccumulation`, treating each rate sample as one hour.
+- PirateWeather `precipAccumulation` is typed `precipitationRate` (`PirateWeather.py` ~41).
 
 ## Problem 2: no dimension algebra
 
@@ -125,4 +138,4 @@ Temperature separates a **reading** from a **change**.
 
 ## Report
 
-Per phase: commit, tests added, the `.numerator` / `.denominator` grep hits in LevityDash, and the answer (or still-open state) of the window question, and the spelling chosen for the temperature change type.
+Per phase: commit, tests added, the spelling chosen for the temperature change type.
