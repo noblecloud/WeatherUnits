@@ -31,6 +31,10 @@ These are blocked on a judgment call, not on effort.
 
 ## Ready to pick up
 
+- **[small-fixes.md](small-fixes.md)** — four independent items: Kelvin's symbol
+  is `'k'` (should be `'K'`), the `heatIndex` guard reads `300 > K < 318`,
+  `wu.auto(value, unit)` crashes, and there is no `py.typed`.
+
 > **The cleanup gate is clear.** Everything that was blocking "show it to
 > people and then decide the name" has landed: the README executes, the
 > parameter surface is snake_case and documented, the dead code is resolved,
@@ -81,3 +85,31 @@ Small, self-contained, no decisions needed.
   and useless). The heuristic formatter already exists in `Time.__format__`;
   its `timestamp` spec carries the magnitude-escalation logic and currently
   raises TypeError.
+
+## Design
+
+Decided direction, not yet built. Purpose: easy, automatic conversion for
+normalising and humanising data from any API; units declared with a class,
+everything else automatic.
+
+Dependency order: [same-dimension-regressions.md](same-dimension-regressions.md)
+(the minimal fix) -> conversion-core -> derived-units-and-algebra -> compound
+parsing. [missing-values-and-locale.md](missing-values-and-locale.md) and
+[small-fixes.md](small-fixes.md) are independent.
+
+- **[conversion-core.md](conversion-core.md)** — four conversion paths become
+  one: a reference (SI) unit per dimension, `to_reference` / `from_reference`
+  per unit, declaration keywords, generated accessors. Phase 0 (physical-constant
+  tests) is ready; the declaration spelling needs sign-off before phase 2.
+- **[derived-units-and-algebra.md](derived-units-and-algebra.md)** — the
+  denominator does two jobs (unit and window); split them. Then exponent-vector
+  dimension algebra (`^3`), type-preserving operators. Depends on phase 1 above.
+- **[unit-parsing.md](unit-parsing.md)** — strict `wu.parse`, scoped lookup,
+  `UnknownUnit` / `AmbiguousUnit`, explicit `wu.suggest`. The strict half can
+  start now; compound units wait on the algebra.
+
+## Backlog
+
+- **[ideas.md](ideas.md)** — knots, Beaufort, irradiance, PPFD/DLI, VPD, EC/TDS,
+  Home Assistant normalisation, `to_dict`/`from_dict`, volume. Maintainer
+  prioritises.
