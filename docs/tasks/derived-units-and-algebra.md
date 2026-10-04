@@ -88,18 +88,27 @@ The README roadmap (README.md ~385-391) already lists products (Pa·s), negative
 - **Result unit:** if a registered unit matches the operands' unit combination (ft × ft gives ft²), use it. Otherwise return the reference unit. The caller can then localise.
 - **Type preservation:** unary `-` and `+`, `abs`, scalar `*` and `/` on either side, `%`, `//` and `round` keep the class.
 
-### Open question: temperature is affine
+### Temperature: a reading is not a change (decided: maintainer, 2026-10-04)
 
-- **Recommended:** subtracting two absolute temperatures gives a delta (converted by factor only). Absolute + delta gives an absolute.
-- The existing `delta` parameter on the temperature conversion methods hints at this (`temperature/celsius.py` ~13-17, `fahrenheit.py` ~13-14).
-- Ask the maintainer what absolute + absolute should do.
+Temperature separates a **reading** from a **change**.
+
+| expression | result | why |
+|---|---|---|
+| reading − reading | change | `Celsius(30) - Celsius(20)` is a change of 10 °C, which equals a change of 18 °F. A change converts by factor only. |
+| reading ± change | reading | `Fahrenheit(68) + Δ10°C` = 86 °F = 30 °C. Consistent across systems. |
+| reading + reading | `TypeError` by default | `20 °C + 10 °C` = 30 °C, but `68 °F + 50 °F` = 118 °F, which is not 86 °F. Same temperatures, and the result depends on the unit. |
+
+- An opt-in mode lets reading + reading add in the left operand's unit.
+- The existing `delta` parameter on the temperature conversion methods is the unfinished start of this (`temperature/celsius.py` ~13-17, `fahrenheit.py` ~13-14).
+- The change type needs a name and a class. The implementer chooses the spelling, e.g. `TemperatureDelta` or `Celsius.delta(10)`.
+- Use cases: "+3° since yesterday", and min/max spreads.
 
 ## Phases
 
 1. **Denominator split.** Construct from a bare number, class-level numerator/denominator, `period`, and the `__pow__` fix. Tests: every row of the first table.
 2. **Exponent vectors and `*` / `/`.**
 3. **Type-preserving operators.**
-4. **Affine rule**, once the question is answered.
+4. **Reading/change rule** for temperature, as decided above.
 
 ## Verify
 
@@ -116,4 +125,4 @@ The README roadmap (README.md ~385-391) already lists products (Pa·s), negative
 
 ## Report
 
-Per phase: commit, tests added, the `.numerator` / `.denominator` grep hits in LevityDash, and the answer (or still-open state) of both questions.
+Per phase: commit, tests added, the `.numerator` / `.denominator` grep hits in LevityDash, and the answer (or still-open state) of the window question, and the spelling chosen for the temperature change type.

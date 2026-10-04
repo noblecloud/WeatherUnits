@@ -34,7 +34,7 @@ The README's own "Defining Your Own Unit" section (README.md ~172-230) shows the
   - Why SI: it is coherent. Products and quotients of reference units are already the reference unit of the result (m × m = m², kg·m⁻¹·s⁻² = Pa). So the algebra brief needs no conversion tables.
   - The reference is internal only. Display and localisation are unaffected.
 - **Every unit has `to_reference(x)` and `from_reference(x)`.**
-  - The default is affine: `ref = (x + offset) * factor` and `x = ref / factor - offset`.
+  - For units with an offset or factor, the conversion math is affine: `ref = (x + offset) * factor` and `x = ref / factor - offset`.
   - Non-linear units (Beaufort, dB, AQI) override both functions. That is the escape hatch.
 - **Conversion is always source → reference → target.** That deletes the bridges, the pairwise temperature methods and `_conversionParams`.
 - **`_Scale` enums stay as declaration syntax.** The metaclass derives each member's factor from the chain, plus ONE declared cross-system equivalence on the system base (1 ft = 0.3048 m exactly).
@@ -47,6 +47,33 @@ The README's own "Defining Your Own Unit" section (README.md ~172-230) shows the
 ### Declaration spelling (decided: maintainer, 2026-10-04)
 
 A unit is a class. Its configuration is class attributes in the class body, one per line. The metaclass reads those attributes from the body; they are not class keyword arguments. Existing keyword arguments such as `system=` may stay where the code already uses them.
+
+There is no single default. Two ways are primary, and which one applies depends on the kind of unit. Both are first-class. Two more are available for special cases.
+
+#### 1. Scaling units (length, mass, pressure, time, ...): a `_Scale` chain plus one cross-system fact
+
+The existing `_Scale` chain stays. Add ONE `equals` fact on the system's base unit.
+
+```python
+class ImperialLength(Length, system=imperial):
+	baseUnit = 'Foot'
+	equals = Meter(0.3048)
+
+	class _Scale(Scale):
+		Line = 1
+		Inch = 12
+		Foot = 12
+		Yard = 3
+		Mile = 1760
+```
+
+The metaclass multiplies along the chain: inch = 0.3048/12 m, mile = 0.3048 × 5280 m (3 ft × 1760). This replaces the `_meter()` / `_foot()` bridges.
+
+These are the real members in `length/imperial.py` ~10-16. The real class also lists `Base = 'Foot'` in `_Scale` and `common = {...}`, and passes `baseUnit` as a class keyword today. The migration moves `baseUnit` into the body and drops `Base` if the metaclass no longer needs it.
+
+#### 2. Offset units (temperature): `offset` / `factor` per unit, with no `_Scale`
+
+Temperature is not a scale, so it has no `_Scale` chain. Each unit states its own offset and factor.
 
 ```python
 class Kelvin(Temperature):
@@ -66,13 +93,28 @@ class Fahrenheit(Temperature):
 	factor = 5 / 9
 	aliases = 'f', 'degF'
 	# reference = (value + offset) * factor
+```
 
+#### 3. Optional, not preferred: two known points
 
-class ImperialLength(ScalingMeasurement, Length, system=imperial):
-	baseUnit = 'Foot'
-	equals = Meter(0.3048)
+```python
+class Fahrenheit(Temperature):
+	unit = '°F'
+	equals = {32: Celsius(0), 212: Celsius(100)}
+```
 
+The metaclass solves the exact factor and offset from the two points. This is arithmetic, not inference.
 
+- It is optional and not preferred. It is documented as one available way and is never used in built-in units.
+- Validate it: exactly two points, and they must be distinct. Anything else raises at class creation.
+
+#### 4. Non-linear units: override `to_reference` / `from_reference`
+
+Beaufort, dB, AQI. See the design section above.
+
+#### Other attributes
+
+```python
 class Knot(Speed):
 	unit = 'kn'
 	aliases = 'kt',
