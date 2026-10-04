@@ -18,6 +18,7 @@ particular differs under si.ini.
 from unittest import TestCase
 
 from WeatherUnits import Length, Light, Mass, Pressure, Temperature, Wind
+from WeatherUnits.base._SmartFloat import SmartFloat
 
 
 class TestZeroValues(TestCase):
@@ -688,3 +689,90 @@ class TestKeywordPrecisionMatchesStringPrecision(TestCase):
 					format(unit(30.0), 'precision=0'),
 					format(unit(30.0), 'precision=0, trailing_zeros=precision'),
 				)
+
+
+class TestCompactFormat(TestCase):
+	"""`compact=True` asks for the unit's *label* convention, not a reading.
+
+	A pressure dial labelled at 28, 29, 30 inHg shows whole inches, while the
+	reading itself wants `29.92`. Those are two renderings of one unit, so the
+	difference belongs to the unit rather than to any caller, and no consumer
+	should be hand-formatting around it. `compact=True` expands to the unit's
+	`_compact_format`, which by default drops the padding zeros a reading
+	needs.
+
+	Ranked below every explicit key on purpose: `compact, precision=2` still
+	gets 2 decimals, because asking to be compact is not asking to override the
+	caller. It sits above the config, which is the only reason it can work at
+	all - `[UnitProperties]` writes onto `defaultFormatParams`, so anything
+	ranked below that map would lose to `trailing_zeros=precision` and `compact`
+	would be a silent no-op.
+	"""
+
+	def paddedUnit(self):
+		"""The unit whose config sets trailing_zeros=precision.
+
+		Which one that is depends on the loaded config - us.ini pads inHg,
+		si.ini pads mmHg (us.ini:39, si.ini:38) - so these tests ask the config
+		rather than naming a unit. Naming one made half of them inert.
+		"""
+		for unit in (Pressure.InchOfMercury, Pressure.MillimeterOfMercury):
+			if unit(30.0).defaultFormatParams.get('trailing_zeros') == 'precision':
+				return unit
+		self.fail('no configured unit carries trailing_zeros=precision')
+
+	def test_a_padded_reading_loses_its_zeros(self):
+		unit = self.paddedUnit()
+		self.assertEqual('28', format(unit(28.0), 'compact=True, show_unit=False'))
+		self.assertEqual('30', format(unit(30.0), 'compact=True, show_unit=False'))
+
+	def test_the_same_reading_pads_without_the_flag(self):
+		# The whole point: one unit, one config, two renderings.
+		unit = self.paddedUnit()
+		self.assertEqual('30.00', format(unit(30.0), 'show_unit=False'))
+		self.assertEqual('30', format(unit(30.0), 'compact=True, show_unit=False'))
+
+	def test_a_reading_without_padding_is_unchanged(self):
+		# 29.5 is not padding - it is the value. Compact must not truncate it,
+		# on a padded unit or any other.
+		for unit in (Pressure.InchOfMercury, Pressure.MillimeterOfMercury):
+			with self.subTest(unit=unit.__name__):
+				self.assertEqual('29.5', format(unit(29.5), 'compact=True, show_unit=False'))
+
+	def test_an_explicit_precision_is_still_a_cap(self):
+		# Compact removes *padding*; it does not override the precision the
+		# caller named. `precision=2` still allows a second decimal, so 30.0
+		# keeps the one it has - it just does not grow to '30.00'. Naming a
+		# precision under compact must not be silently widened or ignored.
+		unit = self.paddedUnit()
+		self.assertEqual('30.0', format(unit(30.0), 'compact=True, precision=2, show_unit=False'))
+		# 30.5 keeps exactly the one decimal it needs - and no second one
+		# invented to fill the precision, which is the whole point of compact.
+		self.assertEqual('30.5', format(unit(30.5), 'compact=True, precision=2, show_unit=False'))
+
+	def test_it_composes_with_other_parameters(self):
+		unit = self.paddedUnit()
+		self.assertEqual('28', format(unit(28.0), 'compact=True, show_unit=False'))
+		self.assertEqual(f'28 {unit._unit}', format(unit(28.0), 'compact=True'))
+
+	def test_the_keyword_spelling_works_too(self):
+		unit = self.paddedUnit()
+		self.assertEqual(
+			format(unit(30.0), 'compact=True, show_unit=False'),
+			unit(30.0).__format__('', compact=True, show_unit=False),
+		)
+
+	def test_a_unit_can_keep_its_zeros(self):
+		"""The rain case: `0.25 0.50` - here the zeros ARE the convention.
+
+		Defaulting to as little information as possible is right for pressure
+		and wrong for precipitation, which is why this is a per-unit
+		declaration rather than a global setting.
+		"""
+		from WeatherUnits.derived.precipitation import PrecipitationRate
+
+		rate = PrecipitationRate.Hourly(Length.Inch(0.25))
+		self.assertIn('.25', format(rate, 'compact=True'))
+
+	def test_the_default_compact_format_is_just_no_padding(self):
+		self.assertEqual({'trailing_zeros': 'off'}, dict(SmartFloat._compact_format))

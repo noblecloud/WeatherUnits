@@ -601,6 +601,14 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	_precision: int = 3
 	valuePrecision: int
 	_digit_budget: int = 4
+	# Where a number is a *label* rather than a reading - a dial face, an
+	# axis - the unit's convention drops the padding zeros a reading needs.
+	# `compact` in a format spec expands this, so a caller asks for it the
+	# same way it asks for `precision`, and a unit whose convention keeps its
+	# zeros (rain in inches) overrides it here instead of in config.
+	# Ranked BELOW any explicit spec key, so `compact, precision=2` still
+	# gets 2 decimals - the ask is a default for compactness, not an order.
+	_compact_format: Mapping[str, object] = {'trailing_zeros': 'off'}
 	_unit: Optional[str]
 	_suffix: Optional[str]
 	_unit_symbol: Optional[str]
@@ -835,7 +843,23 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		# trailing_zeros needs it.
 		params.explicitPrecision = extras.get('precision', specParams.get('precision'))
 		params.default = value.defaultFormatParams
-		params.maps.insert(2, params.default)
+		# `compact` is a *request* for the unit's label convention, so it
+		# expands here rather than at a call site: the caller writes
+		# `format(v, 'compact')` and the unit decides what that means.
+		#
+		# Ranked ABOVE `default` because that map is where `[UnitProperties]`
+		# lands - config writes onto the unit's own `defaultFormatParams`, so
+		# anything below it loses to `trailing_zeros=precision` and `compact`
+		# would be a no-op. It still sits BELOW extras and specParams, so an
+		# explicit key wins: `compact, precision=2` gets 2 decimals, because
+		# asking to be compact is not asking to override the caller. Read from
+		# `value` after any conversion above, so a refit unit's convention is
+		# the one used.
+		if params.get('compact', False):
+			compactFormat = getattr(value, '_compact_format', None)
+			if compactFormat:
+				params.maps.insert(2, dict(compactFormat))
+		params.maps.insert(3, params.default)
 
 		intLength, valuePrecision = value.intFloatLength(floatValue)
 		max_len = params.get('digit_budget', value._digit_budget)
