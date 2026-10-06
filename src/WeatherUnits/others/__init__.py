@@ -18,6 +18,21 @@ class Percentage(Dimensionless, NonPlural):
 	_precision = 2
 
 	def __new__(cls, value, isPercentage: bool = None, *args, **kwargs):
+		"""Build a percentage from a fraction or from a percent figure.
+
+		The class stores a fraction (0-1) and shows it as a percent. What the
+		caller's number *means* has to come from the caller:
+
+		- ``isPercentage=True``: ``value`` is on the 0-100 scale, so 0.1 is
+		  0.1 %. Use this for a source that reports percent.
+		- ``isPercentage=False``: ``value`` is already a fraction, so 0.1 is
+		  10 %. Use this for a source that reports 0-1.
+		- ``isPercentage=None`` (default): no source to ask, as with a literal
+		  written in code. The scale is guessed from the magnitude: a value
+		  above the upper limit, or an int other than 1, is read as percent.
+		  A float at or below 1 is read as a fraction, so 0.1 is 10 % here.
+		  Never rely on this for data from a sensor or an API.
+		"""
 		if isPercentage is None:
 			if value > cls._limits[1] or isinstance(value, int) and value != 1:
 				value /= 100
@@ -25,6 +40,10 @@ class Percentage(Dimensionless, NonPlural):
 			value /= 100
 
 		return super(Percentage, cls).__new__(cls, value, *args, **kwargs)
+
+	def __init__(self, value, isPercentage: bool = None, *args, **kwargs):
+		# `isPercentage` is consumed by __new__; Measurement.__init__ has no use for it
+		super().__init__(value, *args, **kwargs)
 
 	def __format__(self, format_spec: str, **extras) -> str:
 		return super().__format__(format_spec, **extras)
@@ -45,7 +64,17 @@ class Percentage(Dimensionless, NonPlural):
 
 	@classmethod
 	def fromFloat(cls, value: float) -> 'Percentage':
-		return cls(value, isPercentage=False, limits=False)
+		return cls(value, isPercentage=False)
+
+	@classmethod
+	def fromFraction(cls, value: float) -> 'Percentage':
+		"""``value`` is on the 0-1 scale: 0.1 is 10 %."""
+		return cls(value, isPercentage=False)
+
+	@classmethod
+	def fromPercent(cls, value: float) -> 'Percentage':
+		"""``value`` is on the 0-100 scale: 0.1 is 0.1 %."""
+		return cls(value, isPercentage=True)
 
 	@property
 	def formatValue(self) -> float:
