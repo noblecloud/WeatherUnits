@@ -619,6 +619,23 @@ class TestTrueZero(TestCase):
 		z.true_zero = False
 		self.assertEqual('0.00 mmHg', str(z))
 
+	def test_a_given_precision_does_not_pad_exact_zero_while_padding_is_on(self):
+		# The sub-1 branch spends the precision on zero before trailing_zeros
+		# is looked at, so rain read '0.0' even though true_zero was on.
+		for spec in ('precision=1, trailing_zeros=precision', 'precision=2, trailing_zeros=precision, digit_budget=3'):
+			self.assertEqual('0 in', format(Length.Inch(0), f'{spec}'), spec)
+
+	def test_trace_keeps_its_decimal_next_to_a_bare_zero(self):
+		spec = 'precision=1, trailing_zeros=precision'
+		self.assertEqual('0.0 in', format(Length.Inch(0.004), spec))
+		self.assertEqual('0.1 in', format(Length.Inch(0.1), spec))
+
+	def test_true_zero_false_still_pads_zero_to_the_given_precision(self):
+		self.assertEqual('0.0 in', format(Length.Inch(0), 'precision=1, trailing_zeros=precision, true_zero=False'))
+
+	def test_an_explicit_precision_without_padding_is_the_callers_format(self):
+		self.assertEqual('0.0 in', format(Length.Inch(0), 'precision=1'))
+
 
 class TestKeywordPrecisionMatchesStringPrecision(TestCase):
 	"""`v.__format__('', precision=N)` must mean what `format(v, 'precision=N')` means.

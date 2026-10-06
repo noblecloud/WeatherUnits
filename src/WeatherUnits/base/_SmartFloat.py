@@ -999,8 +999,15 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		# `true_zero=False` gives it up in exchange for a column that never
 		# changes width, which is the better trade wherever zero is a common
 		# reading rather than a catastrophe - precipitation, wind.
-		if trailing not in (False, None, 'off') \
-				and (floatValue != 0 or not params.get('true_zero', True)):
+		padding = trailing not in (False, None, 'off')
+		if padding and floatValue == 0 and params.get('true_zero', True):
+			# Bare means bare: the branches above have already spent the
+			# configured precision on this zero ('0.0', '0.00'), and `true_zero`
+			# is the promise that padding never reaches it.
+			params['precision'] = 0
+			params['leadingZeroDropped'] = False
+			params['type'] = 'f'
+		elif padding:
 			intDigits = intLength - bool(params.get('leadingZeroDropped'))
 			# The configured precision, NOT params['precision'] - the latter
 			# has already been clamped down to the value's own decimal count,
