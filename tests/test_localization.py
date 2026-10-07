@@ -109,8 +109,8 @@ def test_reading_a_new_config_drops_the_cached_unit(tmp_path):
 	original = config.path
 	try:
 		config.read(str(miles))
-		assert wu.Length.Inch.localizedUnit is wu.Length.Mile
+		assert wu.Length.localizedUnit is wu.Length.Mile
 		config.read(str(kilometres))
-		assert wu.Length.Inch.localizedUnit is wu.Length.Kilometer
+		assert wu.Length.localizedUnit is wu.Length.Kilometer
 	finally:
 		config.read(str(original))
