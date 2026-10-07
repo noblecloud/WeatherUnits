@@ -65,3 +65,14 @@ class TestDerived(TestCase):
 		doubled = speed * 2
 		self.assertAlmostEqual(float(doubled), 6, places=6)
 		self.assertEqual(doubled.unit, speed.unit)
+
+
+def test_rates_in_different_units_compare_by_size():
+	"""1.4 in/hr is more than 1 in/hr and less than 40 mm/hr (1.575 in/hr), whichever unit each is written in."""
+	import WeatherUnits as wu
+	Hourly = wu.Precipitation.Hourly
+	rate = Hourly(wu.Length.Inch(1.4), wu.Time.Hour(1))
+	one = Hourly(wu.derived.DistanceOverTime.MetersPerSecond(0.0254 / 3600))
+	assert rate > one and rate >= one and not rate < one
+	assert not rate > Hourly(wu.derived.DistanceOverTime.MetersPerSecond(0.040 / 3600))
+	assert rate < Hourly(wu.derived.DistanceOverTime.MetersPerSecond(0.040 / 3600))
