@@ -5,7 +5,7 @@ from functools import lru_cache, cached_property
 import logging
 from datetime import datetime, timedelta
 from numbers import Number
-from typing import Callable, ClassVar, Dict, List, Optional, Type, Union, Final, Literal, Iterable, TypeVar, TypeAlias, Self
+from typing import Callable, ClassVar, Dict, List, Optional, Type, Union, Final, Literal, Iterable, TypeVar, TypeAlias
 
 __all__ = ['Measurement', 'DerivedMeasurement', 'Dimension', 'metric', 'imperial', 'both', 'Dimensionless', 'Quantity', 'Index', 'NonPlural']
 

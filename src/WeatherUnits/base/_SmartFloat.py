@@ -5,7 +5,7 @@ from collections import ChainMap, namedtuple
 from difflib import get_close_matches
 from functools import lru_cache, cached_property
 from locale import delocalize
-from typing import ClassVar, Optional, Set, Type, Union, Tuple, ForwardRef, TypeVar, Literal, Final, Mapping, Iterable, Self
+from typing import ClassVar, Optional, Set, Type, Union, Tuple, ForwardRef, TypeVar, Literal, Final, Mapping, Iterable
 from math import nan, isnan, inf, isinf
 from decimal import Decimal
 
@@ -397,8 +397,11 @@ class MetaUnitClass(type):
 
 	@property
 	def Generic(self) -> Type:
-		genericBases = self.genericBases
-		return next((base for base in genericBases if base is not self), None)
+		# Walk the MRO, not the `genericBases` set: a set of classes iterates in
+		# id order, so for a unit with several generic ancestors (Kilometer is a
+		# Length and a Measurement) `Generic` was a different one from run to run
+		# and `[Units] length = mi` applied only about half the time.
+		return next((base for base in self.__mro__ if base is not self and base in self.genericBases), None)
 
 	def __subclasscheck__(cls, subclass):
 		if subclass is None:
