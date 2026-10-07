@@ -97,3 +97,27 @@ class TestLocalizeConverts(TestCase):
 		"""
 		w = self._mps(0.5)
 		self.assertAlmostEqual(0.5, float(w.localize.ms), places=6)
+
+
+class TestLengthLocalizationIsStable(TestCase):
+	"""`[Units] length = ...` found Kilometer's config entry on about half the runs.
+
+	Kilometer has three generic ancestors (Metric Length, Measurement, Length) and
+	`Generic` took whichever a set of classes yielded first, which changes with
+	object ids. Only Length matches the `length` key.
+	"""
+
+	def test_kilometer_finds_the_length_entry(self):
+		from WeatherUnits.length import Kilometer
+		from WeatherUnits.utils import loadUnitLocalization
+
+		class Config:
+			localUnits = {'wind': 'mi/hr', 'length': 'mi'}
+
+		config = Config()
+		self.assertEqual(loadUnitLocalization(Kilometer, config), 'mi')
+
+	def test_generic_is_the_nearest_generic_ancestor(self):
+		from WeatherUnits.length import Kilometer, MetricLength
+
+		self.assertIs(Kilometer.Generic, MetricLength)

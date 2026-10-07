@@ -27,12 +27,19 @@ def loadUnitLocalization(measurement: Type['Measurement'], config):
 	if not isinstance(measurement, type):
 		measurement = type(measurement)
 	unitName = measurement.type.name.lower()
-	# `Generic` is None for a class that has no other generic base than itself
-	# (e.g. the bare `Measurement` class used as a catch-all unit type), so fall
-	# back to `unitName` rather than crashing on `None.name`.
-	generic = measurement.Generic
-	unitType = generic.name.lower() if generic is not None else unitName
-	match = get_close_matches(unitName, config.localUnits.keys(), n=1, cutoff=0.85) or get_close_matches(unitType, config.localUnits.keys(), n=1, cutoff=0.8)
+	keys = config.localUnits.keys()
+	match = get_close_matches(unitName, keys, n=1, cutoff=0.85)
+	if not match:
+		# Then each generic ancestor, nearest first. Kilometer's are Metric Length,
+		# Measurement and Length: only the last one is what `[Units] length = mi`
+		# names, so stopping at the first (as this once did, on whichever one a set
+		# happened to yield) left it unconverted on some runs. The bare Measurement
+		# is skipped, it is every unit's ancestor and names nothing.
+		for generic in measurement.__mro__:
+			if generic is measurement or generic.__name__ in ('Measurement', 'SmartFloat') or not getattr(generic, 'isGeneric', False):
+				continue
+			if match := get_close_matches(generic.name.lower(), keys, n=1, cutoff=0.8):
+				break
 	return config.localUnits[match[0]] if match else None
 
 
