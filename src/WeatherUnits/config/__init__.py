@@ -16,6 +16,8 @@ log = getLogger('WeatherUnits').getChild('config')
 
 class Config(ConfigParser):
 	configuredUnits: dict[str, list[type]] = {}
+	#: Callables run after every `read`, so a cache built from the old file is dropped.
+	_onRead: list[Callable[[], None]] = []
 	locale = locale.getlocale()[0]
 	__localUnits: SectionProxy
 
@@ -64,8 +66,18 @@ class Config(ConfigParser):
 				log.error(f'Unable to find config file')
 		else:
 			log.debug(f'Loaded "{self.path}"')
+		self.__localUnits = None
+		self.__dict__.pop('unitPropertiesKeys', None)
+		for invalidate in self._onRead:
+			invalidate()
 		for k, v in self.configuredUnits.copy().items():
 			setPropertiesFromConfig(v, self)
+
+	@classmethod
+	def onRead(cls, callback: Callable[[], None]) -> Callable[[], None]:
+		"""Run `callback` after each `read`. For caches that hold something worked out from the file."""
+		cls._onRead.append(callback)
+		return callback
 
 	def __getattr__(self, item):
 		return self[item]
@@ -113,12 +125,14 @@ class Config(ConfigParser):
 
 	@property
 	def localUnits(self) -> SectionProxy:
-		possibleSections = {'Units', f'Units_{self.locale}', 'LocalUnits', 'WeatherUnits'}
+		# Most specific first. A set here made the pick depend on string hash order,
+		# which changes from one process to the next when a file has more than one.
+		possibleSections = (f'Units_{self.locale}', 'Units', 'LocalUnits', 'WeatherUnits')
 		existingSections = set(self.sections())
-		if len(existingSections & possibleSections) == 0:
-			raise AttributeError(f'No local units defined in the config {self.path}')
 		if self.__localUnits is None:
-			self.__localUnits = self[next(iter(existingSections & possibleSections))]
+			if (name := next((section for section in possibleSections if section in existingSections), None)) is None:
+				raise AttributeError(f'No local units defined in the config {self.path}')
+			self.__localUnits = self[name]
 		return self.__localUnits
 
 	def search(
@@ -194,8 +208,11 @@ config = Config()
 locale.setlocale(locale.LC_ALL, '')
 
 try:
-	RADIX_CHAR = locale.nl_langinfo(locale.RADIXCHAR)
-	GROUPING_CHAR = locale.nl_langinfo(locale.THOUSEP)
+	# The C and POSIX locales report no thousands separator at all, and those
+	# characters are interpolated into FormatSpec.number's character classes,
+	# where an empty value would silently change what the regex matches.
+	RADIX_CHAR = locale.nl_langinfo(locale.RADIXCHAR) or '.'
+	GROUPING_CHAR = locale.nl_langinfo(locale.THOUSEP) or ','
 except AttributeError:
 	RADIX_CHAR = '.'
 	GROUPING_CHAR = ','
