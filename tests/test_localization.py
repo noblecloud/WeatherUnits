@@ -97,3 +97,20 @@ class TestLocalizeConverts(TestCase):
 		"""
 		w = self._mps(0.5)
 		self.assertAlmostEqual(0.5, float(w.localize.ms), places=6)
+
+
+def test_reading_a_new_config_drops_the_cached_unit(tmp_path):
+	"""A class's localised unit follows the file read last, not whichever was current when it was first asked."""
+	import WeatherUnits as wu
+	from WeatherUnits.config import config
+	miles, kilometres = tmp_path / 'miles.ini', tmp_path / 'km.ini'
+	miles.write_text('[Units]\nlength = mi\n')
+	kilometres.write_text('[Units]\nlength = km\n')
+	original = config.path
+	try:
+		config.read(str(miles))
+		assert wu.Length.localizedUnit is wu.Length.Mile
+		config.read(str(kilometres))
+		assert wu.Length.localizedUnit is wu.Length.Kilometer
+	finally:
+		config.read(str(original))

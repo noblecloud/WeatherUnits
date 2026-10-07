@@ -11,7 +11,7 @@ from decimal import Decimal
 
 from ..errors import FormattingError
 from ..utils import modifyCase, pluralize, empty, getFrom, loadUnitLocalization, CaseInsensitiveKey, DEBUG
-from ..config import config, GROUPING_CHAR, RADIX_CHAR
+from ..config import config, Config, GROUPING_CHAR, RADIX_CHAR
 from .Registry import UnitRegistry
 
 __all__ = ('SmartFloat', 'Limits', 'TypedLimits', 'FormatSpec', 'FiniteField', 'UnitDict', 'MetaUnitClass')
@@ -601,6 +601,12 @@ class MetaUnitClass(type):
 		if cls.isDerived:
 			return cls.numerator._limitFunc(value)
 		return value
+
+
+# The localised unit of a class comes from the config. A cached answer from an
+# earlier file would outlive `config.read`, so which unit a value was shown in
+# depended on whether it was first read before or after the file changed.
+Config.onRead(MetaUnitClass.localizedUnit.fget.cache_clear)
 
 
 class SmartFloat(float, metaclass=MetaUnitClass):
