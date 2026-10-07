@@ -194,8 +194,8 @@ config = Config()
 locale.setlocale(locale.LC_ALL, '')
 
 try:
-	RADIX_CHAR = locale.nl_langinfo(locale.RADIXCHAR)
-	GROUPING_CHAR = locale.nl_langinfo(locale.THOUSEP)
+	RADIX_CHAR = locale.nl_langinfo(locale.RADIXCHAR) or '.'
+	GROUPING_CHAR = locale.nl_langinfo(locale.THOUSEP) or ','
 except AttributeError:
 	RADIX_CHAR = '.'
 	GROUPING_CHAR = ','
