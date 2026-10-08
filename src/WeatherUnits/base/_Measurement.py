@@ -258,7 +258,18 @@ class Measurement(SmartFloat):
 	def __prepareValues(self, other: Union['Measurement', float, int]) -> tuple[float | int, float | int]:
 		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
 		precision = min(self.valuePrecision, otherPrecision)
-		if isinstance(other, Measurement) and isinstance(other, self.type):
+		if isinstance(self, DerivedMeasurement) and isinstance(other, DerivedMeasurement) and isinstance(other, self.type):
+			# A rate's raw magnitude is per its own units, so `1.4 in/hr` and
+			# `0.0254 m/hr` would compare as 1.4 against 0.0254. Put `other` into
+			# this rate's units first; the base-unit frame below rounds a rate to
+			# nothing, because its base-unit value is tiny.
+			try:
+				other = type(self)(other)
+			except (TypeError, ValueError, errors.BadConversion):
+				pass
+			selfVal = round(float(self), precision)
+			other = round(float(other), precision)
+		elif isinstance(other, Measurement) and isinstance(other, self.type):
 			# Same dimension family: compare in a unit-independent frame
 			# instead of converting other into self's unit, so equal-looking
 			# raw magnitudes in different scales (Week(1) vs Month(1)) don't
