@@ -106,3 +106,8 @@ class TestTypePreservingOperators:
 		m.period = timedelta(hours=1)
 		neg = -m
 		assert neg.period == timedelta(hours=1) and neg._title == 'Wall'
+
+
+def test_same_unit_temperatures_divide_to_a_ratio():
+	r = Temperature.Fahrenheit(10) / Temperature.Fahrenheit(40)
+	assert type(r) is float and r == 0.25

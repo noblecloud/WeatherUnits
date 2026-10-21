@@ -368,6 +368,10 @@ class Measurement(SmartFloat):
 		return not isinstance(self, Dimensionless) and not isinstance(other, Dimensionless) and hasDimension(self) and hasDimension(other)
 
 	def __truediv__(self: Self, other: Other | Number) -> Self:
+		if type(self) is type(other) and not isinstance(self, Dimensionless):
+			# Two values in the same unit divide to a ratio. This also covers a
+			# temperature span over a temperature span, which has no reading in it.
+			return float(self) / float(other)
 		if isinstance(other, Measurement) and self._algebraic(other):
 			from ._Algebra import divide, vectorOf
 			if vectorOf(self) == vectorOf(other):

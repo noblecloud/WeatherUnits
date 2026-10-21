@@ -393,6 +393,9 @@ say which one it is.
 mass, time and temperature:
 
 ```python
+from WeatherUnits import Length, Mass, Time
+Meter, Foot, Millimeter, Hour, Kilogram = Length.Meter, Length.Foot, Length.Millimeter, Time.Hour, Mass.Kilogram
+
 Meter(10) / Meter(2)                  # 5.0, a plain float
 Millimeter(6) / Hour(3)               # 2 mm/hr, keeps the units it was given
 Meter(5) * Meter(5)                   # 25 m², a Compound
