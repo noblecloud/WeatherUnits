@@ -65,6 +65,8 @@ def siValue(m) -> float:
 	if isinstance(m, DerivedMeasurement):
 		return siValue(m.numerator) / siValue(m.denominator)
 	vector = vectorOf(m)
+	if (factor := getattr(m, '_factor', None)) is not None and vector == (0, 0, 0, 1):
+		return float(m) * factor  # a change in temperature: kelvin per degree
 	reference = _references.get(vector)
 	if vector == (0, 0, 0, 1):
 		# A temperature *reading* is not a quantity: 20 °C × 2 is not 40 °C.

@@ -1,6 +1,6 @@
 # Derived units: one number per unit, and a dimension algebra
 
-**Status:** phases 1 to 3 built on `feat/derived-algebra` (2026-10-21), without waiting for the conversion core: the algebra converts through each dimension's SI reference unit by constructing it, which the conversion core would make cheaper but does not change. Phase 4 (temperature reading vs change) is not built. Resolutions below marked "proposed" were taken as written.
+**Status:** phases 1 to 3 built on `feat/derived-algebra` (2026-10-21), without waiting for the conversion core: the algebra converts through each dimension's SI reference unit by constructing it, which the conversion core would make cheaper but does not change. Phase 4 (temperature reading vs change) and the Area, Energy and Power types followed the same day. Resolutions below marked "proposed" were taken as written.
 **Base:** `dev` once the conversion core has landed. Step one: `git checkout -B feat/derived-algebra dev`.
 **Model:** design-heavy. Phase 1 suits Sonnet once the open question is answered; phases 2 and 3 want Opus.
 
@@ -147,4 +147,6 @@ Per phase: commit, tests added, the spelling chosen for the temperature change t
 - **Phase 2.** `base/_Algebra.py`: exponent vectors over m, kg, s, K registered in `WeatherUnits/__init__.py`; `*` and `/` build a named type, a float, or a `Compound`. Distance over time keeps the units it was given. Tests: `tests/test_algebra.py`.
 - **Phase 3.** `-x`, `+x`, `n * x`, `x % n` keep the class and its metadata; `//`, `round` and scalar `*` `/` already did.
 - **Also fixed on the way:** `Scale.__eq__` raised `TypeError` when the cached scale-factor lookup met another unit family's `Base`, so converting a rate could break a later `Pressure` conversion.
-- **Not built:** phase 4; `Compound` result units other than SI (the brief's `ft × ft` gives `ft²`); named Area, Energy and Power types.
+- **Phase 4.** `temperature/change.py`: `CelsiusChange`, `FahrenheitChange`, `KelvinChange`; reading − reading is a change, reading ± change is a reading, reading + reading raises unless inside `summingReadings()`.
+- **Area, Energy, Power** (one base unit each, variants by size in the base unit); registered in the algebra, so `Power × Time` is `Energy`.
+- **Not built:** `Compound` result units other than SI (the brief's `ft × ft` gives `m²`).
