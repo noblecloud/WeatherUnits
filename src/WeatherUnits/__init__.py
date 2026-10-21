@@ -24,6 +24,8 @@ from .length import Length
 from .mass import Mass
 from .time_ import Time
 from .pressure import Pressure
+from .area import Area
+from .energy import Energy, Power
 from . import airQuality as AirQuality
 from . import digital as Digital
 from . import derived
@@ -85,7 +87,7 @@ def auto(*args, dimension: Type[Dimension | Dimensionless] = None) -> Measuremen
 			raise ValueError
 
 
-__all__ = ['auto', 'Measurement', 'Temperature', 'Length', 'Mass', 'Time', 'Pressure', 'Other', 'Light', 'PartsPer',
+__all__ = ['auto', 'Measurement', 'Temperature', 'Length', 'Mass', 'Time', 'Pressure', 'Area', 'Energy', 'Power', 'Other', 'Light', 'PartsPer',
 	'Volume', 'Density', 'PartsPer', 'Rate', 'Wind', 'Precipitation', 'AirQuality', 'Voltage', 'Digital', 'config',
 	'Precipitation', 'LightningStrike', 'Angle', 'Percentage', 'Humidity', 'Direction', 'Coverage', 'Probability']
 
@@ -98,6 +100,10 @@ def _registerDimensions():
 	reg(Time, (0, 0, 1, 0), Time.Second)
 	reg(Temperature, (0, 0, 0, 1), Temperature.Kelvin)
 	reg(Pressure, (-1, 1, -2, 0), Pressure.Pascal)
+	reg(Temperature.Change, (0, 0, 0, 1))
+	reg(Area, (2, 0, 0, 0), Area.SquareMeter)
+	reg(Energy, (2, 1, -2, 0), Energy.Joule)
+	reg(Power, (2, 1, -3, 0), Power.Watt)
 	_Algebra._references[(1, 0, -1, 0)] = derived.DistanceOverTime.MetersPerSecond
 
 

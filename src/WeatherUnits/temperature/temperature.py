@@ -116,6 +116,35 @@ class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 			return value[self.unit]
 		return value[self.unit]
 
+	def __sub__(self, other):
+		from .change import TemperatureChange
+		if isinstance(other, TemperatureChange):
+			# reading - change = reading, whatever scale the change is in
+			return type(self)(float(self) - float(type(self).change(other)))
+		if isinstance(other, Temperature):
+			# reading - reading = change, in this reading's degrees
+			return type(self).change(float(self) - float(type(self)(other)))
+		return super().__sub__(other)
+
+	def __add__(self, other):
+		from .change import TemperatureChange, readingsMaySum
+		if isinstance(other, TemperatureChange):
+			return type(self)(float(self) + float(type(self).change(other)))
+		if isinstance(other, Temperature) and not readingsMaySum():
+			raise TypeError(
+				f'cannot add two temperature readings ({self.withUnit} + {other.withUnit}): the sum depends on the unit. '
+				f'Add a TemperatureChange, or use `with summingReadings():`'
+			)
+		if isinstance(other, Temperature):
+			other = type(self)(other)
+		return super().__add__(other)
+
+	def __radd__(self, other):
+		from .change import TemperatureChange
+		if isinstance(other, TemperatureChange):
+			return self.__add__(other)
+		return super().__radd__(other)
+
 	# abbreviations
 	c = celsius
 	k = kelvin

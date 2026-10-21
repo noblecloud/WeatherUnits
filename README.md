@@ -398,7 +398,7 @@ Meter, Foot, Millimeter, Hour, Kilogram = Length.Meter, Length.Foot, Length.Mill
 
 Meter(10) / Meter(2)                  # 5.0, a plain float
 Millimeter(6) / Hour(3)               # 2 mm/hr, keeps the units it was given
-Meter(5) * Meter(5)                   # 25 m², a Compound
+Meter(5) * Meter(5)                   # 25 m², an Area
 Foot(3) * Meter(1)                    # 0.9144 m², across systems
 Kilogram(2) / (Meter(2) * Meter(2) * Meter(2))   # 0.25 kg·m⁻³
 ```
@@ -408,10 +408,19 @@ float when it is dimensionless, and otherwise a `Compound`, which prints its coh
 further algebra. Exponents run from -3 to 3. A temperature *reading* (`Celsius(5)`) does not multiply or divide, since
 `20 °C × 2` is not `40 °C`; use `Kelvin`. Unary `-`/`+`, `%`, `//`, `round` and scalar `*` and `/` keep the class.
 
+**Temperature readings and changes.** `Celsius(30) - Celsius(20)` is a `CelsiusChange(10)`, which is also an
+`18` change in `FahrenheitChange`: a change converts by a factor, never an offset. A reading plus or minus a change is a
+reading (`Fahrenheit(68) + CelsiusChange(10)` is `86 °F`). Two readings do not add, because `20 °C + 10 °C` and
+`68 °F + 50 °F` are not the same temperature; inside `with summingReadings():` they add in the left operand's unit
+(for a mean). A bare number next to a reading still means the same unit.
+
+**Energy, power and area** are units in their own right: `Energy` (J, kJ, MJ, GJ, Wh, kWh, MWh, cal, BTU),
+`Power` (W, kW, MW, GW, hp) and `Area` (m², cm², km², ha, in², ft², mi², ac). `Power.Kilowatt(2) * Time.Hour(3)` is
+`Energy` (6 kWh), `Energy.KilowattHour(6) / Time.Hour(3)` is `Power`, and `Meter(2) * Meter(3)` is an `Area`.
+
 **Note:**
-Still to do: a distinct type for a temperature *change* (so that `reading - reading` is a change and
-`reading + reading` is refused), named types for the common compounds (area, energy, power), and several different
-units in the numerator or denominator at once.
+Still to do: several different units in the numerator or denominator at once, and compound units beyond what the
+exponent vector names (`Compound` prints them in SI).
 
 Roughly what `DerivedMeasurement` does, for orientation (illustrative, not
 the real source):

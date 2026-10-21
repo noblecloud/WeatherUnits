@@ -3,7 +3,7 @@ from math import isclose
 
 import pytest
 
-from WeatherUnits import Length, Mass, Pressure, Temperature, Time
+from WeatherUnits import Area, Energy, Length, Mass, Power, Pressure, Temperature, Time
 from WeatherUnits.base import Compound
 from WeatherUnits.derived.rate import MilesPerHour
 
@@ -43,11 +43,11 @@ class TestDivision:
 class TestMultiplication:
 	def test_length_squared(self):
 		r = Meter(5) * Meter(5)
-		assert isinstance(r, Compound) and r.unit == 'm²' and float(r) == 25
+		assert isinstance(r, Area) and r.unit == 'm²' and float(r) == 25
 
 	def test_across_systems_lands_in_si(self):
 		r = Foot(3) * Meter(1)
-		assert r.unit == 'm²' and isclose(float(r), 0.9144)
+		assert isinstance(r, Area) and r.unit == 'm²' and isclose(float(r), 0.9144)
 
 	def test_unit_free_scalars_still_scale(self):
 		assert isinstance(2 * Meter(10), Length) and float(2 * Meter(10)) == 20
@@ -76,7 +76,8 @@ class TestMultiplication:
 		assert isclose(float(r), 600) and r.unit == 'm·K'
 
 	def test_compound_keeps_working_as_a_number(self):
-		area = Meter(2) * Meter(3)
+		area = Meter(2) * Meter(3) * Time.Second(1)
+		assert isinstance(area, Compound)
 		assert float(area + area) == 12 and float(-area) == -6 and float(area * 2) == 12
 		assert float(area ** 1) == 6
 		with pytest.raises(Exception):
@@ -111,3 +112,25 @@ class TestTypePreservingOperators:
 def test_same_unit_temperatures_divide_to_a_ratio():
 	r = Temperature.Fahrenheit(10) / Temperature.Fahrenheit(40)
 	assert type(r) is float and r == 0.25
+
+
+class TestNamedCompounds:
+	def test_power_times_time_is_energy(self):
+		r = Power.Kilowatt(2) * Time.Hour(3)
+		assert isinstance(r, Energy) and isclose(float(r['kWh']), 6)
+
+	def test_energy_over_time_is_power(self):
+		r = Energy.KilowattHour(6) / Time.Hour(3)
+		assert isinstance(r, Power) and isclose(float(r['kW']), 2)
+
+	def test_energy_units_convert(self):
+		assert isclose(float(Energy.Joule(Energy.KilowattHour(1))), 3.6e6)
+		assert isclose(float(Energy.Joule(3.6e6).kilowattHour), 1)
+
+	def test_area_units_convert(self):
+		assert isclose(float(Area.SquareMeter(Area.Acre(1))), 4046.8564224)
+		assert isclose(float(Area.SquareMeter(Area.SquareFoot(100))), 9.290304)
+
+	def test_area_over_length_is_length(self):
+		r = Area.SquareMeter(6) / Meter(2)
+		assert isinstance(r, Length) and isclose(float(r), 3)
