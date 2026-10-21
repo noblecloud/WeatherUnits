@@ -8,10 +8,10 @@ __all__ = ['Density']
 class Density(DerivedMeasurement, min=0, numerator=Mass, denominator=Volume):
 	_id = 'density'
 
-	def __new__(cls, numerator: Mass, denominator: Volume = 1):
+	def __new__(cls, numerator: Mass, denominator: Volume = 1, *args, **kwargs):
 		if not isinstance(denominator, Volume) and isinstance(denominator, Length):
 			denominator = Volume.compatibleUnits[denominator.unit](denominator)
-		return super().__new__(cls, numerator, denominator)
+		return super().__new__(cls, numerator, denominator, *args, **kwargs)
 
 	@property
 	def localize(self):

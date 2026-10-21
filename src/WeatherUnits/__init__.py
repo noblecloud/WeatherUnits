@@ -88,3 +88,17 @@ def auto(*args, dimension: Type[Dimension | Dimensionless] = None) -> Measuremen
 __all__ = ['auto', 'Measurement', 'Temperature', 'Length', 'Mass', 'Time', 'Pressure', 'Other', 'Light', 'PartsPer',
 	'Volume', 'Density', 'PartsPer', 'Rate', 'Wind', 'Precipitation', 'AirQuality', 'Voltage', 'Digital', 'config',
 	'Precipitation', 'LightningStrike', 'Angle', 'Percentage', 'Humidity', 'Direction', 'Coverage', 'Probability']
+
+
+def _registerDimensions():
+	from .base import _Algebra
+	reg = _Algebra.register
+	reg(Length, (1, 0, 0, 0), Length.Meter)
+	reg(Mass, (0, 1, 0, 0), Mass.Kilogram)
+	reg(Time, (0, 0, 1, 0), Time.Second)
+	reg(Temperature, (0, 0, 0, 1), Temperature.Kelvin)
+	reg(Pressure, (-1, 1, -2, 0), Pressure.Pascal)
+	_Algebra._references[(1, 0, -1, 0)] = derived.DistanceOverTime.MetersPerSecond
+
+
+_registerDimensions()

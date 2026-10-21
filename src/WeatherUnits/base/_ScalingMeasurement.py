@@ -145,6 +145,11 @@ class Scale(Enum, metaclass=AddressableEnum):
 	def __eq__(self, other):
 		if isinstance(other, self.__class__):
 			return self.index == other.index
+		elif isinstance(other, Scale):
+			# A member of another unit family's scale. `lru_cache` keys on the
+			# scale members and Enum hashes by member name, so `Base` of one
+			# family meets `Base` of another in a bucket; that is not an error.
+			return False
 		else:
 			if (scale := getattr(other, 'scale', None)) is not None and (index := getattr(scale, 'index', None)) is not None:
 				return self.index == index
