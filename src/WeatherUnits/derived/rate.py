@@ -9,15 +9,15 @@ from . import Length, Time, DerivedMeasurement
 @UnitType
 class DistanceOverTime(DerivedMeasurement, numerator=Length, denominator=Time):
 
-	def __new__(cls, numerator: Length, denominator: Time = None):
+	def __new__(cls, numerator: Length, denominator: Time = None, *args, **kwargs):
 		if isinstance(denominator, _td):
 			denominator = Time.Second(denominator.total_seconds())
-		return super().__new__(cls, numerator, denominator)
+		return super().__new__(cls, numerator, denominator, *args, **kwargs)
 
-	def __init__(self, numerator: Length, denominator: Time = None):
+	def __init__(self, numerator: Length, denominator: Time = None, *args, **kwargs):
 		if isinstance(denominator, _td):
 			denominator = Time.Second(denominator.total_seconds())
-		super().__init__(numerator, denominator)
+		super().__init__(numerator, denominator, *args, **kwargs)
 
 	@property
 	def fts(self):

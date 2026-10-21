@@ -51,7 +51,7 @@ class Measurement(SmartFloat):
 		if kwargs.get('type', False):
 			cls._type = cls
 
-	def __new__(cls, value, title: str = None, key: str = None, timestamp: datetime = None, **kwargs):
+	def __new__(cls, value, title: str = None, key: str = None, timestamp: datetime = None, period: timedelta = None, **kwargs):
 		value = sorted((*cls.limits, float(value)))[1]
 		return SmartFloat.__new__(cls, value)
 
@@ -113,10 +113,12 @@ class Measurement(SmartFloat):
 			pass
 		return values * factor + offset
 
-	def __init__(self, value, title: str = None, key: str = None, timestamp: datetime = None, category: str = None):
+	def __init__(self, value, title: str = None, key: str = None, timestamp: datetime = None, category: str = None, period: timedelta = None):
 		if isinstance(value, Measurement):
 			if value._timestamp and timestamp is None:
 				timestamp = value._timestamp
+			if period is None:
+				period = getattr(value, '_period', None)
 		if title:
 			self._title = title
 		if key:
@@ -124,6 +126,7 @@ class Measurement(SmartFloat):
 		self.category = category
 
 		self._timestamp = timestamp
+		self._period = period
 
 		SmartFloat.__init__(self, value)
 
@@ -168,6 +171,18 @@ class Measurement(SmartFloat):
 	@property
 	def type(self) -> Type[Self]:
 		return type(self).type
+
+	@property
+	def period(self) -> Optional[timedelta]:
+		"""The window this value covers (rain in the last 24 h), if it has one.
+
+		Metadata beside `timestamp`: conversion and arithmetic never touch it.
+		"""
+		return getattr(self, '_period', None)
+
+	@period.setter
+	def period(self, value: Optional[timedelta]):
+		self._period = value
 
 	@property
 	def timestamp(self) -> datetime:
@@ -719,8 +734,18 @@ class DerivedMeasurement(Measurement, metaclass=DerivedMeasurementMeta):
 				numerator = numerator.numerator
 			else:
 				denominator = 1
+		if not isinstance(numerator, Measurement) and cls.numerator.isGeneric:
+			raise TypeError(
+				f'{cls.__name__} does not say which {cls.numerator.__name__} unit a bare number is in; '
+				f'pass a measurement (e.g. {cls.numerator.__name__}.Meter(5)) or use a concrete unit class'
+			)
 		if not cls.numerator.isGeneric:
 			numerator = cls.numerator(numerator)
+		if not isinstance(denominator, Measurement) and cls.denominatorClass.isGeneric:
+			raise TypeError(
+				f'{cls.__name__} does not say which {cls.denominatorClass.__name__} unit a bare number is in; '
+				f'pass a measurement or use a concrete unit class'
+			)
 		if not cls.denominatorClass.isGeneric:
 			denominator = cls.denominator(denominator)
 		value = float(numerator)/float(denominator)
@@ -832,25 +857,38 @@ class DerivedMeasurement(Measurement, metaclass=DerivedMeasurementMeta):
 		raise TypeError(f'{cls.__name__} does not support {item.__name__} as unit')
 
 	def __init__(self, numerator, denominator=None, *args, **kwargs):
+		# A derived value is one number in its unit, like every measurement.
+		# `numerator` and `denominator` are the implied "value of these units
+		# per ONE of those units"; the window an amount was reported over
+		# ("6 mm in 3 h") is spent on the rate and is not kept. See `period`
+		# for a value that has to remember its window.
 		if isinstance(numerator, DerivedMeasurement) and denominator is None:
-			self._numerator = numerator.numerator
-			self._denominator = numerator.denominator
+			n, d = numerator.numerator, numerator.denominator
 		elif denominator is None:
-			self._numerator = numerator
-			self._denominator = self.denominator(1)
+			n, d = numerator, None
 		else:
-			self._numerator = numerator
-			self._denominator = denominator
-		if not isinstance(self.numerator, type(self).numerator):
-			self._numerator = type(self).numerator(self._numerator)
-		if not isinstance(self.denominator, type(self).denominator):
-			self._denominator = type(self).denominator(self._denominator)
-		Measurement.__init__(self, float(self._numerator)/float(self._denominator), *args, **kwargs)
+			n, d = numerator, denominator
+		cls = type(self)
+		nCls = cls.numerator if not cls.numerator.isGeneric else type(n)
+		dCls = cls.denominator if not cls.denominator.isGeneric else (type(d) if d is not None else cls.denominator)
+		if not isinstance(n, nCls):
+			n = nCls(n)
+		d = dCls(1) if d is None else (d if isinstance(d, dCls) else dCls(d))
+		value = float(n)/float(d)
+		self._numerator = nCls(value)
+		self._denominator = dCls(1)
+		Measurement.__init__(self, value, *args, **kwargs)
 
 	def __pow__(self, power, modulo=None):
-		return self.__class__(super(Measurement, self).__pow__(power, modulo), self._denominator)
+		return type(self)(float.__pow__(float(self), float(power)) if modulo is None else pow(float(self), float(power), modulo))
 
 	def __getitem__(self, item):
+		converted = self._getUnit(item)
+		if isinstance(converted, Measurement) and converted is not self and converted.period is None:
+			converted._period = self.period
+		return converted
+
+	def _getUnit(self, item):
 		if isinstance(item, str):
 			item = type(self).__parse_unit__(item)
 			if len(item) == 2:
