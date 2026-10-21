@@ -380,16 +380,35 @@ class Meter(MetricLength):
 
 ### Derived Unit
 DerivedMeasurement is essentially a measurement with multiple units, eg, m/s [meters per second], mph [miles per hour].
-Initiation takes in two Measurements and is stored as the dividend of the two.  Both values are independently stored
-as protected variables.
+A derived value is **one number in its unit**, like every measurement. `.numerator` and `.denominator` describe it as
+"this much of the numerator unit per ONE of the denominator unit", so `MilesPerHour(20).numerator` is `20 mi` and
+`.denominator` is `1 hr`. Building one from an amount over an interval still works and gives the rate:
+`Hourly(Millimeter(6), Hour(3))` is `2 mm/hr`. A value that has to remember the window it covers (rain in the last
+24 hours) carries `period=timedelta(...)` beside its `timestamp`; conversion never touches it.
+
+Rates and accumulations share a number and differ in meaning (`mm/h` and `mm`, `kW` and `kWh`), so the class has to
+say which one it is.
+
+**Dimension algebra.** `*` and `/` between measurements of different dimensions work on exponent vectors over length,
+mass, time and temperature:
+
+```python
+Meter(10) / Meter(2)                  # 5.0, a plain float
+Millimeter(6) / Hour(3)               # 2 mm/hr, keeps the units it was given
+Meter(5) * Meter(5)                   # 25 m², a Compound
+Foot(3) * Meter(1)                    # 0.9144 m², across systems
+Kilogram(2) / (Meter(2) * Meter(2) * Meter(2))   # 0.25 kg·m⁻³
+```
+
+The result is a named type when one is registered for the dimension (length, mass, time, pressure, speed), a plain
+float when it is dimensionless, and otherwise a `Compound`, which prints its coherent SI unit and takes part in
+further algebra. Exponents run from -3 to 3. A temperature *reading* (`Celsius(5)`) does not multiply or divide, since
+`20 °C × 2` is not `40 °C`; use `Kelvin`. Unary `-`/`+`, `%`, `//`, `round` and scalar `*` and `/` keep the class.
 
 **Note:**
-This type still needs quite a lot of work.  Currently, it only has fractional support, and only a single unit can be used for
-both the numerator and denominator.  Eventually this will be expanded allowing for more complex unit derivatives.
-Support for the following has not been added:
- - Multiplying two units together, for example a pascal second [Pa·s]
- - Negative exponent units like Hertz [s⁻¹]
- - Multiple units in either the numerator or denominator
+Still to do: a distinct type for a temperature *change* (so that `reading - reading` is a change and
+`reading + reading` is refused), named types for the common compounds (area, energy, power), and several different
+units in the numerator or denominator at once.
 
 Roughly what `DerivedMeasurement` does, for orientation (illustrative, not
 the real source):

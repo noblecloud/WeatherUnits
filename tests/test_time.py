@@ -28,7 +28,8 @@ class TestTime(TestCase):
 
 	def test_multiplication(self):
 		self.assertEqual(self.second * 60, self.minute)
-		self.assertEqual(self.second * self.hour, self.hour)
+		# Seconds times hours is a time squared, not a time: see test_algebra.py
+		self.assertAlmostEqual(float(self.second * self.hour), 3600)
 
 	def test_timedelta_math(self):
 		self.assertEqual(self.second + timedelta(seconds=59), self.minute)

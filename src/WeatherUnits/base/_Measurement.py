@@ -332,7 +332,11 @@ class Measurement(SmartFloat):
 				return type(self).numerator(float(self) * otherValue)
 		# Multiplication commutes: allow  <Measurement> * <derived>  to simplify too
 		if isinstance(other, DerivedMeasurement) and not isinstance(self, DerivedMeasurement):
-			return other.__mul__(self)
+			if isinstance(self, other.denominator.type):
+				return other.__mul__(self)
+		if isinstance(other, Measurement) and self._algebraic(other):
+			from ._Algebra import multiply
+			return multiply(self, other)
 		other = self.__wrapOther(other)
 		return type(self)(super().__mul__(other))
 
@@ -358,7 +362,24 @@ class Measurement(SmartFloat):
 		other = self.__wrapOther(power)
 		return type(self)(super().__pow__(other, modulo))
 
+	def _algebraic(self, other) -> bool:
+		"""Both sides have a dimension, so `*` and `/` follow the dimension algebra."""
+		from ._Algebra import hasDimension
+		return not isinstance(self, Dimensionless) and not isinstance(other, Dimensionless) and hasDimension(self) and hasDimension(other)
+
 	def __truediv__(self: Self, other: Other | Number) -> Self:
+		if isinstance(other, Measurement) and self._algebraic(other):
+			from ._Algebra import divide, vectorOf
+			if vectorOf(self) == vectorOf(other):
+				return float(divide(self, other))
+			if vectorOf(self) == (1, 0, 0, 0) and vectorOf(other) == (0, 0, 1, 0):
+				# A distance over a time keeps the units it was given (mm / h -> mm/hr)
+				# instead of going through SI.
+				if matched := UnitRegistry.get_derived(type(self), type(other)):
+					return matched(self, other)
+				from ..derived import DistanceOverTime
+				return DistanceOverTime(self, other)
+			return divide(self, other)
 		if isinstance(self, DerivedMeasurement) and not isinstance(other, Measurement):
 			# Dividing a derived measurement by a scalar scales its numerator:
 			# e.g. (6m / 2s) / 2 -> (3m / 2s)
@@ -377,6 +398,28 @@ class Measurement(SmartFloat):
 
 		other = self.__wrapOther(other)
 		return type(self)(super().__truediv__(other))
+
+	def _sameType(self, value: float) -> Self:
+		"""A new measurement of this type holding `value`, with this one's metadata."""
+		new = type(self)(value)
+		for key in ('_title', '_key', '_timestamp', '_period', '_category'):
+			if (kept := self.__dict__.get(key)) is not None:
+				new.__dict__[key] = kept
+		return new
+
+	def __rmul__(self: Self, other: Other | Number) -> Self:
+		if isinstance(other, Measurement):
+			return other.__mul__(self)
+		return self._sameType(float(other) * float(self))
+
+	def __neg__(self: Self) -> Self:
+		return self._sameType(-float(self))
+
+	def __pos__(self: Self) -> Self:
+		return self._sameType(float(self))
+
+	def __mod__(self: Self, other: Other | Number) -> Self:
+		return self._sameType(float(self) % self.__wrapOther(other))
 
 	def __floor__(self: Self)->  Self:
 		return type(self)(super().__floor__())

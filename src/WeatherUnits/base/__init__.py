@@ -3,3 +3,4 @@ from .Decorators import *
 from ._SmartFloat import *
 from ._Measurement import *
 from ._ScalingMeasurement import *
+from ._Algebra import *
