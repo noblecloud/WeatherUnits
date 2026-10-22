@@ -84,5 +84,6 @@ class TestTemperature(TestCase):
 		self.assertEqual('0°c', str(low.withUnit))
 
 	def test_dewpoint(self):
-		self.assertEqual(self.cDewpoint, self.cRoom.dewpoint(65))
-		self.assertEqual(self.fDewpoint, self.fRoom.dewpoint(65))
+		# The expected values are rounded readouts, and `==` compares the actual value.
+		self.assertAlmostEqual(float(self.cDewpoint), float(self.cRoom.dewpoint(65)), delta=0.05)
+		self.assertAlmostEqual(float(self.fDewpoint), float(self.fRoom.dewpoint(65)), delta=0.05)

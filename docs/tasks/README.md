@@ -20,10 +20,10 @@ These are blocked on a judgment call, not on effort.
 
 ## Bugs — ready to pick up (found 2026-10-04)
 
-- **[same-dimension-regressions.md](same-dimension-regressions.md)** — `8f1ce65`
-  broke metric↔imperial comparison and arithmetic (`Meter(1) + Foot(1)` raises,
-  `Celsius(0) == Fahrenheit(32)` is False, mixed temperatures sort wrong) and left
-  `==` tolerant while `hash` is not. Equality semantics are decided; see the brief.
+- ~~**[same-dimension-regressions.md](same-dimension-regressions.md)**~~ **Fixed
+  2026-10-22.** Metric and imperial units compare, order, sort and add again;
+  `==` compares the value, not the display (`displays_same` for that); `hash`
+  agrees with `==`; different dimensions raise `TypeError` when ordered.
 - **[missing-values-and-locale.md](missing-values-and-locale.md)** — NaN becomes the
   upper limit (`Humidity(nan)` shows `100%`); the import crashes when the locale is
   unrecognised; the test suite's verdict depends on the host locale (19 failures
