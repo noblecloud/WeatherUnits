@@ -30,15 +30,15 @@ Check what the intent is before changing it. The upper bound at 318 K (~44.85 °
 
 - **Test against the NWS reference value:** 90 °F at 50% RH gives about 95 °F. Also assert that 60 °F at 50% RH returns the input unchanged.
 
-## 3. `wu.auto(value, unit)` crashes
+## 3. `uc.auto(value, unit)` crashes
 
-`__init__.py` ~54-82: the two-argument form iterates over the class `__findUnitClass__` returns, and fails for every unit. Minimal fix plus a test: `wu.auto(5, 'm')` is `Meter(5)`. The parsing brief replaces `auto` later, so keep this to the smallest change that works.
+`__init__.py` ~54-82: the two-argument form iterates over the class `__findUnitClass__` returns, and fails for every unit. Minimal fix plus a test: `uc.auto(5, 'm')` is `Meter(5)`. The parsing brief replaces `auto` later, so keep this to the smallest change that works.
 
 ## 4. Add `py.typed`
 
-There is no `py.typed` in `src/WeatherUnits/`. Add an empty one and include it in the build. `pyproject.toml` ~27 has `include = ["*.ini"]`; add `"py.typed"` to it, or confirm poetry picks it up from the package.
+There is no `py.typed` in `src/unitcorn/`. Add an empty one and include it in the build. `pyproject.toml` ~27 has `include = ["*.ini"]`; add `"py.typed"` to it, or confirm poetry picks it up from the package.
 
-- **Test:** build a wheel and check it lists `WeatherUnits/py.typed`.
+- **Test:** build a wheel and check it lists `unitcorn/py.typed`.
 
 ## Verify
 

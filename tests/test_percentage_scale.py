@@ -1,6 +1,6 @@
 import pytest
 
-from WeatherUnits import others
+from unitcorn import others
 
 
 @pytest.mark.parametrize('cls', [others.Humidity, others.Probability, others.Coverage, others.Percentage])

@@ -1,5 +1,16 @@
-# WeatherUnits️ 🌧
-Easily convert typical weather units from one unit to another with automatic localization.
+# unitcorn 🦄
+Units that convert, localize and format themselves. Born for weather dashboards,
+good for anything you can measure.
+
+> **Formerly WeatherUnits.** The library outgrew its name: lengths, masses, time,
+> bytes and the whole derived-unit algebra are general-purpose, and the weather part
+> lives in the config. `pip install WeatherUnits` still works, as a shim that installs
+> unitcorn and forwards `import WeatherUnits` to it with a `DeprecationWarning` —
+> see [compat/WeatherUnits](compat/WeatherUnits/README.md).
+
+```sh
+pip install unitcorn
+```
 
 ## Features
 🌈 Effortlessly define or extend your own units
@@ -10,7 +21,7 @@ Easily convert typical weather units from one unit to another with automatic loc
 
 ## Requirements
 
-- Python 3.10
+- Python 3.10 – 3.14, no other dependencies
 
 ## How to use
 
@@ -24,7 +35,7 @@ Easily convert typical weather units from one unit to another with automatic loc
 Conversion is as easy as using the desired unit's name or aliases as either an attribute or subscript
 
 ```python
-from WeatherUnits.temperature import Fahrenheit
+from unitcorn.temperature import Fahrenheit
 >>> value = Fahrenheit(32)
 >>> value
 '32°'
@@ -40,10 +51,10 @@ from WeatherUnits.temperature import Fahrenheit
 
 #### Loading a config file
 ```python
-import WeatherUnits as wu
-wu.config.read('config.ini')
+import unitcorn as uc
+uc.config.read('config.ini')
 ```
-A template config file can be found in [src/WeatherUnits/config](src/WeatherUnits/config/template.ini).  There are three sections in a valid config file
+A template config file can be found in [src/unitcorn/config](src/unitcorn/config/template.ini).  There are three sections in a valid config file
 1) LocalUnits: This is what defines what units you want to use for localization
 2) UnitDefaults: This section holds the default values that apply to every unit
 3) UnitProperties: Defines properties for individual units or unit systems as a whole
@@ -180,7 +191,7 @@ Fahrenheit, Celsius, and Kelvin are subclasses of Temperature. Convert to other
 similar units with a single private function sharing the name of the desired unit.
 
 ```python
-from WeatherUnits.base import Measurement, UnitType
+from unitcorn.base import Measurement, UnitType
 
 @UnitType  # Unit types are defined with this decorator.
 class Temperature(Measurement):  # For static unit types, the class inherits Measurement.
@@ -251,8 +262,8 @@ have an SI basis, so this can be done fairly often.  However, it is sometimes ne
 
 ```python
 
-from WeatherUnits.base import UnitType, Synonym, ScalingMeasurement
-from WeatherUnits.base import Scale, SystemVariant, both
+from unitcorn.base import UnitType, Synonym, ScalingMeasurement
+from unitcorn.base import Scale, SystemVariant, both
 
 @UnitType
 # `baseUnit` names the unit everything reduces to; `system` assigns the class
@@ -307,8 +318,8 @@ class Millibar(Hectopascal):
 #### Split system
 
 ```python
-from WeatherUnits.base import ScalingMeasurement, Scale, Dimension
-from WeatherUnits.base import metric, imperial
+from unitcorn.base import ScalingMeasurement, Scale, Dimension
+from unitcorn.base import metric, imperial
 
 
 # The shared dimension is a plain class using the Dimension metaclass. It owns
@@ -393,7 +404,7 @@ say which one it is.
 mass, time and temperature:
 
 ```python
-from WeatherUnits import Length, Mass, Time
+from unitcorn import Length, Mass, Time
 Meter, Foot, Millimeter, Hour, Kilogram = Length.Meter, Length.Foot, Length.Millimeter, Time.Hour, Mass.Kilogram
 
 Meter(10) / Meter(2)                  # 5.0, a plain float
@@ -441,8 +452,8 @@ class DerivedMeasurement(Measurement):
 And defining your own:
 
 ```python
-from WeatherUnits import Length, Time
-from WeatherUnits.base import DerivedMeasurement, UnitType
+from unitcorn import Length, Time
+from unitcorn.base import DerivedMeasurement, UnitType
 
 
 @UnitType

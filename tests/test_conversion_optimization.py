@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from WeatherUnits import Length, Temperature
-from WeatherUnits.base import _SmartFloat
-from WeatherUnits.base._ScalingMeasurement import _scaleFactor
+from unitcorn import Length, Temperature
+from unitcorn.base import _SmartFloat
+from unitcorn.base._ScalingMeasurement import _scaleFactor
 
 try:
 	import numpy as np

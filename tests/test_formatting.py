@@ -17,8 +17,8 @@ particular differs under si.ini.
 """
 from unittest import TestCase
 
-from WeatherUnits import Length, Light, Mass, Pressure, Temperature, Wind
-from WeatherUnits.base._SmartFloat import FormatSpec, SmartFloat
+from unitcorn import Length, Light, Mass, Pressure, Temperature, Wind
+from unitcorn.base._SmartFloat import FormatSpec, SmartFloat
 
 
 class TestZeroValues(TestCase):
@@ -206,7 +206,7 @@ class TestDegreeSign(TestCase):
 		self.assertNotIn(self.ORDINAL, rendered)
 
 	def test_angle_and_direction_use_the_degree_sign(self):
-		from WeatherUnits.others import Angle, Direction
+		from unitcorn.others import Angle, Direction
 		for cls in (Angle, Direction):
 			with self.subTest(cls=cls.__name__):
 				self.assertEqual(self.DEGREE, cls(0).unit_symbol)
@@ -214,8 +214,8 @@ class TestDegreeSign(TestCase):
 	def test_no_ordinal_indicator_survives_anywhere_in_the_package(self):
 		# Cheap guard against it creeping back in via a copy-paste.
 		import pathlib
-		import WeatherUnits
-		root = pathlib.Path(WeatherUnits.__file__).parent
+		import unitcorn
+		root = pathlib.Path(unitcorn.__file__).parent
 		offenders = []
 		for path in list(root.rglob('*.py')) + list(root.rglob('*.ini')):
 			if '__pycache__' in str(path):
@@ -314,8 +314,8 @@ class TestDimensionlessSpacing(TestCase):
 	"""
 
 	def test_dimensionless_values_have_no_trailing_space(self):
-		from WeatherUnits import Light
-		from WeatherUnits.others import Angle, Direction
+		from unitcorn import Light
+		from unitcorn.others import Angle, Direction
 		for measurement, expected in (
 			(Direction(180), 'S'),
 			(Angle(45), '45°'),
@@ -343,14 +343,14 @@ class TestDirectionCardinal(TestCase):
 	"""
 
 	def test_cardinal_false_renders_degrees(self):
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		d = Direction(180)
 		self.assertEqual('S', format(d, 'cardinal=True'))
 		self.assertEqual('180°', format(d, 'cardinal=False'))
 		self.assertEqual('180°', format(d, 'cardinal: False'))
 
 	def test_shorten_selects_letters_vs_words(self):
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		self.assertEqual('S', format(Direction(180), 'shorten=True'))
 		self.assertEqual('South', format(Direction(180), 'shorten=False'))
 
@@ -361,7 +361,7 @@ class TestDirectionCardinal(TestCase):
 		ends of the ladder and leaving every rung between them unreachable -
 		budgets 5 through 8 could never produce the word forms.
 		"""
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		expected = {
 			1: ['N', 'N',   'N',  'E', 'S',  'S', 'S',  'W',   'N'],
 			2: ['N', 'N',   'NE', 'E', 'SE', 'S', 'SW', 'W',   'NW'],
@@ -381,7 +381,7 @@ class TestDirectionCardinal(TestCase):
 		Below a 3-char budget everything fell to the 8-point `twoLetter`
 		set, so a 1-character budget still returned 'NE'.
 		"""
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		for deg in (0, 45, 90, 135, 180, 225, 270, 315):
 			with self.subTest(degrees=deg):
 				d = Direction(deg)
@@ -397,7 +397,7 @@ class TestDirectionCardinal(TestCase):
 		'NE' as the single word 'Northeast' and the 3-component 'SSW' as
 		the 2-word 'South Southwest'.
 		"""
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		# 238 deg is the useful probe: it resolves to a different heading at
 		# every rung, so all three budgets are genuinely exercised.
 		expected = {
@@ -420,7 +420,7 @@ class TestDirectionCardinal(TestCase):
 		heading is plain 'S' - one letter against a budget of two. Nothing
 		should stretch it to two.
 		"""
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		d = Direction(202.5)
 		d._digit_budget = 2
 		self.assertEqual('S', format(d, 'shorten=True'))
@@ -436,7 +436,7 @@ class TestDirectionCardinal(TestCase):
 
 	def test_both_forms_name_the_same_heading(self):
 		"""Letters and words must never disagree about which way the wind blows."""
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		initial = {'N': 'North', 'E': 'East', 'S': 'South', 'W': 'West'}
 		for deg in range(0, 360, 15):
 			for budget in (1, 2, 3):
@@ -451,7 +451,7 @@ class TestDirectionCardinal(TestCase):
 					)
 
 	def test_default_is_abbreviated_cardinal(self):
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		self.assertEqual('S', str(Direction(180)))
 
 
@@ -543,7 +543,7 @@ class TestUnitPropertiesBinding(TestCase):
 		self.assertEqual('760.00 mmHg', str(m))
 
 	def test_lookup_is_exact_not_fuzzy(self):
-		from WeatherUnits.config import config
+		from unitcorn.config import config
 		self.assertEqual('mmHg', config.unitPropertiesKeyFor('MillimeterOfMercury', 'mmHg'))
 		self.assertEqual('mmHg', config.unitPropertiesKeyFor('mmhg'))          # case-insensitive
 		self.assertIsNone(config.unitPropertiesKeyFor('MillimeterOfMercury'))  # class name alone: no key
@@ -553,7 +553,7 @@ class TestUnitPropertiesBinding(TestCase):
 	def test_class_name_keys_still_bind(self):
 		# `direction` and `temperature` matched by class name before and must
 		# keep matching - this is the half that always worked.
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		self.assertEqual(3, Direction(180)._digit_budget)
 
 
@@ -831,7 +831,7 @@ class TestCompactFormat(TestCase):
 		and wrong for precipitation, which is why this is a per-unit
 		declaration rather than a global setting.
 		"""
-		from WeatherUnits.derived.precipitation import PrecipitationRate
+		from unitcorn.derived.precipitation import PrecipitationRate
 
 		rate = PrecipitationRate.Hourly(Length.Inch(0.25))
 		self.assertIn('.25', format(rate, 'compact=True'))

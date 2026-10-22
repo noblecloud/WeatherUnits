@@ -1,6 +1,6 @@
 from datetime import timedelta
 from unittest import TestCase
-from WeatherUnits import Time
+from unitcorn import Time
 
 
 class TestTime(TestCase):

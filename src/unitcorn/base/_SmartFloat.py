@@ -18,7 +18,7 @@ __all__ = ('SmartFloat', 'Limits', 'TypedLimits', 'FormatSpec', 'FiniteField', '
 
 regexType: Final = Literal['b', 'c', 'd', 'e', 'E', 'f', 'F', 'g', 'G', 'n', 'o', 's', 'x', 'X', '%']
 
-log = logging.getLogger('WeatherUnits').getChild('SmartFloat')
+log = logging.getLogger('unitcorn').getChild('SmartFloat')
 
 __all__ = ['SmartFloat', 'FiniteField', 'MetaUnitClass', 'FormatSpec']
 

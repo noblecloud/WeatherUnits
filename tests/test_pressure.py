@@ -1,5 +1,5 @@
 from unittest import TestCase
-from WeatherUnits import Pressure
+from unitcorn import Pressure
 
 class TestPressure(TestCase):
 	def test_pascal_conversions(self):

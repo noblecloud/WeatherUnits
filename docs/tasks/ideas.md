@@ -29,7 +29,7 @@ The maintainer grows carnivorous plants and does tissue culture.
 HA states carry `unit_of_measurement` and `device_class`. A LevityDash HA backend is "strict-parse the unit, then map `device_class` to a LevityDash key".
 
 - The `device_class` table lives in LevityDash.
-- WeatherUnits' job is that every HA unit string parses. That is the fixture in [unit-parsing.md](unit-parsing.md).
+- unitcorn's job is that every HA unit string parses. That is the fixture in [unit-parsing.md](unit-parsing.md).
 
 ## Serialisation
 

@@ -13,8 +13,8 @@ called it. These assertions are cheap insurance against the next such edit.
 """
 from unittest import TestCase
 
-from WeatherUnits import Length, Temperature
-from WeatherUnits.others import Angle, Direction
+from unitcorn import Length, Temperature
+from unitcorn.others import Angle, Direction
 
 
 class TestStringRenders(TestCase):
@@ -91,7 +91,7 @@ class TestSeparatorOverrides(TestCase):
 	"""
 
 	def test_defaults_come_from_the_locale(self):
-		from WeatherUnits.config import GROUPING_CHAR, RADIX_CHAR
+		from unitcorn.config import GROUPING_CHAR, RADIX_CHAR
 		# Whatever the locale says, both must be single non-empty characters -
 		# they are interpolated into FormatSpec.number's character classes,
 		# where an empty value would silently change what that regex matches.
@@ -100,5 +100,5 @@ class TestSeparatorOverrides(TestCase):
 		self.assertNotEqual(GROUPING_CHAR, RADIX_CHAR)
 
 	def test_the_removed_property_is_really_gone(self):
-		from WeatherUnits.config import config
+		from unitcorn.config import config
 		self.assertFalse(hasattr(type(config), 'groupingCharacter'))

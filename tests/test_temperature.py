@@ -1,6 +1,6 @@
 import unittest
 from unittest import TestCase
-from WeatherUnits import Temperature
+from unitcorn import Temperature
 
 
 class TestTemperature(TestCase):

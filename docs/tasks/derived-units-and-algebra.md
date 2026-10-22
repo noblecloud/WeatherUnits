@@ -54,7 +54,7 @@ The two jobs the denominator does:
 - Storing both values has been there since `4b4026b` (2021-02-08), the initial commit. No commit message mentions a window, accumulation or period.
 - It is not recoverable today anyway: `Hourly(Millimeter(1), Minute(5))` is 12 mm/hr with `.n` = 1 mm and `.d` = 0.1 hr. The interval is rescaled into the class's denominator unit.
 - LevityDash's only instance readers (`observation.py` ~737-738 and ~764-765, `Graph.py` ~927-928) use the classes and force a denominator of 1.
-- Inside WeatherUnits, every reader (`rate.py`, `precipitation.py`, `__getitem__`, `localize`, `_convert`, `nArr`/`dArr`) converts units or reads `.unit`. None needs a magnitude other than the implied 1. The stored pair is how the first `localized` converted each part separately.
+- Inside the library, every reader (`rate.py`, `precipitation.py`, `__getitem__`, `localize`, `_convert`, `nArr`/`dArr`) converts units or reads `.unit`. None needs a magnitude other than the implied 1. The stored pair is how the first `localized` converted each part separately.
 
 ### The normalising hazard (document in the README)
 
@@ -144,7 +144,7 @@ Per phase: commit, tests added, the spelling chosen for the temperature change t
 ## Built (2026-10-21)
 
 - **Phase 1.** A derived value stores one number; `.numerator`/`.denominator` are the implied `value × n-unit` and `1 × d-unit`. `period` on `Measurement`. `__pow__` fixed. A bare number on a generic class (`Hourly(6)`, `Wind(5)`) is a clear `TypeError`. Tests: `tests/test_derived_values.py`.
-- **Phase 2.** `base/_Algebra.py`: exponent vectors over m, kg, s, K registered in `WeatherUnits/__init__.py`; `*` and `/` build a named type, a float, or a `Compound`. Distance over time keeps the units it was given. Tests: `tests/test_algebra.py`.
+- **Phase 2.** `base/_Algebra.py`: exponent vectors over m, kg, s, K registered in `unitcorn/__init__.py`; `*` and `/` build a named type, a float, or a `Compound`. Distance over time keeps the units it was given. Tests: `tests/test_algebra.py`.
 - **Phase 3.** `-x`, `+x`, `n * x`, `x % n` keep the class and its metadata; `//`, `round` and scalar `*` `/` already did.
 - **Also fixed on the way:** `Scale.__eq__` raised `TypeError` when the cached scale-factor lookup met another unit family's `Base`, so converting a rate could break a later `Pressure` conversion.
 - **Phase 4.** `temperature/change.py`: `CelsiusChange`, `FahrenheitChange`, `KelvinChange`; reading − reading is a change, reading ± change is a reading, reading + reading raises unless inside `summingReadings()`.

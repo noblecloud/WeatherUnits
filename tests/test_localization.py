@@ -22,9 +22,9 @@ each one alone was enough to break it:
 """
 from unittest import TestCase
 
-from WeatherUnits import Length, Time, Wind
-import WeatherUnits.derived.rate as rate
-import WeatherUnits.derived.wind as wind
+from unitcorn import Length, Time, Wind
+import unitcorn.derived.rate as rate
+import unitcorn.derived.wind as wind
 
 
 class TestWindUnitResolution(TestCase):
@@ -101,17 +101,17 @@ class TestLocalizeConverts(TestCase):
 
 def test_reading_a_new_config_drops_the_cached_unit(tmp_path):
 	"""A class's localised unit follows the file read last, not whichever was current when it was first asked."""
-	import WeatherUnits as wu
-	from WeatherUnits.config import config
+	import unitcorn as uc
+	from unitcorn.config import config
 	miles, kilometres = tmp_path / 'miles.ini', tmp_path / 'km.ini'
 	miles.write_text('[Units]\nlength = mi\n')
 	kilometres.write_text('[Units]\nlength = km\n')
 	original = config.path
 	try:
 		config.read(str(miles))
-		assert wu.Length.localizedUnit is wu.Length.Mile
+		assert uc.Length.localizedUnit is uc.Length.Mile
 		config.read(str(kilometres))
-		assert wu.Length.localizedUnit is wu.Length.Kilometer
+		assert uc.Length.localizedUnit is uc.Length.Kilometer
 	finally:
 		config.read(str(original))
 
@@ -124,8 +124,8 @@ class TestLengthLocalizationIsStable(TestCase):
 	"""
 
 	def test_kilometer_finds_the_length_entry(self):
-		from WeatherUnits.length import Kilometer
-		from WeatherUnits.utils import loadUnitLocalization
+		from unitcorn.length import Kilometer
+		from unitcorn.utils import loadUnitLocalization
 
 		class Config:
 			localUnits = {'wind': 'mi/hr', 'length': 'mi'}
@@ -134,6 +134,6 @@ class TestLengthLocalizationIsStable(TestCase):
 		self.assertEqual(loadUnitLocalization(Kilometer, config), 'mi')
 
 	def test_generic_is_the_nearest_generic_ancestor(self):
-		from WeatherUnits.length import Kilometer, MetricLength
+		from unitcorn.length import Kilometer, MetricLength
 
 		self.assertIs(Kilometer.Generic, MetricLength)

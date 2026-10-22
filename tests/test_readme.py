@@ -18,7 +18,7 @@ from unittest import TestCase
 README = Path(__file__).parent.parent / 'README.md'
 
 # Fences that are prose-adjacent rather than runnable programs.
-SKIP_MARKERS = ('Illustrative sketch', 'wu.config.read(')
+SKIP_MARKERS = ('Illustrative sketch', 'uc.config.read(')
 
 
 def _code_blocks():
@@ -51,7 +51,7 @@ class TestReadmeTranscript(TestCase):
 	"""The `>>>` block at the top is the first thing anyone reads."""
 
 	def test_conversion_transcript(self):
-		from WeatherUnits.temperature import Fahrenheit
+		from unitcorn.temperature import Fahrenheit
 		value = Fahrenheit(32)
 		self.assertEqual('32°', str(value))
 		self.assertEqual('32°f', value.withUnit)
@@ -60,8 +60,8 @@ class TestReadmeTranscript(TestCase):
 
 	def test_parameter_reference_tables(self):
 		"""The rendered outputs in the '#### Properties' tables."""
-		from WeatherUnits import Length, Time, Light
-		from WeatherUnits.others import Direction
+		from unitcorn import Length, Time, Light
+		from unitcorn.others import Direction
 
 		# precision table (3.14159 m)
 		for precision, expected in ((0, '3 m'), (1, '3.1 m'), (2, '3.14 m'), (3, '3.142 m')):
@@ -79,7 +79,7 @@ class TestReadmeTranscript(TestCase):
 		self.assertEqual('1.00k lux', str(Light.Lux(1000)))
 
 		# unit_spacer is a string, not a flag
-		from WeatherUnits import Temperature
+		from unitcorn import Temperature
 		self.assertEqual('90°f', format(Temperature.Fahrenheit(90), 'unit_spacer=False, show_unit=True'))
 		self.assertEqual('90°Truef', format(Temperature.Fahrenheit(90), 'unit_spacer=True, show_unit=True'))
 
@@ -88,7 +88,7 @@ class TestReadmeTranscript(TestCase):
 		self.assertEqual('180°', format(Direction(180), 'cardinal=False'))
 
 		# trailing_zeros table
-		from WeatherUnits import Pressure
+		from unitcorn import Pressure
 		v = Pressure.InchOfMercury(30.0)
 		for mode, expected in (('off', '30.0'), ('precision', '30.00'), ('fill', '30.000'), ('3', '30.000')):
 			with self.subTest(trailing_zeros=mode):

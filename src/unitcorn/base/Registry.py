@@ -4,7 +4,7 @@ import logging
 if TYPE_CHECKING:
 	from ._Measurement import Measurement
 
-log = logging.getLogger('WeatherUnits').getChild('Registry')
+log = logging.getLogger('unitcorn').getChild('Registry')
 
 class UnitRegistry:
 	_units_by_symbol: Dict[str, Type['Measurement']] = {}

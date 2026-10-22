@@ -4,7 +4,7 @@
 **Base:** `dev`. Step one: `git checkout -B fix/missing-and-locale dev`.
 **Model:** Sonnet. Three independent parts; one commit each.
 
-WeatherUnits exists to normalise values from data APIs, and APIs send gaps. Every part below is a way the library misreports a gap, or misbehaves depending on the machine it runs on.
+unitcorn exists to normalise values from data APIs, and APIs send gaps. Every part below is a way the library misreports a gap, or misbehaves depending on the machine it runs on.
 
 ## 1. NaN becomes the upper limit
 
@@ -47,7 +47,7 @@ path = 'us.ini' if (self.locale.lower().endswith('us') or 'United States' in sel
 **a. Import crash.** If `locale.getlocale()[0]` is `None`, the import dies:
 
 ```
-$ LANG=en_US.UTF-8 python -c "import WeatherUnits"   # en_US not installed on the host
+$ LANG=en_US.UTF-8 python -c "import unitcorn"   # en_US not installed on the host
 AttributeError: 'NoneType' object has no attribute 'lower'
 ```
 
@@ -59,12 +59,12 @@ That happens with an unset `LANG`, an uninstalled locale, or some containers. A 
 |---|---|---|
 | `C.UTF-8` (CI, containers) | `si.ini` | 142 pass, 1 fail |
 | `en_US` (the maintainer's Mac, presumably) | `us.ini` | **19 fail** |
-| `WU_CONFIG_PATH=tests/config.ini` | `tests/config.ini` | 14 fail |
+| `UNITCORN_CONFIG_PATH=tests/config.ini` | `tests/config.ini` | 14 fail |
 
-Reproduce: `WU_CONFIG_PATH=$PWD/src/WeatherUnits/config/us.ini pytest -q`.
+Reproduce: `UNITCORN_CONFIG_PATH=$PWD/src/unitcorn/config/us.ini pytest -q`.
 
 **Expected:**
-- **Pin the config for the suite** in a `tests/conftest.py` that sets `WU_CONFIG_PATH` *before* the first `import WeatherUnits`. The config is read at import time, in a class body, so later is too late.
+- **Pin the config for the suite** in a `tests/conftest.py` that sets `UNITCORN_CONFIG_PATH` *before* the first `import unitcorn`. The config is read at import time, in a class body, so later is too late.
 - **Pick one config deliberately and say why.** `tests/config.ini` exists, but it has drifted from `us.ini` (diff them: `wind = mi/hraust` looks like a typo, and `[Units]` vs `[LocalUnits]` look like stale section names).
   - Do not just point the suite at whichever config makes it green.
   - For each test that fails under the chosen config, read what it asserts. Decide whether the test, the config or the library is wrong, and say which in the commit.
@@ -75,9 +75,9 @@ Reproduce: `WU_CONFIG_PATH=$PWD/src/WeatherUnits/config/us.ini pytest -q`.
 
 ```bash
 LANG=C.UTF-8 pytest -q
-WU_CONFIG_PATH=$PWD/src/WeatherUnits/config/us.ini pytest -q   # same result as the line above
-LANG=xx_XX.UTF-8 python -c "import WeatherUnits"               # imports, no traceback
-python -c "from WeatherUnits.others import Humidity; print(repr(Humidity(float('nan'))))"   # not 100%
+UNITCORN_CONFIG_PATH=$PWD/src/unitcorn/config/us.ini pytest -q   # same result as the line above
+LANG=xx_XX.UTF-8 python -c "import unitcorn"               # imports, no traceback
+python -c "from unitcorn.others import Humidity; print(repr(Humidity(float('nan'))))"   # not 100%
 ```
 
 Then from `../LevityDash`: `.venv/bin/python -m pytest -q`. LevityDash path-depends on this checkout, so any formatting change shows up there.

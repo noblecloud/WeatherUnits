@@ -3,9 +3,9 @@ from datetime import timedelta
 
 import pytest
 
-from WeatherUnits import Length, Time, Wind, Precipitation
-from WeatherUnits.derived.rate import MilesPerHour, MetersPerSecond
-from WeatherUnits.derived.precipitation import Hourly
+from unitcorn import Length, Time, Wind, Precipitation
+from unitcorn.derived.rate import MilesPerHour, MetersPerSecond
+from unitcorn.derived.precipitation import Hourly
 
 Mile, Meter, Millimeter = Length.Mile, Length.Meter, Length.Millimeter
 Hour, Minute = Time.Hour, Time.Minute
@@ -76,13 +76,13 @@ class TestPeriod:
 def test_scale_lookup_survives_another_family_with_the_same_member_names():
 	# `_scaleFactor` is cached on scale members; converting a rate first used to
 	# make a later Pressure.Kilopascal lookup compare two families' `Base`.
-	from WeatherUnits import Pressure
+	from unitcorn import Pressure
 	Hourly(Millimeter(6), Hour(3))['in/hr']
 	assert float(Pressure.Pascal(1000).kilopascal) == 1
 
 
 def test_a_rate_of_zero_is_less_than_a_rate_of_a_tenth():
-	from WeatherUnits import Length, Precipitation, Time
+	from unitcorn import Length, Precipitation, Time
 	none = Precipitation.Hourly(Length.Inch(0.0), Time.Hour(1))
 	some = Precipitation.Hourly(Length.Inch(0.1), Time.Hour(1))
 	assert none < some and some > none and not some < none

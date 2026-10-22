@@ -25,7 +25,7 @@ inHg = precision=2, digit_budget=4, trailing_zeros=precision
 and `si.ini` ships the equivalent for `mmHg`. Neither reaches the class:
 
 ```python
->>> from WeatherUnits import Pressure
+>>> from unitcorn import Pressure
 >>> m = Pressure.MillimeterOfMercury(760.0)
 >>> m._precision, m._digit_budget      # config says 2 and 5
 (1, 3)
