@@ -37,7 +37,7 @@ class TemperatureChange(Measurement):
 	"""A difference between two temperatures, in one of the three scales' degrees."""
 	#: Kelvin per degree of this unit.
 	_factor: float = 1.0
-	_unit_symbol = ''
+	_unit_symbol = '°'
 	_show_unit = False
 	_id = 'Δ°t'
 	_reading: Type[Measurement]
