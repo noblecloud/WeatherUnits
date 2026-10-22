@@ -1075,6 +1075,9 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		# 		params[k] = int(v)
 
 		params['value'] = value.__format_value__(params)
+		# -0.04 at precision 0 is '-0': a value that rounds to zero keeps no sign
+		if '-' in params['value'] and not any(c in '123456789' for c in params['value']):
+			params['value'] = params['value'].replace('-', '', 1)
 		if params.get('leadingZeroDropped', False):
 			# leading_zero off for a value between -1 and 1: drop the '0'
 			# before the radix point ('0.01' -> '.01', '-0.5' -> '-.5').
