@@ -223,6 +223,13 @@ class UnitDict(dict):
 		super().__delitem__(k)
 
 
+# Bumped whenever a unit class is created or one of the attributes that
+# `compatibleUnits` is built from is reassigned, so per-class caches of it can
+# tell they are stale without re-walking the subclass tree on every format.
+_unitGeneration: int = 0
+_unitAffecting: Final = frozenset({'_unit', '_aliases', '_name', '_pluralName', '_pluralUnit', '__dimension__', '_type'})
+
+
 class MetaUnitClass(type):
 
 	global Measurement
@@ -376,10 +383,24 @@ class MetaUnitClass(type):
 
 		attrs['__annotations__'] = ChainMap(attrs.get('__annotations__', {}), *(b.__dict__.get('__annotations__', {}) for b in bases))
 
+		global _unitGeneration
+		_unitGeneration += 1
 		mcs = super().__new__(mcs, name, bases, attrs, **kwargs)
 		UnitRegistry.register(mcs)
 		# mcs._addSpecials()
 		return mcs
+
+	def __setattr__(cls, key, value):
+		global _unitGeneration
+		if key in _unitAffecting:
+			_unitGeneration += 1
+		super().__setattr__(key, value)
+
+	def __delattr__(cls, key):
+		global _unitGeneration
+		if key in _unitAffecting:
+			_unitGeneration += 1
+		super().__delattr__(key)
 
 	def _addSpecials(cls):
 		name = cls.__name__
@@ -522,6 +543,16 @@ class MetaUnitClass(type):
 			units.update({alias.lower(): subtype for alias in (subtype.unit, *subtype.aliases) if alias})
 		units.pop(None, None)
 		return units
+
+	@property
+	def unitNames(cls) -> frozenset[str]:
+		"""The keys of `compatibleUnits` plus 'auto', cached until a unit class changes."""
+		cached = cls.__dict__.get('_unitNamesCache')
+		if cached is not None and cached[0] == _unitGeneration:
+			return cached[1]
+		names = frozenset(cls.compatibleUnits) | {'auto'}
+		type.__setattr__(cls, '_unitNamesCache', (_unitGeneration, names))
+		return names
 
 	@property
 	def compatibleTypes(cls) -> Set[Type['Measurement']]:
@@ -787,7 +818,6 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	def __format__(self, formatSpec, **extras):
 		convertTo = None
-		compatible_units = type(self).compatibleUnits
 
 		if isinstance(formatSpec, dict):
 			params, formatSpec = formatSpec, formatSpec.get('format', '')
@@ -795,7 +825,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			params = {}
 
 		conversionSpecMatch = FormatSpec.conversion.search(formatSpec)
-		unitSet = set(compatible_units) | {'auto'}
+		unitSet = type(self).unitNames
 		if conversionSpecMatch:
 			conversionSpecMatch = conversionSpecMatch.groupdict()
 			parsedUnit = type(self).__parse_unit__(conversionSpecMatch['convertTo'])
