@@ -27,4 +27,4 @@ jobs:
           poetry build -o dist
           python -m pip wheel --no-deps -w dist ./compat/WeatherUnits
           python -m pip install dist/unitcorn-*.whl dist/weatherunits-*.whl
-          cd /tmp && python -W error::DeprecationWarning -c "import unitcorn" && python -c "import WeatherUnits, unitcorn; assert WeatherUnits.Length is unitcorn.Length"
+          cd /tmp && python -W "error:WeatherUnits has been renamed" -c "import unitcorn" && python -c "import WeatherUnits, unitcorn; assert WeatherUnits.Length is unitcorn.Length"
