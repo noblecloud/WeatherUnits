@@ -71,7 +71,7 @@ class TestTemperature(TestCase):
 		self.assertEqual(self.fHigh, high.f)
 		low.precision = 1
 		low.digit_budget= 4
-		self.assertEqual('273.1k', low.withUnit)
+		self.assertEqual('273.1K', low.withUnit)
 
 	def test_celsius_force_show_unit(self):
 		# Celsius defaults to show_unit=False (the ° unit_symbol already conveys

@@ -31,9 +31,9 @@ These are blocked on a judgment call, not on effort.
 
 ## Ready to pick up
 
-- **[small-fixes.md](small-fixes.md)** — four independent items: Kelvin's symbol
+- ~~**[small-fixes.md](small-fixes.md)** — four independent items: Kelvin's symbol
   is `'k'` (should be `'K'`), the `heatIndex` guard reads `300 > K < 318`,
-  `wu.auto(value, unit)` crashes, and there is no `py.typed`.
+  `wu.auto(value, unit)` crashes, and there is no `py.typed`.~~ **Resolved 2026-10-22.**
 
 > **The cleanup gate is clear.** Everything that was blocking "show it to
 > people and then decide the name" has landed: the README executes, the
