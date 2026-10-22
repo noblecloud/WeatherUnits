@@ -416,7 +416,8 @@ reading (`Fahrenheit(68) + CelsiusChange(10)` is `86 °F`). Two readings do not 
 
 **Energy, power and area** are units in their own right: `Energy` (J, kJ, MJ, GJ, Wh, kWh, MWh, cal, BTU),
 `Power` (W, kW, MW, GW, hp) and `Area` (m², cm², km², ha, in², ft², mi², ac). `Power.Kilowatt(2) * Time.Hour(3)` is
-`Energy` (6 kWh), `Energy.KilowattHour(6) / Time.Hour(3)` is `Power`, and `Meter(2) * Meter(3)` is an `Area`.
+`Energy` (6 kWh), `Energy.KilowattHour(6) / Time.Hour(3)` is `Power`, and `Meter(2) * Meter(3)` is an `Area`. `Light.Irradiance` (W/m²) is power per area: `Irradiance(500) * Area.SquareMeter(20)` is
+`Power` (10 kW), and `Power / Area` is an `Irradiance`. Illuminance (lux) has no dimension and does not multiply.
 
 **Note:**
 Still to do: several different units in the numerator or denominator at once, and compound units beyond what the
