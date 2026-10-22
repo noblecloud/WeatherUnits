@@ -12,8 +12,8 @@ total number of *displayed digits* - a width budget that, together with
 adding a k/m suffix). `precision` fills whatever room `max` leaves, derived
 per value from that value's own decimal content.
 
-Assertions here reflect the **US config** (config/us.ini); `shorten` in
-particular differs under si.ini.
+Assertions here reflect the **US config** (config/us.toml); `shorten` in
+particular differs under si.toml.
 """
 from unittest import TestCase
 
@@ -217,7 +217,7 @@ class TestDegreeSign(TestCase):
 		import WeatherUnits
 		root = pathlib.Path(WeatherUnits.__file__).parent
 		offenders = []
-		for path in list(root.rglob('*.py')) + list(root.rglob('*.ini')):
+		for path in list(root.rglob('*.py')) + list(root.rglob('*.toml')):
 			if '__pycache__' in str(path):
 				continue
 			try:
@@ -536,7 +536,7 @@ class TestUnitPropertiesBinding(TestCase):
 	"""
 
 	def test_a_symbol_keyed_unit_gets_its_config(self):
-		# si.ini: mmHg = precision=2, digit_budget=5, trailing_zeros=precision
+		# si.toml: mmHg = precision=2, digit_budget=5, trailing_zeros=precision
 		m = Pressure.MillimeterOfMercury(760.0)
 		self.assertEqual(2, m._precision)
 		self.assertEqual(5, m._digit_budget)
@@ -657,8 +657,8 @@ class TestKeywordPrecisionMatchesStringPrecision(TestCase):
 	before anything can overwrite `extras`. Pinned here in both spellings,
 	plus the configured-precision path the option exists to override.
 
-	Which unit carries the padding depends on the loaded config: us.ini
-	pads inHg, si.ini pads mmHg (si.ini:38, us.ini:39). Both are asserted,
+	Which unit carries the padding depends on the loaded config: us.toml
+	pads inHg, si.toml pads mmHg (si.toml, us.toml). Both are asserted,
 	so this test bites under either config rather than quietly going
 	inert on whichever one happens to be loaded.
 	"""
@@ -698,7 +698,7 @@ class TestKeywordPrecisionMatchesStringPrecision(TestCase):
 	def test_without_a_caller_precision_the_configured_one_still_governs(self):
 		# The fallback branch is unchanged: no explicit precision means the
 		# config decides, as it did before. Which unit it applies to depends
-		# on the config - us.ini pads inHg to 2 places, si.ini pads mmHg.
+		# on the config - us.toml pads inHg to 2 places, si.toml pads mmHg.
 		# Asserted through whichever unit this config actually pads, so the
 		# guard holds under both.
 		for unit in self.PADDED_UNITS:
@@ -730,8 +730,8 @@ class TestCompactFormat(TestCase):
 	def paddedUnit(self):
 		"""The unit whose config sets trailing_zeros=precision.
 
-		Which one that is depends on the loaded config - us.ini pads inHg,
-		si.ini pads mmHg (us.ini:39, si.ini:38) - so these tests ask the config
+		Which one that is depends on the loaded config - us.toml pads inHg,
+		si.toml pads mmHg (us.toml, si.toml) - so these tests ask the config
 		rather than naming a unit. Naming one made half of them inert.
 		"""
 		for unit in (Pressure.InchOfMercury, Pressure.MillimeterOfMercury):
@@ -784,7 +784,7 @@ class TestCompactFormat(TestCase):
 		"""Render a Hectopascal as mBar, which is stable across configs.
 
 		`pressure` in the config decides what a pressure value is localised to
-		- us.ini says inHg, si.ini says mmHg - so a plain Hectopascal renders
+		- us.toml says inHg, si.toml says mmHg - so a plain Hectopascal renders
 		as `759.96 mmHg` under one and `1013.2 inHg` under the other, and
 		never reaches its own convention. Asking for `convert=millibar` pins
 		the display unit; mBar renders the same under both configs, and
