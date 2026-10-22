@@ -134,3 +134,26 @@ class TestNamedCompounds:
 	def test_area_over_length_is_length(self):
 		r = Area.SquareMeter(6) / Meter(2)
 		assert isinstance(r, Length) and isclose(float(r), 3)
+
+
+class TestIrradiance:
+	def test_irradiance_over_an_area_is_power(self):
+		from WeatherUnits import Light
+		r = Light.Irradiance(500) * Area.SquareMeter(20)
+		assert isinstance(r, Power) and isclose(float(r['kW']), 10)
+
+	def test_power_per_area_is_irradiance(self):
+		from WeatherUnits import Light
+		r = Power.Kilowatt(10) / Area.SquareMeter(20)
+		assert isinstance(r, Light.Irradiance) and isclose(float(r), 500)
+
+	def test_irradiance_for_a_time_is_energy(self):
+		from WeatherUnits import Light
+		r = Light.Irradiance(500) * Area.SquareMeter(20) * Time.Hour(3)
+		assert isinstance(r, Energy) and isclose(float(r['kWh']), 30)
+
+	def test_illuminance_has_no_dimension(self):
+		from WeatherUnits import Light
+		from WeatherUnits.errors import Conversion
+		with pytest.raises(Conversion.BadConversion):
+			Light.Illuminance(500) * Area.SquareMeter(20)

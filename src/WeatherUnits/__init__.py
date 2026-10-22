@@ -104,6 +104,8 @@ def _registerDimensions():
 	reg(Area, (2, 0, 0, 0), Area.SquareMeter)
 	reg(Energy, (2, 1, -2, 0), Energy.Joule)
 	reg(Power, (2, 1, -3, 0), Power.Watt)
+	# Irradiance is power per area: kg·s⁻³. Only Irradiance, not Light, which also holds lux and the UV index.
+	reg(Light.Irradiance, (0, 1, -3, 0), Light.Irradiance)
 	_Algebra._references[(1, 0, -1, 0)] = derived.DistanceOverTime.MetersPerSecond
 
 
