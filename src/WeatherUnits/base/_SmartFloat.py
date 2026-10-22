@@ -208,6 +208,38 @@ class FiniteField:
 		return value%self._limits[1]
 
 
+_MISSING: Final = object()
+
+
+class FormatParams(ChainMap):
+	"""A ChainMap with single-pass lookups.
+
+	`__format__` reads dozens of keys per call from a handful of plain dicts,
+	most of them misses in the first few maps. The stock implementation raises
+	and swallows a KeyError per missed map and checks `in` then indexes for
+	`get`; this probes each map once. Every map here is a plain dict, so
+	`dict.get` and `[]` agree.
+	"""
+
+	def __getitem__(self, key):
+		for mapping in self.maps:
+			if (value := mapping.get(key, _MISSING)) is not _MISSING:
+				return value
+		return self.__missing__(key)
+
+	def get(self, key, default=None):
+		for mapping in self.maps:
+			if (value := mapping.get(key, _MISSING)) is not _MISSING:
+				return value
+		return default
+
+	def __contains__(self, key):
+		for mapping in self.maps:
+			if key in mapping:
+				return True
+		return False
+
+
 class UnitDict(dict):
 
 	def __getitem__(self, k):
@@ -880,7 +912,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 		floatValue = fm if (fm := getattr(value, 'formatValue', None)) is not None else float(value)
 
-		params = ChainMap(extras, specParams, params)
+		params = FormatParams(extras, specParams, params)
 		params.extras = extras
 		params.specParams = specParams
 		# The caller's own precision, from either spelling - `format(v,
