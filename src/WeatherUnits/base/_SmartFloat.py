@@ -1111,7 +1111,9 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		for key, opts in formatVarsSpecs.items():
 			spec = opts['spec']
 			try:
-				v = getFrom(key, value, self, params, locals(), globals())
+				# locals() copies the whole frame, so only take it once the cheap sources miss
+				if (v := getFrom(key, value, self, params, default=_MISSING)) is _MISSING:
+					v = getFrom(key, value, self, params, locals(), globals())
 			except KeyError:
 				raise FormattingError(f'Invalid format variable {key!r} in {formatString!r} while formatting {self!r}')
 			if spec and key not in {'format', 'self', 'value'}:
