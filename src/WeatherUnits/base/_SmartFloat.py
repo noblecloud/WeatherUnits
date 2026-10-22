@@ -1141,7 +1141,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			# digit it frees has gone to a decimal place.
 			params['value'] = params['value'].replace('0.', '.', 1)
 
-		formattedValue = formatString.format(**params)
+		formattedValue = formatString.format_map(params)
 
 		return formattedValue
 
@@ -1259,7 +1259,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return 0 if round(abs(floatValue), dropped) != 0 else intLength
 
 	def __format_value__(self, params: Mapping) -> str:
-		return '{value:{fill}{align}{sign}{minwidth}.{precision}{type}}'.format(**params)
+		return '{value:{fill}{align}{sign}{minwidth}.{precision}{type}}'.format_map(params)
 
 	def __format_template__(self, params: Mapping) -> str:
 		formatTemplate = []
