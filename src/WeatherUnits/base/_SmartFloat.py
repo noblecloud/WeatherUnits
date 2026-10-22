@@ -632,6 +632,8 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	_title: Optional[str]
 	_show_unit: Optional[bool]
 	_shorten: Optional[bool]
+	#: What a NaN formats as. `missing` in `[UnitDefaults]` overrides it.
+	_missing: str = '\u2014'
 	_k_separator: Optional[str]
 	_key: Optional[Union[str, Set[Union[str, Tuple[str]]]]]
 	_size_hint: Optional[str]
@@ -785,6 +787,8 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return f'{self}'
 
 	def __format__(self, formatSpec, **extras):
+		if isnan(self):
+			return self._missing
 		convertTo = None
 		compatible_units = type(self).compatibleUnits
 
@@ -1301,6 +1305,9 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			return f'{type(self).__name__}({self.__repr_value__()})'
 
 	def __bool__(self):
+		# A gap is falsy, even though it has a unit
+		if isnan(self):
+			return False
 		return super().__bool__() or bool(self.unit)
 
 	def __float__(self) -> float:
@@ -1320,7 +1327,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	@property
 	def valueUnset(self) -> bool:
-		return self == nan
+		return isnan(self)
 
 	@property
 	def withUnit(self) -> str:

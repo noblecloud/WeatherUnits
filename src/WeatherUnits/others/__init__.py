@@ -1,4 +1,5 @@
 from fractions import Fraction
+from math import isnan, nan
 from functools import cached_property
 from typing import Optional, Tuple, Mapping
 
@@ -33,7 +34,11 @@ class Percentage(Dimensionless, NonPlural):
 		  A float at or below 1 is read as a fraction, so 0.1 is 10 % here.
 		  Never rely on this for data from a sensor or an API.
 		"""
-		if isPercentage is None:
+		if value is None:
+			value = nan
+		if isnan(value):
+			pass
+		elif isPercentage is None:
 			if value > cls._limits[1] or isinstance(value, int) and value != 1:
 				value /= 100
 		elif isPercentage:

@@ -2,7 +2,7 @@ from abc import abstractmethod
 from enum import Enum, EnumMeta
 from functools import lru_cache, cached_property
 from itertools import groupby
-from math import prod
+from math import nan, prod
 from typing import Optional, Type, Tuple, Set, Dict, Union
 
 from ._Measurement import systemName
@@ -221,6 +221,8 @@ class ScalingMeasurement(Measurement):
 	def __new__(cls, value, *args, **kwargs):
 		if isinstance(value, DerivedMeasurement):
 			return value
+		if value is None:
+			value = nan
 		valueCls = type(value)
 
 		if not issubclass(valueCls, Measurement) and issubclass(valueCls, (float, int)):
