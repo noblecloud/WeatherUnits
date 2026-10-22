@@ -4,7 +4,7 @@ from builtins import float, isinstance
 from collections import ChainMap, namedtuple
 from difflib import get_close_matches
 from functools import lru_cache, cached_property
-from locale import delocalize
+from locale import delocalize, setlocale, LC_NUMERIC
 from typing import ClassVar, Optional, Set, Type, Union, Tuple, ForwardRef, TypeVar, Literal, Final, Mapping, Iterable
 from math import nan, isnan, inf, isinf
 from decimal import Decimal
@@ -199,6 +199,36 @@ class FormatSpec:
 		if hasTrue == hasFalse:
 			return default
 		return hasTrue
+
+
+@lru_cache(maxsize=512)
+def _parseSpec(formatSpec: str, numericLocale: str) -> tuple[dict, dict]:
+	"""Split a format spec into its python format-spec part and its `key=value` parameters.
+
+	Depends only on the spec text and the numeric locale (numbers are delocalized),
+	so it is memoised on both. The dicts are shared: copy `specParams` before
+	mutating it, and treat `precisionSpec` as read-only.
+	"""
+	if (precisionSpec := FormatSpec.precision.search(formatSpec)) and precisionSpec.group():
+		formatSpec = formatSpec[:precisionSpec.start()-1] if formatSpec.endswith(precisionSpec.group()) else formatSpec[precisionSpec.end()+1:]
+		precisionSpec = precisionSpec.groupdict()
+	else:
+		precisionSpec = {'format_spec': ''}
+
+	specParams = dict((i['key'], i['value']) for i in FormatSpec.params.finditer(formatSpec))
+	for key, value in specParams.items():
+		if number := FormatSpec.getNumber(value, strict=True):
+			specParams[key] = number
+		elif key in FormatSpec.never_boolean:
+			# Left as the literal string: several single-letter format
+			# codes collide with the boolean words below - 'f' and 'n'
+			# are both in falsy_values, so `type=f` used to coerce to
+			# False and reach __format_value__ as '.2False', raising
+			# ValueError. These keys never take a boolean value.
+			continue
+		elif (boolValue := FormatSpec.getBool(value, strict=None)) is not None:
+			specParams[key] = boolValue if boolValue is not None else empty
+	return precisionSpec, specParams
 
 
 class FiniteField:
@@ -868,25 +898,8 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				formatSpec = re.sub(fr'{conversionSpecMatch["fullmatch"]}', '', formatSpec)
 				convertTo = tuple(i.lower() for i in parsedUnit if i in unitSet)
 
-		if (precisionSpec := FormatSpec.precision.search(formatSpec)) and precisionSpec.group():
-			formatSpec = formatSpec[:precisionSpec.start()-1] if formatSpec.endswith(precisionSpec.group()) else formatSpec[precisionSpec.end()+1:]
-			precisionSpec = precisionSpec.groupdict()
-		else:
-			precisionSpec = {'format_spec': ''}
-
-		specParams = dict((i['key'], i['value']) for i in FormatSpec.params.finditer(formatSpec))
-		for key, value in specParams.items():
-			if number := FormatSpec.getNumber(value, strict=True):
-				specParams[key] = number
-			elif key in FormatSpec.never_boolean:
-				# Left as the literal string: several single-letter format
-				# codes collide with the boolean words below - 'f' and 'n'
-				# are both in falsy_values, so `type=f` used to coerce to
-				# False and reach __format_value__ as '.2False', raising
-				# ValueError. These keys never take a boolean value.
-				continue
-			elif (boolValue := FormatSpec.getBool(value, strict=None)) is not None:
-				specParams[key] = boolValue if boolValue is not None else empty
+		precisionSpec, specParams = _parseSpec(formatSpec, setlocale(LC_NUMERIC))
+		specParams = dict(specParams)
 
 		# Conversion
 		paramsSpecConversionMatch = type(self).__parse_unit__(specParams.get('convert', None))
