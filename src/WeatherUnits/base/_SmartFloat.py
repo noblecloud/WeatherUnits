@@ -112,6 +112,7 @@ class FormatSpec:
 	(?=,|$)
 	""", re.VERBOSE)
 	formatParams = re.compile(r"{(?P<name>\w+?) (?: :(?P<spec>.*?))?}", re.VERBOSE)
+	attrRef = re.compile(r'{(?P<obj>\w+)\.(?P<attr>[\w.]+\w)(:.+?)?}')
 	conversion = re.compile(r"""
 	^(?P<fullmatch>
 		(?P<convertTo>[-\w\s/\\]+)
@@ -1101,9 +1102,13 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return formatParams
 
 	def __replace_format_attrs__(self, formatString: str, formatParams: Mapping) -> str:
+		matches = FormatSpec.attrRef.findall(formatString)
+		if not matches:
+			return formatString
+		# Flattening a ChainMap touches every key in every map; only pay for it when there is an attribute reference to resolve.
 		formatVars = {**formatParams.get('formatVars', {}), **dict(formatParams)}
 		self = formatParams.get('self', self)
-		for obj, attr, *frmt in re.findall(r'{(?P<obj>\w+)\.(?P<attr>[\w.]+\w)(:.+?)?}', formatString):
+		for obj, attr, *frmt in matches:
 			if obj not in formatVars:
 				if (attr_ := (getattr(self, obj, None))) is not None:
 					formatParams[obj] = attr_
