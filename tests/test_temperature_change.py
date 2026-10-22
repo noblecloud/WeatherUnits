@@ -64,3 +64,7 @@ def test_a_change_takes_part_in_the_algebra():
 
 def test_kelvin_readings_subtract_to_a_change():
 	assert isinstance(Kelvin(300) - Kelvin(290), type(Kelvin.change(0)))
+
+
+def test_a_change_is_written_with_a_degree_sign():
+	assert format(Fahrenheit.change(17)) == '17°'
