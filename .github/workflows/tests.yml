@@ -22,3 +22,9 @@ jobs:
         run: poetry install --with dev
       - name: Run tests
         run: poetry run pytest
+      - name: Build unitcorn and the WeatherUnits shim
+        run: |
+          poetry build -o dist
+          python -m pip wheel --no-deps -w dist ./compat/WeatherUnits
+          python -m pip install dist/unitcorn-*.whl dist/weatherunits-*.whl
+          cd /tmp && python -W error::DeprecationWarning -c "import unitcorn" && python -c "import WeatherUnits, unitcorn; assert WeatherUnits.Length is unitcorn.Length"

@@ -1,6 +1,7 @@
 /.idea/
 /dist/
 /build/
+/compat/*/build/
 *.egg-info/
 .envrc
 
