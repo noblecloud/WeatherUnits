@@ -270,9 +270,11 @@ class Measurement(SmartFloat):
 		"""
 		return float(self)
 
-	def __prepareValues(self, other: Union['Measurement', float, int]) -> tuple[float | int, float | int]:
+	def __prepareValues(self, other: Union['Measurement', float, int], ordering: bool = False) -> tuple[float | int, float | int]:
 		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
-		precision = min(self.valuePrecision, otherPrecision)
+		# Equality forgives the digits one side does not have (`5` equals `5.04`); an order does not, or `0.0` would
+		# not be less than `0.1` and `max` of a series of rates would return its first value.
+		precision = (max if ordering else min)(self.valuePrecision, otherPrecision)
 		if isinstance(self, DerivedMeasurement) and isinstance(other, DerivedMeasurement) and isinstance(other, self.type):
 			# A rate's raw magnitude is per its own units, so `1.4 in/hr` and
 			# `0.0254 m/hr` would compare as 1.4 against 0.0254. Put `other` into
@@ -436,28 +438,28 @@ class Measurement(SmartFloat):
 
 	def __lt__(self: Self, other: Other | Number) -> bool:
 		try:
-			other, selfVal = self.__prepareValues(other)
+			other, selfVal = self.__prepareValues(other, ordering=True)
 			return selfVal < other
 		except (ValueError, TypeError, errors.BadConversion):
 			return False
 
 	def __gt__(self: Self, other: Other | Number) -> bool:
 		try:
-			other, selfVal = self.__prepareValues(other)
+			other, selfVal = self.__prepareValues(other, ordering=True)
 			return selfVal > other
 		except (ValueError, TypeError, errors.BadConversion):
 			return False
 
 	def __ge__(self: Self, other: Other | Number) -> bool:
 		try:
-			other, selfVal = self.__prepareValues(other)
+			other, selfVal = self.__prepareValues(other, ordering=True)
 			return selfVal >= other
 		except (ValueError, TypeError, errors.BadConversion):
 			return False
 
 	def __le__(self: Self, other: Other | Number) -> bool:
 		try:
-			other, selfVal = self.__prepareValues(other)
+			other, selfVal = self.__prepareValues(other, ordering=True)
 			return selfVal <= other
 		except (ValueError, TypeError, errors.BadConversion):
 			return False

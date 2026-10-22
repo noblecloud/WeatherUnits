@@ -79,3 +79,11 @@ def test_scale_lookup_survives_another_family_with_the_same_member_names():
 	from WeatherUnits import Pressure
 	Hourly(Millimeter(6), Hour(3))['in/hr']
 	assert float(Pressure.Pascal(1000).kilopascal) == 1
+
+
+def test_a_rate_of_zero_is_less_than_a_rate_of_a_tenth():
+	from WeatherUnits import Length, Precipitation, Time
+	none = Precipitation.Hourly(Length.Inch(0.0), Time.Hour(1))
+	some = Precipitation.Hourly(Length.Inch(0.1), Time.Hour(1))
+	assert none < some and some > none and not some < none
+	assert max([none, some, none]) is some
