@@ -62,7 +62,7 @@ class FormatSpec:
 	# '.2False'. Deliberately narrow: keys like unit_spacer/decorator/prefix/
 	# suffix/unit DO take False meaningfully (it disables them), so they
 	# must keep being coerced.
-	never_boolean: ClassVar[Set[str]] = {'type', 'fill', 'align'}
+	never_boolean: ClassVar[Set[str]] = {'type', 'fill', 'align', 'missing'}
 	# UNUSED, INTENTIONALLY KEPT. Nothing reads `.limit`, so the bracket
 	# syntax it describes - `{value:[100:0]}`, clamping at format time - is
 	# not accepted anywhere yet. Kept because implementing it is still wanted;
@@ -632,8 +632,8 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	_title: Optional[str]
 	_show_unit: Optional[bool]
 	_shorten: Optional[bool]
-	#: What a NaN formats as. `missing` in `[UnitDefaults]` overrides it.
-	_missing: str = '\u2014'
+	#: What a NaN formats as; see `missing`.
+	_missing: str = '\u22ef'
 	_k_separator: Optional[str]
 	_key: Optional[Union[str, Set[Union[str, Tuple[str]]]]]
 	_size_hint: Optional[str]
@@ -788,7 +788,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	def __format__(self, formatSpec, **extras):
 		if isnan(self):
-			return self._missing
+			return self.__format_missing__(formatSpec, extras)
 		convertTo = None
 		compatible_units = type(self).compatibleUnits
 
@@ -1227,6 +1227,17 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 		return ''.join(formatTemplate)
 
+	def __format_missing__(self, formatSpec, extras) -> str:
+		"""A NaN has no digits to shape, so the only parameter that applies is `missing`."""
+		if 'missing' in extras:
+			return str(extras['missing'])
+		if isinstance(formatSpec, dict):
+			if 'missing' in formatSpec:
+				return str(formatSpec['missing'])
+		elif (asked := next((i['value'] for i in FormatSpec.params.finditer(formatSpec) if i['key'] == 'missing'), None)) is not None:
+			return asked
+		return self.missing
+
 	@property
 	def defaultFormatParams(self):
 		return {
@@ -1248,6 +1259,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			'digit_budget': self.digit_budget,
 			'limits':       self._limits,
 			'shorten':      self.shorten,
+			'missing':      self.missing,
 		}
 
 	@property
@@ -1435,6 +1447,19 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	@leading_zero.setter
 	def leading_zero(self, value):
 		self._leading_zero = value
+
+	@property
+	def missing(self) -> str:
+		"""What the value shows when there is none (NaN, or None from a source): ``⋯`` by default.
+
+		Set like any other parameter: ``missing`` in ``[UnitDefaults]`` for every unit, per unit or unit type in
+		``[UnitProperties]`` (``humidity = missing=--``), on an instance, or in a format spec (``missing=n/a``).
+		"""
+		return getattr(self, '_missing', '\u22ef')
+
+	@missing.setter
+	def missing(self, value: str):
+		self._missing = value
 
 	@property
 	def trailing_zeros(self):
