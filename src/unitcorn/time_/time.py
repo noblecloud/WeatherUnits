@@ -47,6 +47,30 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 
 	common = {'Decade', 'Year', 'Day', 'Hour', 'Minute', 'Second', 'Millisecond'}
 
+	# Which unit is sensible at which magnitude. Each rung reads "below
+	# <amount> <unit>, show <unit>"; the first rung that fits wins and anything
+	# past the last rung is shown in `ladder_top`. Used by the `human` and `ago`
+	# specs and by `Time.humanized`. This is a meaning-of-the-number table, not
+	# a width constraint: `digit_budget` is unrelated and stays one.
+	#
+	#   under 90 s -> seconds      (a minute and a half is still "90 s" to a person)
+	#   under 90 min -> minutes
+	#   under 30 h -> hours        (33 hrs is not a useful reading, 1.4 days is; the
+	#                               first draft said 36 h, which would have left 33 hrs alone)
+	#   under 14 d -> days
+	#   under 8 wk -> weeks
+	#   under 18 mth -> months
+	#   else -> years
+	ladder = (
+		(90, 'Second', 'Second'),
+		(90, 'Minute', 'Minute'),
+		(30, 'Hour', 'Hour'),
+		(14, 'Day', 'Day'),
+		(8, 'Week', 'Week'),
+		(18, 'Month', 'Month'),
+	)
+	ladder_top = 'Year'
+
 	def __new__(cls, value: float | datetime | timedelta, scale: Scale = None):
 		match value:
 			case float(value) | int(value):
@@ -74,17 +98,16 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 			precisionSpec = {'format_spec': ''}
 
 		if format_spec == 'timestamp':
-			if type(self) < Time.Minute:
-				if self < Time.anHour:
-					format_spec = '%MM:%SS'
-				else:
-					format_spec = '%H:%MM:%SS'
-			else:
-				format_spec = '%H:%MM'
-			if self.hour > 100:
-				format_spec = f'{{day}} {format_spec}'
-			if self.day > 100:
-				format_spec = f'{{year}} {format_spec}'
+			return self._formatTimestamp()
+		elif format_spec.startswith('human'):
+			if format_spec[-1] == '+':
+				extras['unit_type'] = 'name'
+			# The sign is put on by hand: the base formatter sends any value
+			# that is not above 1 down its sub-1 branch, so -1.375 days comes
+			# out as '-1 days' where 1.375 days comes out as '1.4 days'.
+			humanized = self.humanized
+			sign = '-' if humanized < 0 else ''
+			return sign + abs(humanized).__format__('simple', **extras)
 		elif format_spec.startswith('simple'):
 			extras['unit_spacer'] = ' '
 			if format_spec[-1] == '+':
@@ -97,8 +120,8 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 			if format_spec[-1] == '+':
 				extras['unit_type'] = 'name'
 			if self < 0:
-				return f'in {abs(self).__format__("simple", **extras)}'
-			return f'{self.__format__("simple", **extras)} ago'
+				return f'in {abs(self).__format__("human", **extras)}'
+			return f'{self.__format__("human", **extras)} ago'
 
 
 		units = 'ymwdHMS'
@@ -142,6 +165,55 @@ class Time(ScalingMeasurement, metaclass=Dimension, system=both, symbol='T', bas
 		if matches:
 			format_spec = {'format': format_spec, **params}
 		return super().__format__(format_spec)
+
+	def _formatTimestamp(self) -> str:
+		"""
+		Clock form, escalating with magnitude.
+
+		=====================  ==================
+		under an hour          ``MM:SS``
+		an hour up to 100 h    ``H:MM:SS``
+		over 100 h             ``Dd H:MM:SS``
+		a year or more         ``Yy Dd H:MM:SS``
+		=====================  ==================
+
+		Seconds are rounded to the nearest whole second, a negative value keeps
+		its sign in front, and a year is 365 days. The year prefix only appears
+		once there is a whole year to show, so 101 days reads ``101d 0:00:00``
+		and 400 days reads ``1y 35d 0:00:00``.
+
+		This does the arithmetic itself rather than going through ``onlyInt``:
+		``Time.common`` holds ``Scale`` members, which ``splitInto`` then tries to
+		call as types.
+		"""
+		total = float(self.second)
+		sign = '-' if total < 0 else ''
+		total = round(abs(total))
+		days, rest = divmod(total, 86400)
+		hours, rest = divmod(rest, 3600)
+		minutes, seconds = divmod(rest, 60)
+		if total < 3600:
+			return f'{sign}{minutes:02}:{seconds:02}'
+		if total <= 100*3600:
+			return f'{sign}{total//3600}:{minutes:02}:{seconds:02}'
+		clock = f'{hours}:{minutes:02}:{seconds:02}'
+		if days >= 365:
+			years, days = divmod(days, 365)
+			return f'{sign}{years}y {days}d {clock}'
+		return f'{sign}{days}d {clock}'
+
+	@property
+	def humanized(self) -> 'Time':
+		"""
+		This duration in the unit :attr:`ladder` says is sensible for its
+		magnitude (``Hour(33).humanized`` is ``Day(1.375)``). The sign is kept;
+		the choice is made on the magnitude.
+		"""
+		seconds = abs(float(self.second))
+		for amount, thresholdUnit, unit in self.ladder:
+			if seconds < amount*getattr(Time, thresholdUnit).scale.absoluteValue:
+				return getattr(Time, unit)(self)
+		return getattr(Time, self.ladder_top)(self)
 
 	def __format_value__(self, params: Mapping) -> str:
 
@@ -261,7 +333,7 @@ class Hour(Time):
 	_unit = 'hr'
 
 
-class Day(Time, plural_name='days'):
+class Day(Time, plural_name='Days', plural_unit='days'):
 	_unit = 'd'
 	_digit_budget = 2
 
