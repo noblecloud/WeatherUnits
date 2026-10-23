@@ -52,7 +52,7 @@ def test_old_names_are_the_same_objects():
 
 
 def test_old_environment_variable_still_read():
-	us = ROOT / 'src' / 'unitcorn' / 'config' / 'us.ini'
+	us = ROOT / 'src' / 'unitcorn' / 'config' / 'us.toml'
 	result = run(f'''
 		import os
 		os.environ.pop('UNITCORN_CONFIG_PATH', None)
@@ -61,4 +61,4 @@ def test_old_environment_variable_still_read():
 		print(os.path.basename(unitcorn.config.path))
 	''')
 	assert result.returncode == 0, result.stderr
-	assert result.stdout.strip() == 'us.ini'
+	assert result.stdout.strip() == 'us.toml'

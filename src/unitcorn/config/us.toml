@@ -1,0 +1,53 @@
+[Location]
+timezone = "America/New_York"
+lat = 37.1
+lon = -76.6
+locale = "en_US"
+
+[LocalUnits]
+wind = "mi/hr"
+temperature = "f"
+precipitationRate = "inch/*"
+precipitation = "inch"
+pressure = "inHg"
+density = "lbs/ft"
+area = "ft²"
+energy = "kWh"
+power = "kW"
+
+[UnitDefaults]
+precision = 1
+digit_budget = 3
+unit = ""
+suffix = ""
+unit_symbol = ""
+unit_spacer = true
+title = ""
+exp = 1
+slide = false
+show_unit = true
+shorten = false
+k_separator = false
+# key is unset
+# size_hint is unset
+trailing_zeros = "off"
+missing = "⋯"
+grouping_char = true
+
+[UnitProperties]
+Tiny = { precision = 3, digit_budget = 4 }
+Small = { precision = 2, digit_budget = 4 }
+Medium = { precision = 1, digit_budget = 3 }
+Large = { precision = 1, digit_budget = 3 }
+Huge = { precision = 2, digit_budget = 3 }
+inHg = { precision = 2, digit_budget = 4, trailing_zeros = "precision" }
+voltage = { precision = 2, digit_budget = 3, unit_spacer = false }
+temperature = { precision = 0, digit_budget = 3, unit_spacer = false, shorten = false, show_unit = false }
+direction = { cardinal = true, degrees = false, size_hint = "WWE" }
+strikes = { precision = 0, digit_budget = 5 }
+illuminance = { digit_budget = 4, shorten = true }
+precipitationRate = { precision = 2 }
+precipitation = { precision = 2 }
+humidity = { precision = 0, digit_budget = 2 }
+tonne = { unit = "tonne" }
+time = { unit_spacer = false }

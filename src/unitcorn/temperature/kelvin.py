@@ -10,7 +10,7 @@ class Kelvin(Temperature, system=metric):
 	_show_unit = True
 	_unit_symbol = ''
 	_limits = (0, inf)
-	_unit = 'k'
+	_unit = 'K'
 
 	def _kelvin(self):
 		return self

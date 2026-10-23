@@ -1,6 +1,6 @@
 # Small fixes
 
-**Status:** ready to pick up.
+**Status:** fixed 2026-10-22. Notes: Kelvin also gained a `K` attribute alias (`value['K']` resolves by attribute before unit lookup), and two tests that spelled the old `k` were updated. The `heatIndex` guard already behaved as `K < 300` (a chained comparison `300 > K < 318` is `300 > K and K < 318`, and the first term implies the second), so the fix is a clarity change with no behaviour change; there is no upper bound, so hot days are not returned early. `wu.auto(5, 'm')` raises `ValueError` for an unknown unit. `py.typed` is added and listed in `include`; poetry would ship it from the package regardless.
 **Base:** `dev`. Step one: `git checkout -B fix/small dev`.
 **Model:** Sonnet. Four independent items; one commit each, each with a test.
 

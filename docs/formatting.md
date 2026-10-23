@@ -151,6 +151,7 @@ Defaults come from the class, which comes from the config file
 | `format` | none | replace the whole template (see below) | ✅ |
 | `convert` | none | conversion target, alternative to the leading `unit:` form | ✅ |
 | `limits` | per class | — | ⚠️ never read while formatting |
+| `missing` | `⋯` | what a NaN (or `None` from a source) shows instead of a number; replaces the whole output, so no other parameter applies to it | ✅ |
 
 ---
 

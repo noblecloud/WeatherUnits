@@ -1,4 +1,5 @@
 import os.path
+import tomllib
 from functools import cached_property
 from importlib import resources
 
@@ -6,6 +7,8 @@ import locale
 
 from logging import getLogger
 from configparser import ConfigParser, SectionProxy
+from json import dumps as _quoted
+import re
 from pathlib import Path
 from typing import Any, Optional, Callable, Set, Iterable, Mapping
 
@@ -34,8 +37,7 @@ class Config(ConfigParser):
 			except Exception:
 				log.error(f'Unable to set locale to {self.locale}')
 		if path is None:
-			path = 'us.ini' if (self.locale.lower().endswith('us') or 'United States' in self.locale) else 'si.ini'
-			with resources.path(__package__, path) as path:
+			with resources.path(__package__, self.defaultFileFor(self.locale)) as path:
 				self.path = path
 		else:
 			if isinstance(path, str):
@@ -45,6 +47,13 @@ class Config(ConfigParser):
 		self.read(path, reloadModules=False)
 		log.debug(f'Loaded "{path}"')
 
+	@staticmethod
+	def defaultFileFor(name: Optional[str]) -> str:
+		"""The bundled config for a locale name. An unknown locale (None) gets `si.toml`."""
+		if name and (name.lower().endswith('us') or 'United States' in name):
+			return 'us.toml'
+		return 'si.toml'
+
 	def __hash__(self):
 		return hash(self.path)
 
@@ -53,12 +62,17 @@ class Config(ConfigParser):
 		return self._customConfig
 
 	def read(self, *args, reloadModules: bool = True, **kwargs):
+		"""Read a config file: TOML by its `.toml` extension, anything else as INI."""
 		if args or kwargs:
 			for arg in args:
 				if os.path.isfile(arg):
 					self.path = arg
 					log.debug(f'Loaded "{arg}"')
-					super().read(arg, **kwargs)
+					if Path(arg).suffix.lower() == '.toml':
+						with open(arg, 'rb') as file:
+							self.read_dict(self.fromToml(tomllib.load(file), source=str(arg)))
+					else:
+						super().read(arg, **kwargs)
 					break
 				else:
 					log.error(f'{os.path.abspath(os.getcwd())}/{arg} is not a file')
@@ -72,6 +86,77 @@ class Config(ConfigParser):
 			invalidate()
 		for k, v in self.configuredUnits.copy().items():
 			setPropertiesFromConfig(v, self)
+
+	@staticmethod
+	def fromToml(data: Mapping[str, Any], source: str = '<toml>') -> dict[str, dict[str, str]]:
+		"""A parsed TOML config as the INI-shaped sections the rest of the config reads.
+
+		A `[UnitProperties]` entry is a table (`mmHg = { precision = 2, digit_budget = 5 }`), written back as the
+		`precision=2, digit_budget=5` line an INI file holds. That line splits on `,` and `=`, so neither may appear
+		in a value. A key left out means unset, the same as a bare key in INI.
+		"""
+		def text(value) -> str:
+			return str(value)  # True/False and numbers read back the same as they do from an INI file
+
+		sections = {}
+		for name, section in data.items():
+			if not isinstance(section, Mapping):
+				raise ValueError(f'{source}: top-level key {name!r} must be a [section]')
+			converted = {}
+			for key, value in section.items():
+				if isinstance(value, Mapping):
+					pairs = []
+					for prop, propValue in value.items():
+						propValue = text(propValue)
+						if ',' in propValue or '=' in propValue:
+							raise ValueError(f'{source}: [{name}] {key}.{prop} = {propValue!r} can not hold "," or "="')
+						pairs.append(f'{prop}={propValue}')
+					converted[key] = ', '.join(pairs)
+				else:
+					converted[key] = text(value)
+			sections[name] = converted
+		return sections
+
+	@staticmethod
+	def toToml(path: str | Path) -> str:
+		"""An INI config file rewritten as TOML, for moving a config over: `python -m unitcorn.config file.ini`."""
+		parser = ConfigParser(allow_no_value=True, inline_comment_prefixes=('#',))
+		parser.optionxform = str
+		parser.read(path, encoding='utf-8')
+
+		def value(raw: str):
+			if raw in ('True', 'False'):
+				return raw == 'True'
+			if re.fullmatch(r'-?\d+', raw):
+				return int(raw)
+			if re.fullmatch(r'-?\d*\.\d+', raw):
+				return float(raw)
+			return raw
+
+		def literal(v) -> str:
+			if isinstance(v, bool):
+				return 'true' if v else 'false'
+			if isinstance(v, (int, float)):
+				return str(v)
+			return _quoted(v, ensure_ascii=False)
+
+		def key(k: str) -> str:
+			return k if re.fullmatch(r'[A-Za-z0-9_-]+', k) else _quoted(k, ensure_ascii=False)
+
+		lines = []
+		for name in parser.sections():
+			lines.append(f'[{key(name)}]')
+			for k, raw in parser[name].items():
+				if raw is None:
+					lines.append(f'# {key(k)} is unset')
+				elif name == 'UnitProperties':
+					pairs = (item.split('=', 1) for item in (part.strip() for part in raw.split(',')) if item)
+					table = ', '.join(f'{key(p.strip())} = {literal(value(v.strip()))}' for p, v in pairs)
+					lines.append(f'{key(k)} = {{ {table} }}')
+				else:
+					lines.append(f'{key(k)} = {literal(value(raw))}')
+			lines.append('')
+		return '\n'.join(lines)
 
 	@classmethod
 	def onRead(cls, callback: Callable[[], None]) -> Callable[[], None]:
@@ -205,7 +290,11 @@ class Config(ConfigParser):
 config = Config()
 
 # search = config.search('locale', fuzzy=True, default=locale.getlocale()[0], accept=locale.locale_alias)
-locale.setlocale(locale.LC_ALL, '')
+try:
+	locale.setlocale(locale.LC_ALL, '')
+except locale.Error:
+	# LANG names a locale the host doesn't have. Stay on the C locale rather than fail the import.
+	log.debug('The locale set in the environment is not installed, using the C locale')
 
 try:
 	# The C and POSIX locales report no thousands separator at all, and those
