@@ -43,10 +43,10 @@ class TestDefaultConfig(TestCase):
 		return Config.defaultFileFor(name)
 
 	def test_us_locales_get_us_ini(self):
-		self.assertEqual('us.ini', self.pick('en_US'))
-		self.assertEqual('us.ini', self.pick('English_United States'))
+		self.assertEqual('us.toml', self.pick('en_US'))
+		self.assertEqual('us.toml', self.pick('English_United States'))
 
 	def test_everything_else_gets_si_ini(self):
 		for name in ('de_DE', 'C', 'fr_CA', '', None):
 			with self.subTest(locale=name):
-				self.assertEqual('si.ini', self.pick(name))
+				self.assertEqual('si.toml', self.pick(name))

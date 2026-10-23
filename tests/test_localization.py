@@ -61,7 +61,7 @@ class TestConcreteOverGenericInheritance(TestCase):
 class TestLocalizeConverts(TestCase):
 	"""The conversion `localize` performs, tested without depending on config.
 
-	The suite runs under si.ini, where `wind = m/s`, so localizing a m/s
+	The suite runs under si.toml, where `wind = m/s`, so localizing a m/s
 	reading correctly returns it unchanged and proves nothing. These build the
 	target the same way `localize` does - `unit(self.numerator,
 	self.denominator)` - which is where the relabel happened.
@@ -92,7 +92,7 @@ class TestLocalizeConverts(TestCase):
 	def test_localize_preserves_the_physical_quantity(self):
 		"""Whatever unit the config picks, the speed itself must not change.
 
-		Trivially true under si.ini (which localizes wind to m/s); the
+		Trivially true under si.toml (which localizes wind to m/s); the
 		assertion earns its keep under any config that converts.
 		"""
 		w = self._mps(0.5)

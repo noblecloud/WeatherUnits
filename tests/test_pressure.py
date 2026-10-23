@@ -24,7 +24,7 @@ class TestPressure(TestCase):
 		self.assertAlmostEqual(float(hpa.inHg), 29.92, places=2)
 
 	def test_string_representation(self):
-		# The default configuration (si.ini) localizes pressure to mmHg,
+		# The default configuration (si.toml) localizes pressure to mmHg,
 		# so a Hectopascal value is displayed converted to mmHg.
 		self.assertEqual(str(Pressure.Hectopascal(1013.25).withUnit), '760.00 mmHg')
 		self.assertEqual(str(Pressure.InchOfMercury(29.92).withUnit), '29.9 inHg')

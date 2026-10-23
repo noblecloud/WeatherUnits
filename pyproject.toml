@@ -24,7 +24,7 @@ classifiers = [
 	"Intended Audience :: Science/Research",
 	"Intended Audience :: Education",
 ]
-include = ["*.ini", "py.typed"]
+include = ["*.toml", "py.typed"]
 packages = [
 	{ include = "WeatherUnits", from = "src" }
 ]
@@ -33,7 +33,7 @@ packages = [
 "Bug Tracker" = "https://github.com/noblecloud/WeatherUnits/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.15"
+python = ">=3.12,<3.15"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"

@@ -4,13 +4,13 @@ Easily convert typical weather units from one unit to another with automatic loc
 ## Features
 🌈 Effortlessly define or extend your own units
 
-☀️ Change nearly every part of unit display from a config.ini file. No need for additional code.
+☀️ Change nearly every part of unit display from a TOML config file. No need for additional code.
 
 ❄️ Localization can is as simple as adding .localize to a units variable or setting it to automatic
 
 ## Requirements
 
-- Python 3.10
+- Python 3.12
 
 ## How to use
 
@@ -41,9 +41,9 @@ from WeatherUnits.temperature import Fahrenheit
 #### Loading a config file
 ```python
 import WeatherUnits as wu
-wu.config.read('config.ini')
+wu.config.read('units.toml')
 ```
-A template config file can be found in [src/WeatherUnits/config](src/WeatherUnits/config/template.ini).  There are three sections in a valid config file
+A template config file can be found in [src/WeatherUnits/config](src/WeatherUnits/config/template.toml). An older `.ini` config still loads, and `python -m WeatherUnits.config units.ini` prints it as TOML. There are three sections in a valid config file
 1) LocalUnits: This is what defines what units you want to use for localization
 2) UnitDefaults: This section holds the default values that apply to every unit
 3) UnitProperties: Defines properties for individual units or unit systems as a whole
@@ -53,8 +53,8 @@ The basic rules are:
 
 1) Properties are specified without the leading '_'
 2) Units are specified with their lowercase names or types
-3) Empty values will be read as '' and denote being set
-4) Values without an '=' will be read as None and denote being unset
+3) `""` sets a property to empty; leaving the key out leaves it unset
+4) In `[UnitProperties]`, each unit is an inline table: `mmHg = { precision = 2, digit_budget = 5 }`
 
 #### Properties
 - **precision:**  The number of digits allowed to be displayed past the decimal but will not exceed `digit_budget`. Example number:

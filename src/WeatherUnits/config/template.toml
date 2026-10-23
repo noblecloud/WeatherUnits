@@ -1,48 +1,45 @@
-[Location]
-timezone =
-lat =
-lon =
+# A WeatherUnits config file. Copy it, fill it in, and load it with
+# `wu.config.read('units.toml')` or by pointing WU_CONFIG_PATH at it.
+# An older .ini config still loads; `python -m WeatherUnits.config file.ini`
+# prints it as TOML.
 
+[Location]
+# timezone = "America/New_York"
+# lat = 37.1
+# lon = -76.6
 
 [LocalUnits]
+# The unit each kind of measurement is shown in.
+#
+# Mass:    milligram (mg), gram (g), kilogram (kg), ounce (oz), pound (lbs)
+# Length:  miles (mi), inches (in), meters (m), kilometers (km)
+# Time:    millisecond (ms), second (s), minute (min), hour (hr), day (d)
+# A rate separates its units with '/':  wind = "m/s"
 
-# Mass Units:
-# milligram (mg), gram (g), kilogram (kg), ounce (oz), pound (lbs)
+# wind = ""               # length / time
+# temperature = ""        # fahrenheit (f), celsius (c), kelvin (K)
+# precipitation = ""      # length
+# precipitationRate = ""  # length / time; * keeps the time unit of the value, or hour
+# pressure = ""           # bar, hPa, millibar (mb), inHg, mmHg
+# density = ""            # mass / length
+# area = ""               # m², km², ha, ft², in², mi², ac
+# energy = ""             # J, kJ, MJ, Wh, kWh, MWh, cal, BTU
+# power = ""              # W, kW, MW, hp
 
-# Length Units:
-# miles (mi), inches (in), meters (m), kilometers (km)
-
-# Time Units:
-# millisecond (ms), second (s), minute (min), hour (hr), day (d)
-
-# Multi-unit values are separated by '/'.  Example: wind = m/s
-
-wind =                    # length / time
-temperature =             # fahrenheit (f), celsius (c), kelvin (K)
-precipitation =           # length
-precipitationRate =       # length / time | * denotes to leave time the same as converting measurement or default to hour
-pressure =                # bar, hPa, millibar (mb), inHg, mmHg
-density =                 # mass / length
-area =                    # m², km², ha, ft², in², mi², ac
-energy =                  # J, kJ, MJ, Wh, kWh, MWh, cal, BTU
-power =                   # W, kW, MW, hp
-
-# 1) Any unit property can be defined by specifying key value pairs separated by a ','
-# 2) Properties are specified without the leading '_'
-# 3) Units are specified with their lowercase names or types
-# 4) Empty values will be read as '' and denote being set
-# 5) Values without an '=' will be read as None and denote being unset
+[UnitDefaults]
+# The defaults every unit starts from. A property is written without its
+# leading '_'. A key left out is unset; "" sets it to empty.
 #
 #  precision:  The number of digits allowed to be displayed past the decimal
 #              but will not exceed max
-#			   Example number: 3.14159m
-#              0: 3m		1: 3.1m		2: 3.14m	3: 3.141m
+#               Example number: 3.14159m
+#              0: 3m        1: 3.1m        2: 3.14m    3: 3.141m
 #
-# 	 	 max:  The total number of digits that can be displayed while still showing
-#		 	   the decimal.  If shorten is True, numbers would be reduced by factors
+#           max:  The total number of digits that can be displayed while still showing
+#                the decimal.  If shorten is True, numbers would be reduced by factors
 #              of 10^3
 #              Example number: 415.25mm
-#	           2: 0.4k mm	 3: 415mm	4: 415.3mm	5: 415.25mm
+#               2: 0.4k mm     3: 415mm    4: 415.3mm    5: 415.25mm
 #
 #        unit: Override built in unit string
 #
@@ -55,10 +52,10 @@ power =                   # W, kW, MW, hp
 #         exp: Override exponent.  I can't imagine why this would be used
 #
 #    show_unit: Show unit
-#              True: 5km	False: 5
+#              True: 5km    False: 5
 #
 # leading_zero: Display zero before values less than 1
-#              True: 0.1in	False: .1in		auto (default): decides per value
+#              True: 0.1in    False: .1in        auto (default): decides per value
 #              The zero costs a digit of `max`, and that digit is sometimes
 #              the difference between showing a value and showing nothing.
 #              `auto` drops it ONLY when keeping it would render the value
@@ -97,55 +94,53 @@ power =                   # W, kW, MW, hp
 #
 #     missing: What a value with no reading (NaN, or None from a source) shows.
 #              Default ⋯.  Override per unit in [UnitProperties]:
-#              humidity = missing=--
+#              humidity = { missing = "--" }
 #
 # unit_spacer:  Determines if there is a space between measurements and their units
 #              True: 90° f    False: 90°f
 #
-# k_separator:  True: 1,000ft	 False: 1000ft
+# k_separator:  True: 1,000ft     False: 1000ft
 #
-# shorten:	   Shortens values to fit within the max display amount
-#			   True: 1k s	False: 1000s
+# shorten:       Shortens values to fit within the max display amount
+#               True: 1k s    False: 1000s
 #
-# slide:	   Scale units for the appropriate values | Not yet implemented
-#			   True: 1km		False: 1000m
+# slide:       Scale units for the appropriate values | Not yet implemented
+#               True: 1km        False: 1000m
 #
-# cardinal:	   Show degrees as cardinal direction | shorten decides full vs abbreviated name
-#              True: 180°	False: S
+# cardinal:       Show degrees as cardinal direction | shorten decides full vs abbreviated name
+#              True: 180°    False: S
 #
 # key: Key to be used for other programs
 #
-# size_hint:	   Override generated size hint string.  Useful for when you know the
+# size_hint:       Override generated size hint string.  Useful for when you know the
 #              expected max string length.
 #
 
 precision = 1
 digit_budget = 3
-unit =
-suffix =
-unit_symbol =
-unit_spacer = True
-title =
+unit = ""
+suffix = ""
+unit_symbol = ""
+unit_spacer = true
+title = ""
 exp = 1
-slide = False
-show_unit = True
-shorten = False
-k_separator = None
-key
-size_hint
-trailing_zeros = off
-true_zero = True
-missing = ⋯
+slide = false
+show_unit = true
+shorten = false
+trailing_zeros = "off"
+true_zero = true
+missing = "⋯"
 
 [UnitProperties]
-# Any unit property can be defined by specifying key value pairs separated by a ','
-Tiny = precision=3, digit_budget=4
-Small = precision=2, digit_budget=4
-Medium = precision=1, digit_budget=3
-Large = precision=1, digit_budget=3
-Huge = precision=2, digit_budget=3
-mmHg = precision=2, digit_budget=5
-voltage = precision=2, digit_budget=3, unit_spacer=False
-temperature = precision=1, digit_budget=3, unit_spacer=False, shorten=False, k_separator=True
-direction = cardinal=True, degrees=False
-strikes = precision=2, digit_budget=5
+# Per unit or unit type, by lowercase name, type or symbol, as an inline table
+# of the same properties. Values can't contain ',' or '='.
+Tiny = { precision = 3, digit_budget = 4 }
+Small = { precision = 2, digit_budget = 4 }
+Medium = { precision = 1, digit_budget = 3 }
+Large = { precision = 1, digit_budget = 3 }
+Huge = { precision = 2, digit_budget = 3 }
+mmHg = { precision = 2, digit_budget = 5 }
+voltage = { precision = 2, digit_budget = 3, unit_spacer = false }
+temperature = { precision = 1, digit_budget = 3, unit_spacer = false, shorten = false, k_separator = true }
+direction = { cardinal = true, degrees = false }
+strikes = { precision = 2, digit_budget = 5 }

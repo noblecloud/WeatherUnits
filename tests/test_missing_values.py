@@ -99,10 +99,10 @@ class TestPlaceholderLevels(TestCase):
 		import subprocess, sys, textwrap
 		from pathlib import Path
 		from tempfile import TemporaryDirectory
-		si = Path(__file__).resolve().parents[1] / 'src' / 'WeatherUnits' / 'config' / 'si.ini'
-		text = si.read_text(encoding='utf-8').replace('missing = ⋯', 'missing = n/a').replace('kelvin = unit_symbol=', 'kelvin = unit_symbol=, missing=no data')
+		si = Path(__file__).resolve().parents[1] / 'src' / 'WeatherUnits' / 'config' / 'si.toml'
+		text = si.read_text(encoding='utf-8').replace('missing = "⋯"', 'missing = "n/a"').replace('kelvin = { unit_symbol = "" }', 'kelvin = { unit_symbol = "", missing = "no data" }')
 		with TemporaryDirectory() as folder:
-			path = Path(folder) / 'units.ini'
+			path = Path(folder) / 'units.toml'
 			path.write_text(text, encoding='utf-8')
 			script = textwrap.dedent('''
 				from WeatherUnits.length import Meter
