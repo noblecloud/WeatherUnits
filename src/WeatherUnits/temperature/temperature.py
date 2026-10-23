@@ -68,7 +68,8 @@ class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 	def heatIndex(self, rh: float):
 		R = float(self.normalizeRh(rh))
 
-		if 300 > self.kelvin < 318 or R < 13:
+		# below 300 K (about 27 °C, 80 °F) the regression does not apply
+		if self.kelvin < 300 or R < 13:
 			return self
 
 		if self._unit == 'f':
@@ -76,13 +77,13 @@ class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 		else:
 			c = [-8.78469475556, 1.61139411, 2.33854883889, -0.14611605, -0.012308094, -0.0164248277778, 0.002211732, 0.00072546, -0.000003582]
 
-		T = float(self if self._unit != 'k' else self.c)
+		T = float(self if self._unit != 'K' else self.c)
 		T2 = pow(T, 2)
 		R2 = pow(R, 2)
 
 		hi = c[0] + (c[1]*T) + (c[2]*R) + (c[3]*T*R) + (c[4]*T2) + (c[5]*R2) + (c[6]*T2*R) + (c[7]*T*R2) + (c[8]*T2*R2)
 
-		hi = hi if self._unit != 'k' else hi + 273.15
+		hi = hi if self._unit != 'K' else hi + 273.15
 		value = self.transform(self.__class__(hi))
 		value.title = 'Heat Index'
 		value.calculated = True
@@ -148,5 +149,6 @@ class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 	# abbreviations
 	c = celsius
 	k = kelvin
+	K = kelvin  # the symbol, which unit lookup by attribute uses
 	kel = kelvin
 	f = fahrenheit
