@@ -11,6 +11,7 @@ Length.Meter = Meter
 Length.Decameter = Decameter
 Length.Hectometer = Hectometer
 Length.Kilometer = Kilometer
+Length.NauticalMile = NauticalMile
 
 Length.Line = Line
 Length.Inch = Inch

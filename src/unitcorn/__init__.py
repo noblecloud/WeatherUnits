@@ -29,6 +29,7 @@ from .energy import Energy, Power
 from . import airQuality as AirQuality
 from . import digital as Digital
 from . import derived
+from .derived.wind import Beaufort
 
 Rate = derived.DistanceOverTime
 Wind = derived.Wind
@@ -87,7 +88,8 @@ def auto(*args, dimension: Type[Dimension | Dimensionless] = None) -> Measuremen
 
 __all__ = ['auto', 'Measurement', 'Temperature', 'Length', 'Mass', 'Time', 'Pressure', 'Area', 'Energy', 'Power', 'Other', 'Light', 'PartsPer',
 	'Volume', 'Density', 'PartsPer', 'Rate', 'Wind', 'Precipitation', 'AirQuality', 'Voltage', 'Digital', 'config',
-	'Precipitation', 'LightningStrike', 'Angle', 'Percentage', 'Humidity', 'Direction', 'Coverage', 'Probability']
+	'Precipitation', 'LightningStrike', 'Angle', 'Percentage', 'Humidity', 'Direction', 'Coverage', 'Probability',
+	'Beaufort']
 
 
 def _registerDimensions():
