@@ -34,8 +34,7 @@ class Config(ConfigParser):
 			except Exception:
 				log.error(f'Unable to set locale to {self.locale}')
 		if path is None:
-			path = 'us.ini' if (self.locale.lower().endswith('us') or 'United States' in self.locale) else 'si.ini'
-			with resources.path(__package__, path) as path:
+			with resources.path(__package__, self.defaultFileFor(self.locale)) as path:
 				self.path = path
 		else:
 			if isinstance(path, str):
@@ -44,6 +43,13 @@ class Config(ConfigParser):
 
 		self.read(path, reloadModules=False)
 		log.debug(f'Loaded "{path}"')
+
+	@staticmethod
+	def defaultFileFor(name: Optional[str]) -> str:
+		"""The bundled config for a locale name. An unknown locale (None) gets `si.ini`."""
+		if name and (name.lower().endswith('us') or 'United States' in name):
+			return 'us.ini'
+		return 'si.ini'
 
 	def __hash__(self):
 		return hash(self.path)
@@ -205,7 +211,11 @@ class Config(ConfigParser):
 config = Config()
 
 # search = config.search('locale', fuzzy=True, default=locale.getlocale()[0], accept=locale.locale_alias)
-locale.setlocale(locale.LC_ALL, '')
+try:
+	locale.setlocale(locale.LC_ALL, '')
+except locale.Error:
+	# LANG names a locale the host doesn't have. Stay on the C locale rather than fail the import.
+	log.debug('The locale set in the environment is not installed, using the C locale')
 
 try:
 	# The C and POSIX locales report no thousands separator at all, and those

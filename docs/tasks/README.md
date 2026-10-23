@@ -24,10 +24,10 @@ These are blocked on a judgment call, not on effort.
   2026-10-22.** Metric and imperial units compare, order, sort and add again;
   `==` compares the value, not the display (`displays_same` for that); `hash`
   agrees with `==`; different dimensions raise `TypeError` when ordered.
-- **[missing-values-and-locale.md](missing-values-and-locale.md)** — NaN becomes the
-  upper limit (`Humidity(nan)` shows `100%`); the import crashes when the locale is
-  unrecognised; the test suite's verdict depends on the host locale (19 failures
-  under `us.ini`).
+- ~~**[missing-values-and-locale.md](missing-values-and-locale.md)**~~ — **Resolved
+  2026-10-22.** NaN becomes the upper limit (`Humidity(nan)` shows `100%`); the
+  import crashes when the locale is unrecognised; the test suite's verdict depends
+  on the host locale (19 failures under `us.ini`).
 
 ## Ready to pick up
 

@@ -19,7 +19,7 @@ log = logging.getLogger('WeatherUnits').getChild('Measurement')
 
 
 
-from math import isclose, isinf
+from math import isclose, isinf, isnan, nan
 
 
 @lru_cache(maxsize=None)
@@ -52,7 +52,10 @@ class Measurement(SmartFloat):
 			cls._type = cls
 
 	def __new__(cls, value, title: str = None, key: str = None, timestamp: datetime = None, period: timedelta = None, **kwargs):
-		value = sorted((*cls.limits, float(value)))[1]
+		value = nan if value is None else float(value)
+		# NaN is a gap, not a number: sorting it into the limits would land it on the upper one
+		if not isnan(value):
+			value = sorted((*cls.limits, value))[1]
 		return SmartFloat.__new__(cls, value)
 
 	def __class_getitem__(cls, item):
