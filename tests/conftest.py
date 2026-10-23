@@ -1,7 +1,7 @@
-"""Pin the units config before WeatherUnits is first imported.
+"""Pin the units config before unitcorn is first imported.
 
 The config is read at import time, in a class body, so this has to run before
-the first `import WeatherUnits`. Without it the default file follows the
+the first `import unitcorn`. Without it the default file follows the
 machine's locale (`us.toml` for en_US, `si.toml` otherwise) and the suite passes
 or fails with the locale of whoever runs it.
 
@@ -11,10 +11,10 @@ or fails with the locale of whoever runs it.
 bundled file that also loads on the CI hosts. `tests/config.ini` is not used: it
 has drifted from `us.toml` (`wind = mi/hraust`, stale `[Units]` section).
 
-`setdefault`, so `WU_CONFIG_PATH=... pytest` still tries another file. Under
+`setdefault`, so `UNITCORN_CONFIG_PATH=... pytest` still tries another file. Under
 `us.toml` 18 tests fail: they assert si.toml's values rather than set their own.
 """
 import os
 from pathlib import Path
 
-os.environ.setdefault('WU_CONFIG_PATH', str(Path(__file__).resolve().parents[1] / 'src' / 'WeatherUnits' / 'config' / 'si.toml'))
+os.environ.setdefault('UNITCORN_CONFIG_PATH', str(Path(__file__).resolve().parents[1] / 'src' / 'unitcorn' / 'config' / 'si.toml'))

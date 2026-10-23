@@ -15,7 +15,7 @@ from .Registry import UnitRegistry
 from ..utils import HashSlice, Other, Self
 from ..config import config
 
-log = logging.getLogger('WeatherUnits').getChild('Measurement')
+log = logging.getLogger('unitcorn').getChild('Measurement')
 
 
 

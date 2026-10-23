@@ -13,9 +13,9 @@ SRC = str(Path(__file__).resolve().parents[1] / 'src')
 
 
 def importIn(env: dict) -> subprocess.CompletedProcess:
-	base = {k: v for k, v in os.environ.items() if k not in ('LANG', 'LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'WU_CONFIG_PATH')}
+	base = {k: v for k, v in os.environ.items() if k not in ('LANG', 'LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'UNITCORN_CONFIG_PATH')}
 	return subprocess.run(
-		[sys.executable, '-I', '-c', 'import sys; sys.path.insert(0, sys.argv[1]); import WeatherUnits', SRC],
+		[sys.executable, '-I', '-c', 'import sys; sys.path.insert(0, sys.argv[1]); import unitcorn', SRC],
 		capture_output=True, text=True, env={**base, **env}, check=False,
 	)
 
@@ -39,7 +39,7 @@ class TestDefaultConfig(TestCase):
 	"""Which file loads when nothing names one."""
 
 	def pick(self, name):
-		from WeatherUnits.config import Config
+		from unitcorn.config import Config
 		return Config.defaultFileFor(name)
 
 	def test_us_locales_get_us_ini(self):

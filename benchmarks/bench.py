@@ -6,8 +6,8 @@ import timeit
 import tracemalloc
 from time import perf_counter
 
-import WeatherUnits as wu
-from WeatherUnits import Length, Temperature, Pressure, Wind
+import unitcorn as uc
+from unitcorn import Length, Temperature, Pressure, Wind
 
 Celsius, Fahrenheit, Meter = Temperature.Celsius, Temperature.Fahrenheit, Length.Meter
 Hectopascal = Pressure.Hectopascal
@@ -40,14 +40,14 @@ def importTime():
 	best = None
 	for _ in range(5):
 		t = perf_counter()
-		subprocess.run([sys.executable, '-c', 'import WeatherUnits'], check=True)
+		subprocess.run([sys.executable, '-c', 'import unitcorn'], check=True)
 		dt = perf_counter() - t
 		best = dt if best is None else min(best, dt)
-	out = subprocess.run([sys.executable, '-X', 'importtime', '-c', 'import WeatherUnits'], capture_output=True, text=True).stderr
+	out = subprocess.run([sys.executable, '-X', 'importtime', '-c', 'import unitcorn'], capture_output=True, text=True).stderr
 	rows = []
 	for line in out.splitlines()[1:]:
 		mt = re.match(r'import time:\s+(\d+) \|\s+(\d+) \| (\s*)(.*)', line)
-		if mt and len(mt.group(3)) == 0 or (mt and mt.group(4).startswith('WeatherUnits')):
+		if mt and len(mt.group(3)) == 0 or (mt and mt.group(4).startswith('unitcorn')):
 			rows.append((int(mt.group(2)), mt.group(3) + mt.group(4)))
 	return best * 1000, sorted(rows, reverse=True)[:6]
 
@@ -79,7 +79,7 @@ if __name__ == '__main__':
 			pstats.Stats(pr).strip_dirs().sort_stats(key).print_stats(18)
 		sys.exit()
 	ms, top = importTime()
-	print(f'import WeatherUnits (wall, best of 5): {ms:.1f} ms')
+	print(f'import unitcorn (wall, best of 5): {ms:.1f} ms')
 	for us, name in top:
 		print(f'    {us / 1000:7.1f} ms cumulative  {name}')
 	print()

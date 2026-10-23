@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from WeatherUnits import Length
+from unitcorn import Length
 
 
 class TestUnitNamesCache(TestCase):
@@ -30,7 +30,7 @@ class TestUnitNamesCache(TestCase):
 
 class TestSpecParseCache(TestCase):
 	def test_repeat_and_interleaved_specs_are_stable(self):
-		from WeatherUnits import Temperature
+		from unitcorn import Temperature
 		c = Temperature.Celsius(21.345)
 		specs = ['', 'precision=2', 'precision=1, show_unit=False', 'precision=0, type=f']
 		first = [format(c, s) for s in specs]
@@ -38,7 +38,7 @@ class TestSpecParseCache(TestCase):
 			self.assertEqual([format(c, s) for s in reversed(specs)][::-1], first)
 
 	def test_spec_param_values_are_not_shared_between_calls(self):
-		from WeatherUnits.base._SmartFloat import _parseSpec
+		from unitcorn.base._SmartFloat import _parseSpec
 		_, a = _parseSpec('precision=2', 'C')
 		self.assertEqual(a, {'precision': 2})
 		_, b = _parseSpec('precision=2', 'C')

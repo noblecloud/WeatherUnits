@@ -7,8 +7,8 @@ missing temperature as `inf°`.
 from math import isnan, nan
 from unittest import TestCase
 
-from WeatherUnits import Length, Pressure, Temperature
-from WeatherUnits.others import Humidity, Percentage
+from unitcorn import Length, Pressure, Temperature
+from unitcorn.others import Humidity, Percentage
 
 
 class TestNaNPassesThrough(TestCase):
@@ -61,7 +61,7 @@ class TestPlaceholder(TestCase):
 		self.assertNotIn('inf', repr(Temperature.Celsius(nan)))
 
 	def test_the_config_names_it(self):
-		from WeatherUnits.config import config
+		from unitcorn.config import config
 		self.assertEqual('⋯', config['UnitDefaults']['missing'])
 
 
@@ -99,15 +99,15 @@ class TestPlaceholderLevels(TestCase):
 		import subprocess, sys, textwrap
 		from pathlib import Path
 		from tempfile import TemporaryDirectory
-		si = Path(__file__).resolve().parents[1] / 'src' / 'WeatherUnits' / 'config' / 'si.toml'
+		si = Path(__file__).resolve().parents[1] / 'src' / 'unitcorn' / 'config' / 'si.toml'
 		text = si.read_text(encoding='utf-8').replace('missing = "⋯"', 'missing = "n/a"').replace('kelvin = { unit_symbol = "" }', 'kelvin = { unit_symbol = "", missing = "no data" }')
 		with TemporaryDirectory() as folder:
 			path = Path(folder) / 'units.toml'
 			path.write_text(text, encoding='utf-8')
 			script = textwrap.dedent('''
-				from WeatherUnits.length import Meter
-				from WeatherUnits.temperature import Kelvin
+				from unitcorn.length import Meter
+				from unitcorn.temperature import Kelvin
 				print(f'{Meter(None)}|{Kelvin(None)}')
 			''')
-			out = subprocess.run([sys.executable, '-c', script], env={**__import__('os').environ, 'WU_CONFIG_PATH': str(path)}, capture_output=True, text=True, encoding='utf-8')
+			out = subprocess.run([sys.executable, '-c', script], env={**__import__('os').environ, 'UNITCORN_CONFIG_PATH': str(path)}, capture_output=True, text=True, encoding='utf-8')
 		self.assertEqual('n/a|no data', out.stdout.strip(), out.stderr)

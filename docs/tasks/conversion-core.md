@@ -6,7 +6,7 @@
 
 ## Purpose
 
-WeatherUnits exists for easy, automatic conversion of values from data APIs, to normalise and humanise them. Any data API, not just weather. Two decisions follow from that, both made by the maintainer on 2026-10-04:
+unitcorn exists for easy, automatic conversion of values from data APIs, to normalise and humanise them. Any data API, not just weather. Two decisions follow from that, both made by the maintainer on 2026-10-04:
 
 - Defining a unit should be a class declaration. Everything else should be automatic.
 - Conversion is "convoluted" today. This brief fixes that.

@@ -3,8 +3,8 @@ from math import isclose
 
 import pytest
 
-from WeatherUnits import Length
-from WeatherUnits.temperature import Celsius, CelsiusChange, Fahrenheit, FahrenheitChange, Kelvin, summingReadings
+from unitcorn import Length
+from unitcorn.temperature import Celsius, CelsiusChange, Fahrenheit, FahrenheitChange, Kelvin, summingReadings
 
 
 def test_reading_minus_reading_is_a_change_in_the_left_degrees():

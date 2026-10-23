@@ -6,11 +6,11 @@ foot as unrelated to a metre. See docs/tasks/same-dimension-regressions.md.
 """
 import pytest
 
-from WeatherUnits import errors
-from WeatherUnits.derived.rate import MetersPerSecond, MilesPerHour
-from WeatherUnits.length import Centimeter, Foot, Kilometer, Meter, Mile, Millimeter
-from WeatherUnits.temperature import Celsius, Fahrenheit, Kelvin
-from WeatherUnits.time_ import Time
+from unitcorn import errors
+from unitcorn.derived.rate import MetersPerSecond, MilesPerHour
+from unitcorn.length import Centimeter, Foot, Kilometer, Meter, Mile, Millimeter
+from unitcorn.temperature import Celsius, Fahrenheit, Kelvin
+from unitcorn.time_ import Time
 
 
 def test_add_across_systems():

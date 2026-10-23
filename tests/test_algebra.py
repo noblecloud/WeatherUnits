@@ -3,9 +3,9 @@ from math import isclose
 
 import pytest
 
-from WeatherUnits import Area, Energy, Length, Mass, Power, Pressure, Temperature, Time
-from WeatherUnits.base import Compound
-from WeatherUnits.derived.rate import MilesPerHour
+from unitcorn import Area, Energy, Length, Mass, Power, Pressure, Temperature, Time
+from unitcorn.base import Compound
+from unitcorn.derived.rate import MilesPerHour
 
 Meter, Foot, Mile, Millimeter = Length.Meter, Length.Foot, Length.Mile, Length.Millimeter
 Second, Hour = Time.Second, Time.Hour
@@ -138,22 +138,22 @@ class TestNamedCompounds:
 
 class TestIrradiance:
 	def test_irradiance_over_an_area_is_power(self):
-		from WeatherUnits import Light
+		from unitcorn import Light
 		r = Light.Irradiance(500) * Area.SquareMeter(20)
 		assert isinstance(r, Power) and isclose(float(r['kW']), 10)
 
 	def test_power_per_area_is_irradiance(self):
-		from WeatherUnits import Light
+		from unitcorn import Light
 		r = Power.Kilowatt(10) / Area.SquareMeter(20)
 		assert isinstance(r, Light.Irradiance) and isclose(float(r), 500)
 
 	def test_irradiance_for_a_time_is_energy(self):
-		from WeatherUnits import Light
+		from unitcorn import Light
 		r = Light.Irradiance(500) * Area.SquareMeter(20) * Time.Hour(3)
 		assert isinstance(r, Energy) and isclose(float(r['kWh']), 30)
 
 	def test_illuminance_has_no_dimension(self):
-		from WeatherUnits import Light
-		from WeatherUnits.errors import Conversion
+		from unitcorn import Light
+		from unitcorn.errors import Conversion
 		with pytest.raises(Conversion.BadConversion):
 			Light.Illuminance(500) * Area.SquareMeter(20)

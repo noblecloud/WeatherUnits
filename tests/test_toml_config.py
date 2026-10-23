@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from WeatherUnits.config import Config, config
+from unitcorn.config import Config, config
 
-CONFIG = Path(__file__).resolve().parents[1] / 'src' / 'WeatherUnits' / 'config'
+CONFIG = Path(__file__).resolve().parents[1] / 'src' / 'unitcorn' / 'config'
 
 
 def test_unit_properties_tables_become_property_lines():
@@ -50,18 +50,18 @@ def test_an_ini_config_converts_to_the_same_settings(tmp_path):
 def test_the_converter_runs_as_a_module(tmp_path):
 	ini = tmp_path / 'units.ini'
 	ini.write_text('[LocalUnits]\ntemperature = f\n', encoding='utf-8')
-	out = subprocess.run([sys.executable, '-m', 'WeatherUnits.config', str(ini)], capture_output=True, text=True, encoding='utf-8', check=True)
+	out = subprocess.run([sys.executable, '-m', 'unitcorn.config', str(ini)], capture_output=True, text=True, encoding='utf-8', check=True)
 	assert tomllib.loads(out.stdout) == {'LocalUnits': {'temperature': 'f'}}
 
 
 @pytest.mark.parametrize('suffix', ['.toml', '.ini'])
 def test_reading_either_format_localizes(tmp_path, suffix):
-	import WeatherUnits as wu
+	import unitcorn as uc
 	path = tmp_path / f'units{suffix}'
 	path.write_text('[Units]\nlength = "mi"\n' if suffix == '.toml' else '[Units]\nlength = mi\n', encoding='utf-8')
 	original = config.path
 	try:
 		config.read(str(path))
-		assert wu.Length.localizedUnit is wu.Length.Mile
+		assert uc.Length.localizedUnit is uc.Length.Mile
 	finally:
 		config.read(str(original))

@@ -11,12 +11,17 @@ from typing import (
 	NamedTuple
 )
 
-DEBUG = environ.get('WU_DEBUG', False)
+def getEnv(name: str, default: Any = None) -> Any:
+	"""Read ``UNITCORN_<name>``, falling back to the pre-rename ``WU_<name>``."""
+	return environ.get(f'UNITCORN_{name}', environ.get(f'WU_{name}', default))
+
+
+DEBUG = getEnv('DEBUG', False)
 
 if TYPE_CHECKING:
 	from .base import Measurement
 
-log = logging.getLogger('WeatherUnits').getChild('utils')
+log = logging.getLogger('unitcorn').getChild('utils')
 
 numeric = re.compile(r'^[-+]?[0-9]*\.?[0-9]+$')
 

@@ -12,7 +12,7 @@ The strict parser's structured errors (`UnknownUnit` with candidates) are also t
 
 ## Problems (probed on `dev` @ aa10d20)
 
-- `wu.auto(value, unit)` crashes for every unit. It iterates over the class `__findUnitClass__` returns (`__init__.py` ~54-82).
+- `uc.auto(value, unit)` crashes for every unit. It iterates over the class `__findUnitClass__` returns (`__init__.py` ~54-82).
 - The registry is global and unscoped. `Minute.__findUnitClass__('m')` returns Meter.
 - Symbol collisions:
   - `'ms'`: Meter plural vs Millisecond;
@@ -26,21 +26,21 @@ The strict parser's structured errors (`UnknownUnit` with candidates) are also t
 | `%` | Hundred (PartsPer) |
 
 - `wind.MetersPerSecond(10)['km/h']` gives 0.01 km/s, a wrong unit. `['kn']` returns m/s unchanged, with no error.
-- `wu.auto('5 X')` fails for `°C`, `°F`, `kn`, `kt`, `kWh`, `W`, `h`, `°` and `deg`.
+- `uc.auto('5 X')` fails for `°C`, `°F`, `kn`, `kt`, `kWh`, `W`, `h`, `°` and `deg`.
 - Compound units (`km/h`, `m/s`, `W/m²`, `µg/m³`, `mm/h`) raise `NotImplementedError`.
 
 ## Design
 
-- `wu.parse('10 m/s')` and `wu.parse(10, 'm/s')` are **strict**: exact symbol, alias or name.
+- `uc.parse('10 m/s')` and `uc.parse(10, 'm/s')` are **strict**: exact symbol, alias or name.
   - Case-sensitive where it matters: `K` vs `k`, `mm` vs `Mm`.
   - Unicode normalisation: `µ`/`μ`/`u`, `²`/`^2`/`2`, `°`, `·`/`*`.
 - Lookup is **scoped by dimension** when one is known (`Time` + `'m'` gives Minute).
 - Unknown or ambiguous input raises `UnknownUnit` / `AmbiguousUnit`, carrying the candidates.
-- **Fuzzy suggestions only via an explicit `wu.suggest('degC')`**, which returns a ranked list and never auto-picks.
+- **Fuzzy suggestions only via an explicit `uc.suggest('degC')`**, which returns a ranked list and never auto-picks.
 - Aliases are declared on the class (see [conversion-core.md](conversion-core.md) phase 2). A collision raises at class creation, so the test import catches it.
 - **Compound units** parse via the algebra. Until then, register the common compound symbols as aliases.
 - `w['km/h']` uses the same parser.
-- `wu.auto` becomes a thin wrapper over `wu.parse`, or is deprecated. Decide when you get there, and say which.
+- `uc.auto` becomes a thin wrapper over `uc.parse`, or is deprecated. Decide when you get there, and say which.
 
 ## Phases
 

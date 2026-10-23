@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from WeatherUnits import Length, Temperature, Time
-from WeatherUnits import errors
+from unitcorn import Length, Temperature, Time
+from unitcorn import errors
 
 
 class TestDimensionality(TestCase):

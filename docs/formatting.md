@@ -16,7 +16,7 @@ How a measurement becomes a string.
 ## Quick start
 
 ```python
->>> from WeatherUnits import Wind, Temperature
+>>> from unitcorn import Wind, Temperature
 >>> speed = Wind.MilesPerHour(4.1)
 
 >>> f'{speed}'                  # class defaults
@@ -101,7 +101,7 @@ Because the float spec is claimed *before* parameters (step 2), a
 `key: value` pair whose **value looks like a float spec** is swallowed:
 
 ```python
->>> from WeatherUnits import Length
+>>> from unitcorn import Length
 >>> i = Length.Inch(51)
 >>> f'{i:unit_spacer=_}'    # '=' → parsed as a parameter
 '51_in'
@@ -259,7 +259,7 @@ something that looks equivalent and is not — two such attempts are recorded
 below precisely so they don't get re-attempted.
 
 ```python
->>> from WeatherUnits import Length
+>>> from unitcorn import Length
 >>> format(Length.Inch(0.5),  'digit_budget=2, show_unit=False')                 # nothing to gain
 '0.5'
 >>> format(Length.Inch(0.04), 'precision=2, digit_budget=2, show_unit=False')    # else it's '0.0'

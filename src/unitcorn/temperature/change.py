@@ -13,7 +13,7 @@ from ..utils import Self
 
 __all__ = ['TemperatureChange', 'CelsiusChange', 'FahrenheitChange', 'KelvinChange', 'summingReadings']
 
-_summing: ContextVar[bool] = ContextVar('WeatherUnits.summingReadings', default=False)
+_summing: ContextVar[bool] = ContextVar('unitcorn.summingReadings', default=False)
 
 
 @contextmanager

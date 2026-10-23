@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-import WeatherUnits as wu
-from WeatherUnits import Temperature
-from WeatherUnits.temperature import Celsius, Fahrenheit, Kelvin
+import unitcorn as uc
+from unitcorn import Temperature
+from unitcorn.temperature import Celsius, Fahrenheit, Kelvin
 
 
 class TestKelvinSymbol:
@@ -17,7 +17,7 @@ class TestKelvinSymbol:
 	@pytest.mark.parametrize('spelling', ['k', 'K', 'kelvin', 'Kelvin'])
 	def test_lookup_still_resolves(self, spelling):
 		assert Temperature.__findUnitClass__(spelling) is Kelvin
-		assert wu.Measurement.__findUnitClass__(spelling) is Kelvin
+		assert uc.Measurement.__findUnitClass__(spelling) is Kelvin
 
 	@pytest.mark.parametrize('spelling', ['k', 'K', 'kelvin'])
 	def test_subscript_conversion(self, spelling):
@@ -25,7 +25,7 @@ class TestKelvinSymbol:
 		assert type(Celsius(0)[spelling]) is Kelvin
 
 	def test_config_key_binds_by_name_and_symbol(self):
-		from WeatherUnits.config import config
+		from unitcorn.config import config
 		assert config.unitPropertiesKeyFor('Kelvin', 'K') == 'kelvin'
 		assert config.unitPropertiesKeyFor('Kelvin', 'k') == 'kelvin'
 
@@ -58,20 +58,20 @@ class TestHeatIndex:
 class TestAuto:
 
 	def test_value_and_unit(self):
-		m = wu.auto(5, 'm')
+		m = uc.auto(5, 'm')
 		# by name: test_readme registers its own Meter, which shadows the unit lookup
 		assert type(m).__name__ == 'Meter'
 		assert float(m) == 5
 		assert m.unit == 'm'
 
 	def test_string_value(self):
-		assert type(wu.auto('5', 'km')).__name__ == 'Kilometer'
+		assert type(uc.auto('5', 'km')).__name__ == 'Kilometer'
 
 	def test_unit_only_still_works(self):
-		assert wu.auto('m').__name__ == 'Meter'
+		assert uc.auto('m').__name__ == 'Meter'
 
 
 class TestPyTyped:
 
 	def test_marker_in_package(self):
-		assert (Path(wu.__file__).parent / 'py.typed').is_file()
+		assert (Path(uc.__file__).parent / 'py.typed').is_file()

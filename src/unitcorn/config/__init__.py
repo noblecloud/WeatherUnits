@@ -12,9 +12,9 @@ import re
 from pathlib import Path
 from typing import Any, Optional, Callable, Set, Iterable, Mapping
 
-from ..utils import convertString, setPropertiesFromConfig, scored_get_close_matches, best_match, CaseInsensitiveKey
+from ..utils import getEnv, convertString, setPropertiesFromConfig, scored_get_close_matches, best_match, CaseInsensitiveKey
 
-log = getLogger('WeatherUnits').getChild('config')
+log = getLogger('unitcorn').getChild('config')
 
 
 class Config(ConfigParser):
@@ -27,7 +27,7 @@ class Config(ConfigParser):
 	def __init__(self, *args, path: str = None, locale: str = None, **kwargs):
 		self.optionxform = CaseInsensitiveKey
 		self.__localUnits = None
-		path = path or os.environ.get('WU_CONFIG_PATH')
+		path = path or getEnv('CONFIG_PATH')
 		super(Config, self).__init__(allow_no_value=True)
 
 		if locale is not None:
@@ -119,7 +119,7 @@ class Config(ConfigParser):
 
 	@staticmethod
 	def toToml(path: str | Path) -> str:
-		"""An INI config file rewritten as TOML, for moving a config over: `python -m WeatherUnits.config file.ini`."""
+		"""An INI config file rewritten as TOML, for moving a config over: `python -m unitcorn.config file.ini`."""
 		parser = ConfigParser(allow_no_value=True, inline_comment_prefixes=('#',))
 		parser.optionxform = str
 		parser.read(path, encoding='utf-8')
@@ -212,7 +212,7 @@ class Config(ConfigParser):
 	def localUnits(self) -> SectionProxy:
 		# Most specific first. A set here made the pick depend on string hash order,
 		# which changes from one process to the next when a file has more than one.
-		possibleSections = (f'Units_{self.locale}', 'Units', 'LocalUnits', 'WeatherUnits')
+		possibleSections = (f'Units_{self.locale}', 'Units', 'LocalUnits', 'unitcorn', 'WeatherUnits')
 		existingSections = set(self.sections())
 		if self.__localUnits is None:
 			if (name := next((section for section in possibleSections if section in existingSections), None)) is None:

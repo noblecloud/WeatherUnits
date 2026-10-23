@@ -24,3 +24,9 @@ jobs:
         # The suite pins si.ini itself. Run it under the C locale so a test that
         # leans on the host's locale fails here, not only on a developer's machine.
         run: LANG=C.UTF-8 poetry run pytest
+      - name: Build unitcorn and the WeatherUnits shim
+        run: |
+          poetry build -o dist
+          python -m pip wheel --no-deps -w dist ./compat/WeatherUnits
+          python -m pip install dist/unitcorn-*.whl dist/weatherunits-*.whl
+          cd /tmp && python -W "error:WeatherUnits has been renamed" -c "import unitcorn" && python -c "import WeatherUnits, unitcorn; assert WeatherUnits.Length is unitcorn.Length"

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from WeatherUnits import Wind, Length, Time
+from unitcorn import Wind, Length, Time
 
 class TestDerived(TestCase):
 	def test_wind_speed(self):
@@ -20,7 +20,7 @@ class TestDerived(TestCase):
 
 	def test_wind_direction(self):
 		mph = Wind.MilesPerHour(10)
-		from WeatherUnits import Direction
+		from unitcorn import Direction
 		mph.direction = Direction(180)
 		self.assertEqual(float(mph.direction), 180)
 		# No trailing space: Direction is dimensionless, and a unit spacer
@@ -28,7 +28,7 @@ class TestDerived(TestCase):
 		self.assertEqual(str(mph.direction), 'S')
 
 	def test_manual_derived(self):
-		from WeatherUnits import DerivedMeasurement
+		from unitcorn import DerivedMeasurement
 		# Length / Time should create a DistanceOverTime (or similar derived unit)
 		dist = Length.Mile(10)
 		time = Time.Hour(1)
@@ -69,10 +69,10 @@ class TestDerived(TestCase):
 
 def test_rates_in_different_units_compare_by_size():
 	"""1.4 in/hr is more than 1 in/hr and less than 40 mm/hr (1.575 in/hr), whichever unit each is written in."""
-	import WeatherUnits as wu
-	Hourly = wu.Precipitation.Hourly
-	rate = Hourly(wu.Length.Inch(1.4), wu.Time.Hour(1))
-	one = Hourly(wu.derived.DistanceOverTime.MetersPerSecond(0.0254 / 3600))
+	import unitcorn as uc
+	Hourly = uc.Precipitation.Hourly
+	rate = Hourly(uc.Length.Inch(1.4), uc.Time.Hour(1))
+	one = Hourly(uc.derived.DistanceOverTime.MetersPerSecond(0.0254 / 3600))
 	assert rate > one and rate >= one and not rate < one
-	assert not rate > Hourly(wu.derived.DistanceOverTime.MetersPerSecond(0.040 / 3600))
-	assert rate < Hourly(wu.derived.DistanceOverTime.MetersPerSecond(0.040 / 3600))
+	assert not rate > Hourly(uc.derived.DistanceOverTime.MetersPerSecond(0.040 / 3600))
+	assert rate < Hourly(uc.derived.DistanceOverTime.MetersPerSecond(0.040 / 3600))

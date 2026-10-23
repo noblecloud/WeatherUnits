@@ -1,6 +1,6 @@
-# A WeatherUnits config file. Copy it, fill it in, and load it with
-# `wu.config.read('units.toml')` or by pointing WU_CONFIG_PATH at it.
-# An older .ini config still loads; `python -m WeatherUnits.config file.ini`
+# A unitcorn config file. Copy it, fill it in, and load it with
+# `uc.config.read('units.toml')` or by pointing UNITCORN_CONFIG_PATH at it.
+# An older .ini config still loads; `python -m unitcorn.config file.ini`
 # prints it as TOML.
 
 [Location]
