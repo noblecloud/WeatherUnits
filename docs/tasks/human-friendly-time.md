@@ -1,6 +1,6 @@
 # Time should rescale on heuristics, not on digit budget
 
-**Status:** noted 2026-07-26, not fixed.
+**Status:** job 1 done in unitcorn (branch `feat/human-time`); job 2's unitcorn half done, the `Graph.py` half is LevityDash's and not done here. `__format_class__` untouched.
 
 `digit_budget` is the wrong lever for deciding when a duration changes unit.
 It asks "how many characters", when the real question is "is this unit still
@@ -17,8 +17,9 @@ formatter, overriding `__format__` outright rather than using a hook:
 |---|---|---|
 | `simple` | `shorten=True, plural=True` → `33 hrs` | ✅ works |
 | `simple+` | same, full unit names → `33 Hours` | ✅ works |
-| `ago` | relative, signed → `33 hrs ago` / `in 3 hrs` | ✅ works |
-| `timestamp` | magnitude-escalating clock form | ❌ **raises TypeError** |
+| `ago` | relative, signed → `1.4 days ago` / `in 3 hrs` (now uses the ladder) | ✅ works |
+| `timestamp` | magnitude-escalating clock form | ✅ fixed (was a TypeError) |
+| `human` / `human+` | unit chosen by `Time.ladder`, then `simple` rendering | ✅ new |
 
 `timestamp` is the one carrying the intended heuristic:
 
@@ -32,8 +33,8 @@ because the spec errors before it gets there.
 
 ## Two concrete jobs
 
-1. **Fix `timestamp`.** It is the existing home for this logic.
-2. **Give the graph tooltip a better spec.** `Graph.py` currently hand-rolls
+1. **Fix `timestamp`.** It is the existing home for this logic. **Done.** The TypeError came from `Time.common` holding `Scale` members that `splitInto`/`onlyInt` then call as types; `timestamp` now does its own arithmetic. Output: `MM:SS`, `H:MM:SS` to 100 h, `4d 5:00:00` past it, `1y 35d 0:00:00` from a whole year.
+2. **Give the graph tooltip a better spec.** **unitcorn half done:** `human`/`human+` and the ladder-based `ago` exist, plus `Time.humanized`. **Not done here:** the `Graph.py` change belongs to LevityDash (it can drop the hand-rolled sign and use `ago`, or `human` for the signed form). `Graph.py` currently hand-rolls
    the sign:
    ```python
    t = Second(t).auto
