@@ -58,12 +58,10 @@ def auto(*args, dimension: Type[Dimension | Dimensionless] = None) -> Measuremen
 	match args:
 		case [int(value) | float(value) | str(value), str(unit)]:
 			measurement = float(value)
-			unit = dimension.__findUnitClass__(unit)
-			cls = tuple(dimension.__findUnitClass__(u) for u in unit)
-
-			if len(cls) == 1:
-				return cls[0](measurement)
-			raise NotImplementedError('Multi-Unit values are not supported yet')
+			cls = dimension.__findUnitClass__(unit)
+			if cls is None:
+				raise ValueError(f'Unknown unit: {unit!r}')
+			return cls(measurement)
 
 		case [str(value)]:
 			number = base.FormatSpec.number.search(value)

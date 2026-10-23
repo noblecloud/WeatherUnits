@@ -1,8 +1,18 @@
 """Pin the units config before WeatherUnits is first imported.
 
-The default file follows the machine's locale (`us.toml` for en_US, `si.toml`
-otherwise), and the tests assume `si.toml`. Without this pin they pass or fail
-with the locale of whoever runs them.
+The config is read at import time, in a class body, so this has to run before
+the first `import WeatherUnits`. Without it the default file follows the
+machine's locale (`us.toml` for en_US, `si.toml` otherwise) and the suite passes
+or fails with the locale of whoever runs it.
+
+`si.toml` is chosen because the assertions are written against it: its
+`[UnitProperties]` (mmHg's precision and trailing zeros) and its local units
+(pressure is mmHg, not inHg) are what the expected strings encode. It is the
+bundled file that also loads on the CI hosts. `tests/config.ini` is not used: it
+has drifted from `us.toml` (`wind = mi/hraust`, stale `[Units]` section).
+
+`setdefault`, so `WU_CONFIG_PATH=... pytest` still tries another file. Under
+`us.toml` 18 tests fail: they assert si.toml's values rather than set their own.
 """
 import os
 from pathlib import Path

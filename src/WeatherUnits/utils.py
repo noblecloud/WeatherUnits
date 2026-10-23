@@ -1,5 +1,6 @@
 import logging
 import re
+from collections.abc import Mapping as _MappingABC
 from difflib import get_close_matches, SequenceMatcher
 from functools import lru_cache
 from heapq import nlargest
@@ -374,7 +375,8 @@ def getFrom(
 		# is-not-unset/type checks below and returns immediately, so every
 		# remaining object is unreachable. `default` is only correct once the
 		# search is exhausted (see the return at the end).
-		if isinstance(obj, Mapping):
+		# the ABC, not typing.Mapping: isinstance against the typing alias goes through a Python-level __subclasscheck__
+		if isinstance(obj, _MappingABC):
 			value = obj.get(subKey, UnsetKwarg)
 		else:
 			value = getattr(obj, subKey, UnsetKwarg)

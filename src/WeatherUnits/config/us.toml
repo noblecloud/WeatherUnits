@@ -31,6 +31,7 @@ k_separator = false
 # key is unset
 # size_hint is unset
 trailing_zeros = "off"
+missing = "⋯"
 grouping_char = true
 
 [UnitProperties]

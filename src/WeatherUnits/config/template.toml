@@ -92,6 +92,10 @@
 #              width.  Set False where a fixed column width matters more -
 #              precipitation, wind, strikes.  No effect without trailing_zeros.
 #
+#     missing: What a value with no reading (NaN, or None from a source) shows.
+#              Default ⋯.  Override per unit in [UnitProperties]:
+#              humidity = { missing = "--" }
+#
 # unit_spacer:  Determines if there is a space between measurements and their units
 #              True: 90° f    False: 90°f
 #
@@ -125,6 +129,7 @@ show_unit = true
 shorten = false
 trailing_zeros = "off"
 true_zero = true
+missing = "⋯"
 
 [UnitProperties]
 # Per unit or unit type, by lowercase name, type or symbol, as an inline table

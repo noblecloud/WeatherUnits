@@ -1,6 +1,6 @@
 # Missing values, and everything the host locale silently decides
 
-**Status:** open, actionable. Found 2026-10-04.
+**Status:** fixed 2026-10-22 (three commits). Judgement calls: the placeholder is `⋯`, matching LevityDash, and resolves like any other parameter: `[UnitDefaults]`, `[UnitProperties]` per unit, the instance, or `missing=` in a format spec; the suite stays pinned to `si.ini`, and `us.ini` still fails 18 tests that assert si.ini values, so no `us.ini` CI leg was added. Found 2026-10-04.
 **Base:** `dev`. Step one: `git checkout -B fix/missing-and-locale dev`.
 **Model:** Sonnet. Three independent parts; one commit each.
 

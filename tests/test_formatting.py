@@ -246,8 +246,8 @@ class TestDecoratorAndSpacer(TestCase):
 	def test_unit_spacer_is_a_string_not_a_flag(self):
 		# `unit_spacer=True` renders the literal word - documented gotcha.
 		k = Temperature.Kelvin(273.15)
-		self.assertEqual('273_k', format(k, 'unit_spacer=_'))
-		self.assertEqual('273Truek', format(k, 'unit_spacer=True'))
+		self.assertEqual('273_K', format(k, 'unit_spacer=_'))
+		self.assertEqual('273TrueK', format(k, 'unit_spacer=True'))
 
 
 class TestShowUnit(TestCase):
@@ -877,3 +877,24 @@ class TestParameterSeparatorSpacing(TestCase):
 					format(unit(29.92), 'compact=True, precision=0, show_unit=False'),
 					format(unit(29.92), 'compact=True,precision=0,show_unit=False'),
 				)
+
+
+class TestNegativeZero(TestCase):
+	"""A value that rounds to zero at the display precision has no sign."""
+
+	def test_a_small_negative_temperature_shows_no_sign(self):
+		from WeatherUnits import Temperature
+		self.assertEqual('0°', str(Temperature.Celsius(-0.04)))
+
+	def test_negative_zero_itself_shows_no_sign(self):
+		from WeatherUnits import Temperature
+		self.assertEqual('0°', str(Temperature.Celsius(-0.0)))
+
+	def test_a_value_that_survives_rounding_keeps_its_sign(self):
+		from WeatherUnits import Temperature
+		self.assertEqual('-1°', str(Temperature.Celsius(-0.6)))
+		self.assertEqual('-0.4 mm', str(Length.Millimeter(-0.4)))
+
+	def test_it_follows_the_precision_asked_for(self):
+		from WeatherUnits import Temperature
+		self.assertEqual('0.0', f'{Temperature.Celsius(-0.04):precision=1, show_unit=False, unit_symbol=}')

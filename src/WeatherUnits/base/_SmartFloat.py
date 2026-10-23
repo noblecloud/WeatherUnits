@@ -4,7 +4,7 @@ from builtins import float, isinstance
 from collections import ChainMap, namedtuple
 from difflib import get_close_matches
 from functools import lru_cache, cached_property
-from locale import delocalize
+from locale import delocalize, setlocale, LC_NUMERIC
 from typing import ClassVar, Optional, Set, Type, Union, Tuple, ForwardRef, TypeVar, Literal, Final, Mapping, Iterable
 from math import nan, isnan, inf, isinf
 from decimal import Decimal
@@ -62,7 +62,7 @@ class FormatSpec:
 	# '.2False'. Deliberately narrow: keys like unit_spacer/decorator/prefix/
 	# suffix/unit DO take False meaningfully (it disables them), so they
 	# must keep being coerced.
-	never_boolean: ClassVar[Set[str]] = {'type', 'fill', 'align'}
+	never_boolean: ClassVar[Set[str]] = {'type', 'fill', 'align', 'missing'}
 	# UNUSED, INTENTIONALLY KEPT. Nothing reads `.limit`, so the bracket
 	# syntax it describes - `{value:[100:0]}`, clamping at format time - is
 	# not accepted anywhere yet. Kept because implementing it is still wanted;
@@ -112,6 +112,7 @@ class FormatSpec:
 	(?=,|$)
 	""", re.VERBOSE)
 	formatParams = re.compile(r"{(?P<name>\w+?) (?: :(?P<spec>.*?))?}", re.VERBOSE)
+	attrRef = re.compile(r'{(?P<obj>\w+)\.(?P<attr>[\w.]+\w)(:.+?)?}')
 	conversion = re.compile(r"""
 	^(?P<fullmatch>
 		(?P<convertTo>[-\w\s/\\]+)
@@ -200,11 +201,73 @@ class FormatSpec:
 		return hasTrue
 
 
+@lru_cache(maxsize=512)
+def _parseSpec(formatSpec: str, numericLocale: str) -> tuple[dict, dict]:
+	"""Split a format spec into its python format-spec part and its `key=value` parameters.
+
+	Depends only on the spec text and the numeric locale (numbers are delocalized),
+	so it is memoised on both. The dicts are shared: copy `specParams` before
+	mutating it, and treat `precisionSpec` as read-only.
+	"""
+	if (precisionSpec := FormatSpec.precision.search(formatSpec)) and precisionSpec.group():
+		formatSpec = formatSpec[:precisionSpec.start()-1] if formatSpec.endswith(precisionSpec.group()) else formatSpec[precisionSpec.end()+1:]
+		precisionSpec = precisionSpec.groupdict()
+	else:
+		precisionSpec = {'format_spec': ''}
+
+	specParams = dict((i['key'], i['value']) for i in FormatSpec.params.finditer(formatSpec))
+	for key, value in specParams.items():
+		if number := FormatSpec.getNumber(value, strict=True):
+			specParams[key] = number
+		elif key in FormatSpec.never_boolean:
+			# Left as the literal string: several single-letter format
+			# codes collide with the boolean words below - 'f' and 'n'
+			# are both in falsy_values, so `type=f` used to coerce to
+			# False and reach __format_value__ as '.2False', raising
+			# ValueError. These keys never take a boolean value.
+			continue
+		elif (boolValue := FormatSpec.getBool(value, strict=None)) is not None:
+			specParams[key] = boolValue if boolValue is not None else empty
+	return precisionSpec, specParams
+
+
 class FiniteField:
 	_limits: Limits
 
 	def _limitFunc(self, value: float) -> float:
 		return value%self._limits[1]
+
+
+_MISSING: Final = object()
+
+
+class FormatParams(ChainMap):
+	"""A ChainMap with single-pass lookups.
+
+	`__format__` reads dozens of keys per call from a handful of plain dicts,
+	most of them misses in the first few maps. The stock implementation raises
+	and swallows a KeyError per missed map and checks `in` then indexes for
+	`get`; this probes each map once. Every map here is a plain dict, so
+	`dict.get` and `[]` agree.
+	"""
+
+	def __getitem__(self, key):
+		for mapping in self.maps:
+			if (value := mapping.get(key, _MISSING)) is not _MISSING:
+				return value
+		return self.__missing__(key)
+
+	def get(self, key, default=None):
+		for mapping in self.maps:
+			if (value := mapping.get(key, _MISSING)) is not _MISSING:
+				return value
+		return default
+
+	def __contains__(self, key):
+		for mapping in self.maps:
+			if key in mapping:
+				return True
+		return False
 
 
 class UnitDict(dict):
@@ -220,6 +283,13 @@ class UnitDict(dict):
 	def __delitem__(self, k) -> None:
 		k = CaseInsensitiveKey(k)
 		super().__delitem__(k)
+
+
+# Bumped whenever a unit class is created or one of the attributes that
+# `compatibleUnits` is built from is reassigned, so per-class caches of it can
+# tell they are stale without re-walking the subclass tree on every format.
+_unitGeneration: int = 0
+_unitAffecting: Final = frozenset({'_unit', '_aliases', '_name', '_pluralName', '_pluralUnit', '__dimension__', '_type'})
 
 
 class MetaUnitClass(type):
@@ -375,10 +445,24 @@ class MetaUnitClass(type):
 
 		attrs['__annotations__'] = ChainMap(attrs.get('__annotations__', {}), *(b.__dict__.get('__annotations__', {}) for b in bases))
 
+		global _unitGeneration
+		_unitGeneration += 1
 		mcs = super().__new__(mcs, name, bases, attrs, **kwargs)
 		UnitRegistry.register(mcs)
 		# mcs._addSpecials()
 		return mcs
+
+	def __setattr__(cls, key, value):
+		global _unitGeneration
+		if key in _unitAffecting:
+			_unitGeneration += 1
+		super().__setattr__(key, value)
+
+	def __delattr__(cls, key):
+		global _unitGeneration
+		if key in _unitAffecting:
+			_unitGeneration += 1
+		super().__delattr__(key)
 
 	def _addSpecials(cls):
 		name = cls.__name__
@@ -523,6 +607,16 @@ class MetaUnitClass(type):
 		return units
 
 	@property
+	def unitNames(cls) -> frozenset[str]:
+		"""The keys of `compatibleUnits` plus 'auto', cached until a unit class changes."""
+		cached = cls.__dict__.get('_unitNamesCache')
+		if cached is not None and cached[0] == _unitGeneration:
+			return cached[1]
+		names = frozenset(cls.compatibleUnits) | {'auto'}
+		type.__setattr__(cls, '_unitNamesCache', (_unitGeneration, names))
+		return names
+
+	@property
 	def compatibleTypes(cls) -> Set[Type['Measurement']]:
 		return cls._acceptedTypes
 
@@ -632,6 +726,8 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	_title: Optional[str]
 	_show_unit: Optional[bool]
 	_shorten: Optional[bool]
+	#: What a NaN formats as; see `missing`.
+	_missing: str = '\u22ef'
 	_k_separator: Optional[str]
 	_key: Optional[Union[str, Set[Union[str, Tuple[str]]]]]
 	_size_hint: Optional[str]
@@ -785,8 +881,9 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return f'{self}'
 
 	def __format__(self, formatSpec, **extras):
+		if isnan(self):
+			return self.__format_missing__(formatSpec, extras)
 		convertTo = None
-		compatible_units = type(self).compatibleUnits
 
 		if isinstance(formatSpec, dict):
 			params, formatSpec = formatSpec, formatSpec.get('format', '')
@@ -794,7 +891,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			params = {}
 
 		conversionSpecMatch = FormatSpec.conversion.search(formatSpec)
-		unitSet = set(compatible_units) | {'auto'}
+		unitSet = type(self).unitNames
 		if conversionSpecMatch:
 			conversionSpecMatch = conversionSpecMatch.groupdict()
 			parsedUnit = type(self).__parse_unit__(conversionSpecMatch['convertTo'])
@@ -805,25 +902,8 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 				formatSpec = re.sub(fr'{conversionSpecMatch["fullmatch"]}', '', formatSpec)
 				convertTo = tuple(i.lower() for i in parsedUnit if i in unitSet)
 
-		if (precisionSpec := FormatSpec.precision.search(formatSpec)) and precisionSpec.group():
-			formatSpec = formatSpec[:precisionSpec.start()-1] if formatSpec.endswith(precisionSpec.group()) else formatSpec[precisionSpec.end()+1:]
-			precisionSpec = precisionSpec.groupdict()
-		else:
-			precisionSpec = {'format_spec': ''}
-
-		specParams = dict((i['key'], i['value']) for i in FormatSpec.params.finditer(formatSpec))
-		for key, value in specParams.items():
-			if number := FormatSpec.getNumber(value, strict=True):
-				specParams[key] = number
-			elif key in FormatSpec.never_boolean:
-				# Left as the literal string: several single-letter format
-				# codes collide with the boolean words below - 'f' and 'n'
-				# are both in falsy_values, so `type=f` used to coerce to
-				# False and reach __format_value__ as '.2False', raising
-				# ValueError. These keys never take a boolean value.
-				continue
-			elif (boolValue := FormatSpec.getBool(value, strict=None)) is not None:
-				specParams[key] = boolValue if boolValue is not None else empty
+		precisionSpec, specParams = _parseSpec(formatSpec, setlocale(LC_NUMERIC))
+		specParams = dict(specParams)
 
 		# Conversion
 		paramsSpecConversionMatch = type(self).__parse_unit__(specParams.get('convert', None))
@@ -849,7 +929,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 		floatValue = fm if (fm := getattr(value, 'formatValue', None)) is not None else float(value)
 
-		params = ChainMap(extras, specParams, params)
+		params = FormatParams(extras, specParams, params)
 		params.extras = extras
 		params.specParams = specParams
 		# The caller's own precision, from either spelling - `format(v,
@@ -1048,7 +1128,9 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		for key, opts in formatVarsSpecs.items():
 			spec = opts['spec']
 			try:
-				v = getFrom(key, value, self, params, locals(), globals())
+				# locals() copies the whole frame, so only take it once the cheap sources miss
+				if (v := getFrom(key, value, self, params, default=_MISSING)) is _MISSING:
+					v = getFrom(key, value, self, params, locals(), globals())
 			except KeyError:
 				raise FormattingError(f'Invalid format variable {key!r} in {formatString!r} while formatting {self!r}')
 			if spec and key not in {'format', 'self', 'value'}:
@@ -1071,6 +1153,9 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		# 		params[k] = int(v)
 
 		params['value'] = value.__format_value__(params)
+		# -0.04 at precision 0 is '-0': a value that rounds to zero keeps no sign
+		if '-' in params['value'] and not any(c in '123456789' for c in params['value']):
+			params['value'] = params['value'].replace('-', '', 1)
 		if params.get('leadingZeroDropped', False):
 			# leading_zero off for a value between -1 and 1: drop the '0'
 			# before the radix point ('0.01' -> '.01', '-0.5' -> '-.5').
@@ -1078,7 +1163,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			# digit it frees has gone to a decimal place.
 			params['value'] = params['value'].replace('0.', '.', 1)
 
-		formattedValue = formatString.format(**params)
+		formattedValue = formatString.format_map(params)
 
 		return formattedValue
 
@@ -1101,9 +1186,13 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return formatParams
 
 	def __replace_format_attrs__(self, formatString: str, formatParams: Mapping) -> str:
+		matches = FormatSpec.attrRef.findall(formatString)
+		if not matches:
+			return formatString
+		# Flattening a ChainMap touches every key in every map; only pay for it when there is an attribute reference to resolve.
 		formatVars = {**formatParams.get('formatVars', {}), **dict(formatParams)}
 		self = formatParams.get('self', self)
-		for obj, attr, *frmt in re.findall(r'{(?P<obj>\w+)\.(?P<attr>[\w.]+\w)(:.+?)?}', formatString):
+		for obj, attr, *frmt in matches:
 			if obj not in formatVars:
 				if (attr_ := (getattr(self, obj, None))) is not None:
 					formatParams[obj] = attr_
@@ -1192,7 +1281,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 		return 0 if round(abs(floatValue), dropped) != 0 else intLength
 
 	def __format_value__(self, params: Mapping) -> str:
-		return '{value:{fill}{align}{sign}{minwidth}.{precision}{type}}'.format(**params)
+		return '{value:{fill}{align}{sign}{minwidth}.{precision}{type}}'.format_map(params)
 
 	def __format_template__(self, params: Mapping) -> str:
 		formatTemplate = []
@@ -1220,6 +1309,17 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 		return ''.join(formatTemplate)
 
+	def __format_missing__(self, formatSpec, extras) -> str:
+		"""A NaN has no digits to shape, so the only parameter that applies is `missing`."""
+		if 'missing' in extras:
+			return str(extras['missing'])
+		if isinstance(formatSpec, dict):
+			if 'missing' in formatSpec:
+				return str(formatSpec['missing'])
+		elif (asked := next((i['value'] for i in FormatSpec.params.finditer(formatSpec) if i['key'] == 'missing'), None)) is not None:
+			return asked
+		return self.missing
+
 	@property
 	def defaultFormatParams(self):
 		return {
@@ -1241,6 +1341,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			'digit_budget': self.digit_budget,
 			'limits':       self._limits,
 			'shorten':      self.shorten,
+			'missing':      self.missing,
 		}
 
 	@property
@@ -1301,6 +1402,9 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 			return f'{type(self).__name__}({self.__repr_value__()})'
 
 	def __bool__(self):
+		# A gap is falsy, even though it has a unit
+		if isnan(self):
+			return False
 		return super().__bool__() or bool(self.unit)
 
 	def __float__(self) -> float:
@@ -1320,7 +1424,7 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 
 	@property
 	def valueUnset(self) -> bool:
-		return self == nan
+		return isnan(self)
 
 	@property
 	def withUnit(self) -> str:
@@ -1425,6 +1529,19 @@ class SmartFloat(float, metaclass=MetaUnitClass):
 	@leading_zero.setter
 	def leading_zero(self, value):
 		self._leading_zero = value
+
+	@property
+	def missing(self) -> str:
+		"""What the value shows when there is none (NaN, or None from a source): ``⋯`` by default.
+
+		Set like any other parameter: ``missing`` in ``[UnitDefaults]`` for every unit, per unit or unit type in
+		``[UnitProperties]`` (``humidity = missing=--``), on an instance, or in a format spec (``missing=n/a``).
+		"""
+		return getattr(self, '_missing', '\u22ef')
+
+	@missing.setter
+	def missing(self, value: str):
+		self._missing = value
 
 	@property
 	def trailing_zeros(self):

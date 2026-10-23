@@ -71,7 +71,7 @@ class TestTemperature(TestCase):
 		self.assertEqual(self.fHigh, high.f)
 		low.precision = 1
 		low.digit_budget= 4
-		self.assertEqual('273.1k', low.withUnit)
+		self.assertEqual('273.1K', low.withUnit)
 
 	def test_celsius_force_show_unit(self):
 		# Celsius defaults to show_unit=False (the ° unit_symbol already conveys
@@ -84,5 +84,6 @@ class TestTemperature(TestCase):
 		self.assertEqual('0°c', str(low.withUnit))
 
 	def test_dewpoint(self):
-		self.assertEqual(self.cDewpoint, self.cRoom.dewpoint(65))
-		self.assertEqual(self.fDewpoint, self.fRoom.dewpoint(65))
+		# The expected values are rounded readouts, and `==` compares the actual value.
+		self.assertAlmostEqual(float(self.cDewpoint), float(self.cRoom.dewpoint(65)), delta=0.05)
+		self.assertAlmostEqual(float(self.fDewpoint), float(self.fRoom.dewpoint(65)), delta=0.05)
