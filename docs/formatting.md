@@ -367,6 +367,76 @@ per-type overrides (e.g. `illuminance = digit_budget=4, shorten=True`).
 
 ---
 
+## Time specs: `simple`, `human`, `ago`, `timestamp`
+
+`Time` handles these itself (before the normal spec parser runs). `simple`
+keeps the unit it was given and lets `shorten`/`digit_budget` decide whether to
+step up; `human`, `ago` and `timestamp` decide by *magnitude* instead. The
+digit budget is a width constraint and is not involved: `33 hrs` is compact
+but not a useful reading.
+
+| spec | behaviour |
+|---|---|
+| `simple` / `simple+` | the given unit, short / full names, plural: `33 hrs`, `33 Hours` |
+| `human` / `human+` | the unit `Time.ladder` picks for the magnitude, then `simple` rendering; the sign stays: `-3 hrs` |
+| `ago` / `ago+` | `human` as a relative time: `1.4 days ago`, `in 3 hrs` (negative = future) |
+| `timestamp` | clock form that grows with magnitude (below) |
+
+Output from the code (`f'{value:spec}'`):
+
+| value | `simple` | `human` | `human+` | `ago` | `timestamp` |
+|---|---|---|---|---|---|
+| `Second(45)` | `45 s` | `45 s` | `45 Seconds` | `45 s ago` | `00:45` |
+| `Second(90)` | `90 s` | `1.5 mins` | `1.5 Minutes` | `1.5 mins ago` | `01:30` |
+| `Minute(61)` | `61 mins` | `61 mins` | `61 Minutes` | `61 mins ago` | `1:01:00` |
+| `Hour(3)` | `3 hrs` | `3 hrs` | `3 Hours` | `3 hrs ago` | `3:00:00` |
+| `Hour(-3)` | `-3 hrs` | `-3 hrs` | `-3 Hours` | `in 3 hrs` | `-3:00:00` |
+| `Hour(33)` | `33 hrs` | `1.4 days` | `1.4 Days` | `1.4 days ago` | `33:00:00` |
+| `Day(13)` | `13 days` | `13 days` | `13 Days` | `13 days ago` | `13d 0:00:00` |
+| `Day(14)` | `14 days` | `2 wks` | `2 Weeks` | `2 wks ago` | `14d 0:00:00` |
+| `Month(18)` | `18 mths` | `1.5 yrs` | `1.5 Years` | `1.5 yrs ago` | `1y 182d 20:43:48` |
+| `Hour(101)` | `101 hrs` | `4.2 days` | `4.2 Days` | `4.2 days ago` | `4d 5:00:00` |
+
+### The ladder
+
+`Time.ladder` is data, one rung per row: *below `amount` `unit`, show `display`*.
+The first rung that fits wins; past the last, `Time.ladder_top` (`Year`).
+
+| below | shown as |
+|---|---|
+| 90 seconds | seconds |
+| 90 minutes | minutes |
+| 30 hours | hours |
+| 14 days | days |
+| 8 weeks | weeks |
+| 18 months | months |
+| anything more | years |
+
+The choice is made on the magnitude, so negative durations pick the same unit.
+`Hour(33).humanized` is the same duration as `Day(1.375)`; `human` is
+`humanized` formatted with `simple`. The hours rung is 30, not 36, so that 33
+hours steps up to days. Tune the table on the class (or a subclass); nothing
+else needs to change.
+
+### `timestamp`
+
+| magnitude | form |
+|---|---|
+| under an hour | `MM:SS` |
+| an hour up to 100 h | `H:MM:SS` |
+| over 100 h | `Dd H:MM:SS` |
+| a whole year (365 days) or more | `Yy Dd H:MM:SS` |
+
+Seconds round to the nearest whole second and a negative value keeps its sign
+in front. `timestamp` takes no precision or other parameters.
+
+⚠️ Negative values with a fractional part, formatted with a plain spec such
+as `simple`, go down the base formatter's sub-1 branch (`float(value) > 1`),
+so `Day(-1.375)` prints `-1 days` where `Day(1.375)` prints `1.4 days`. `human`
+puts the sign on by hand to avoid this; the base formatter is unchanged.
+
+---
+
 ## Config defaults
 
 `config/*.ini` sets class-level defaults; nothing there is read at format
@@ -411,8 +481,9 @@ reach the class. See `docs/tasks/unitproperties-binding.md`.
 
 Notable implementations: **`Percentage`** scales by 100 and bumps precision;
 **`Direction`** adds cardinal handling and drops `{unit_symbol}` when showing a
-cardinal; **`Time`** pre-processes `simple`, `simple+`, `ago`, and timestamp
-specs before delegating upward. **Derived units** (`Wind`, `Precipitation`,
+cardinal; **`Time`** pre-processes `simple`, `simple+`, `human`, `human+`, `ago`
+and `timestamp` specs before delegating upward (see
+[Time specs](#time-specs-simple-human-ago-timestamp)). **Derived units** (`Wind`, `Precipitation`,
 …) override no formatting at all — they differ only in `unit`, which is
 composed as `numerator/denominator`, enabling `f'{wind:km/hr}'`.
 
