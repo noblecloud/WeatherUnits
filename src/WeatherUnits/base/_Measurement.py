@@ -19,7 +19,7 @@ log = logging.getLogger('WeatherUnits').getChild('Measurement')
 
 
 
-from math import isinf, isnan, nan
+from math import isclose, isinf, isnan, nan
 
 
 @lru_cache(maxsize=None)
@@ -217,7 +217,7 @@ class Measurement(SmartFloat):
 
 	def _convert(self, other: 'Measurement') -> Self:
 		"""For comparisons, convert other to own type"""
-		if isinstance(other, self.type):
+		if self._sameDimension(other):
 			return self.__class__(other)
 		if isinstance(other, (float, int)):
 			return self.__class__(other)
@@ -242,11 +242,38 @@ class Measurement(SmartFloat):
 			other._updateFunction(other)
 		return other
 
-	def __wrapOther(self, other: Union['Measurement', float, int]) -> float:
+	def _sameDimension(self, other) -> bool:
+		"""`other` measures what this does, in whatever unit or system.
+
+		`.type` alone is not that test: a scaling unit's type is its system's family,
+		so `Meter.type` is MetricLength and `Foot.type` is ImperialLength.
+		"""
+		if not isinstance(other, Measurement):
+			return False
+		if isinstance(other, self.type):
+			return True
+		if isinstance(self, Dimensionless) or isinstance(other, Dimensionless):
+			return False
+		if (dimension := type(self).dimension) is not None and dimension is type(other).dimension:
+			return True
+		if isinstance(self, DerivedMeasurement) and isinstance(other, DerivedMeasurement):
+			# A rain rate and a wind speed are both a distance over a time.
+			from ._Algebra import hasDimension, vectorOf
+			return hasDimension(self) and hasDimension(other) and vectorOf(self) == vectorOf(other)
+		return False
+
+	def _inThisUnit(self, other: 'Measurement') -> float:
+		"""`other`, a measurement of this dimension, as a number of this unit."""
 		if type(other) is type(self):
 			return float(other)
-		if isinstance(other, self.type):
+		try:
+			return float(type(self)(other))
+		except (TypeError, ValueError, AttributeError, errors.BadConversion):
 			return float(other[self.unit])
+
+	def __wrapOther(self, other: Union['Measurement', float, int]) -> float:
+		if self._sameDimension(other):
+			return self._inThisUnit(other)
 		# Dimensionality guard: two measurements of different, non-dimensionless
 		# dimensions can not be combined (e.g. Length + Temperature).
 		# Note: Measurement subclasses float, so this must precede the numeric check.
@@ -261,53 +288,55 @@ class Measurement(SmartFloat):
 				return float(match.groupdict()['number'])
 		return float(other)
 
-	@property
-	def _comparableValue(self) -> float:
-		"""A canonical numeric value for hashing and ordering comparisons.
+	@cached_property
+	def _canonicalValue(self) -> float:
+		"""One number for this quantity whatever its unit, for `__hash__`.
 
-		Defaults to the raw magnitude, which is unambiguous for measurements
-		without a scale family. ScalingMeasurement overrides this to compare
-		in a common base unit instead, since two different scales of the same
-		dimension can share a raw magnitude without being equal
-		(e.g. Week(1) and Month(1) are both "1").
+		The SI value where the dimension algebra knows one, else the value in the
+		base unit of its scale, else the value itself.
 		"""
+		from ._Algebra import hasDimension, siValue
+		if not isinstance(self, Dimensionless) and hasDimension(self):
+			try:
+				return siValue(self)
+			except TypeError:
+				# A temperature reading has no SI magnitude to multiply by, but kelvin still orders and equates it.
+				from ..temperature import Kelvin
+				return float(Kelvin(self))
+		if (scale := getattr(self, '_Scale', None)) is not None:
+			return float(self.changeScale(scale.Base))
 		return float(self)
 
-	def __prepareValues(self, other: Union['Measurement', float, int], ordering: bool = False) -> tuple[float | int, float | int]:
-		otherPrecision = getattr(other, 'valuePrecision', self.valuePrecision)
-		# Equality forgives the digits one side does not have (`5` equals `5.04`); an order does not, or `0.0` would
-		# not be less than `0.1` and `max` of a series of rates would return its first value.
-		precision = (max if ordering else min)(self.valuePrecision, otherPrecision)
-		if isinstance(self, DerivedMeasurement) and isinstance(other, DerivedMeasurement) and isinstance(other, self.type):
-			# A rate's raw magnitude is per its own units, so `1.4 in/hr` and
-			# `0.0254 m/hr` would compare as 1.4 against 0.0254. Put `other` into
-			# this rate's units first; the base-unit frame below rounds a rate to
-			# nothing, because its base-unit value is tiny.
-			try:
-				other = type(self)(other)
-			except (TypeError, ValueError, errors.BadConversion):
-				pass
-			selfVal = round(float(self), precision)
-			other = round(float(other), precision)
-		elif isinstance(other, Measurement) and isinstance(other, self.type):
-			# Same dimension family: compare in a unit-independent frame
-			# instead of converting other into self's unit, so equal-looking
-			# raw magnitudes in different scales (Week(1) vs Month(1)) don't
-			# compare or hash as equal.
-			selfVal = round(self._comparableValue, precision)
-			other = round(other._comparableValue, precision)
-		else:
-			other = self.__wrapOther(other)
-			selfVal = round(float(self), precision)
-			other = round(float(other), precision)
-		return other, selfVal
+	def __operands(self, other: Union['Measurement', float, int]) -> tuple[float, float]:
+		"""This value and `other` as two numbers of this unit.
+
+		Raises `BadConversion` for a measurement of another dimension.
+		"""
+		return float(self), self.__wrapOther(other)
 
 	def __eq__(self, other: Union['Measurement', float, int]) -> bool:
+		"""The values are equal, not their display: `Celsius(20) != Celsius(20.05)`; see `displays_same`.
+
+		Within a relative 1e-9, since a conversion leaves float noise (`Meter(Foot(Meter(1)))`), and an absolute 1e-12
+		for the zero of an offset scale: `Kelvin(273.15)` in Celsius is not exactly 0.
+		"""
 		try:
-			other, selfVal = self.__prepareValues(other)
-			return abs(selfVal - other) < 1e-1
+			mine, theirs = self.__operands(other)
 		except (ValueError, TypeError, errors.BadConversion):
 			return False
+		return isclose(mine, theirs, rel_tol=1e-9, abs_tol=1e-12)
+
+	def __ne__(self, other: Union['Measurement', float, int]) -> bool:
+		# float's own `!=` would compare the raw magnitudes: `Meter(1) != Celsius(1)` would be False.
+		return not self.__eq__(other)
+
+	def displays_same(self, other: Union['Measurement', float, int]) -> bool:
+		"""`other`, put into this unit, formats to the same text as this value: does a readout need repainting?"""
+		try:
+			mine, theirs = self.__operands(other)
+		except (ValueError, TypeError, errors.BadConversion):
+			return False
+		return str(self) == str(self._sameType(theirs))
 
 	def __getitem__(self: Self, item: Other | Number):
 		try:
@@ -439,33 +468,39 @@ class Measurement(SmartFloat):
 	def __floordiv__(self: Self, other: Other | Number) -> Self:
 		return type(self)(super().__floordiv__(other))
 
-	def __lt__(self: Self, other: Other | Number) -> bool:
+	def __order(self, other: Other | Number, symbol: str) -> tuple[float, float] | None:
+		"""The operands of an ordering, or None when `other` is not a number at all."""
 		try:
-			other, selfVal = self.__prepareValues(other, ordering=True)
-			return selfVal < other
-		except (ValueError, TypeError, errors.BadConversion):
+			return self.__operands(other)
+		except errors.BadConversion:
+			# Python's contract for unorderable types; a silent False would make `sorted()` lie.
+			raise TypeError(f"'{symbol}' not supported between {type(self).__name__} and {type(other).__name__}") from None
+		except (ValueError, TypeError):
+			return None
+
+	def __lt__(self: Self, other: Other | Number) -> bool:
+		if (operands := self.__order(other, '<')) is None:
 			return False
+		mine, theirs = operands
+		return mine < theirs and not isclose(mine, theirs, rel_tol=1e-9, abs_tol=1e-12)
 
 	def __gt__(self: Self, other: Other | Number) -> bool:
-		try:
-			other, selfVal = self.__prepareValues(other, ordering=True)
-			return selfVal > other
-		except (ValueError, TypeError, errors.BadConversion):
+		if (operands := self.__order(other, '>')) is None:
 			return False
+		mine, theirs = operands
+		return mine > theirs and not isclose(mine, theirs, rel_tol=1e-9, abs_tol=1e-12)
 
 	def __ge__(self: Self, other: Other | Number) -> bool:
-		try:
-			other, selfVal = self.__prepareValues(other, ordering=True)
-			return selfVal >= other
-		except (ValueError, TypeError, errors.BadConversion):
+		if (operands := self.__order(other, '>=')) is None:
 			return False
+		mine, theirs = operands
+		return mine >= theirs or isclose(mine, theirs, rel_tol=1e-9, abs_tol=1e-12)
 
 	def __le__(self: Self, other: Other | Number) -> bool:
-		try:
-			other, selfVal = self.__prepareValues(other, ordering=True)
-			return selfVal <= other
-		except (ValueError, TypeError, errors.BadConversion):
+		if (operands := self.__order(other, '<=')) is None:
 			return False
+		mine, theirs = operands
+		return mine <= theirs or isclose(mine, theirs, rel_tol=1e-9, abs_tol=1e-12)
 
 	def __abs__(self: Self) -> Self:
 		v = type(self)(super().__abs__())
@@ -473,7 +508,9 @@ class Measurement(SmartFloat):
 		return v
 
 	def __hash__(self):
-		return hash(round(self._comparableValue, max(self.valuePrecision, 1)))
+		# Agrees with `==` in all but one case: `isclose` is not transitive, so two values a hair either side of a
+		# 9-significant-digit rounding boundary can compare equal and still hash apart.
+		return hash(float(f'{self._canonicalValue:.9g}'))
 
 
 class DimensionlessMeta(MetaUnitClass):

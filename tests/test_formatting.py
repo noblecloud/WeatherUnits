@@ -246,8 +246,8 @@ class TestDecoratorAndSpacer(TestCase):
 	def test_unit_spacer_is_a_string_not_a_flag(self):
 		# `unit_spacer=True` renders the literal word - documented gotcha.
 		k = Temperature.Kelvin(273.15)
-		self.assertEqual('273_k', format(k, 'unit_spacer=_'))
-		self.assertEqual('273Truek', format(k, 'unit_spacer=True'))
+		self.assertEqual('273_K', format(k, 'unit_spacer=_'))
+		self.assertEqual('273TrueK', format(k, 'unit_spacer=True'))
 
 
 class TestShowUnit(TestCase):

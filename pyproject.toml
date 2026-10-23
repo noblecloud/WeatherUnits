@@ -24,7 +24,7 @@ classifiers = [
 	"Intended Audience :: Science/Research",
 	"Intended Audience :: Education",
 ]
-include = ["*.ini"]
+include = ["*.ini", "py.typed"]
 packages = [
 	{ include = "WeatherUnits", from = "src" }
 ]
