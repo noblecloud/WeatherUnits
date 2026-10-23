@@ -1,6 +1,12 @@
 # Same-dimension comparison and arithmetic regressed in `8f1ce65`
 
-**Status:** open, actionable. Found 2026-10-04.
+**Status:** **fixed 2026-10-22** on `claude/eager-planck-vvrznr`. Found 2026-10-04.
+
+Two deliberate departures from the semantics below:
+- **An absolute tolerance of 1e-12** beside the relative 1e-9. With `abs_tol=0`, `Kelvin(273.15) == Celsius(0)` is False: in Celsius the kelvin value is ~6e-14, not 0, and no relative tolerance reaches zero.
+- **The canonical unit for `__hash__` is SI** (`_Algebra.siValue`; kelvin for a temperature reading), which the algebra work had since made available. Without a dimension vector the value hashes in its scale's base unit, else as itself.
+
+`displays_same` ships under its provisional name. LevityDash still uses `==` to decide whether an observation changed (`ObservationDict.__setitem__`, `noChange`), so 20.0 → 20.05 is now a change rather than a silent update. Switching that to `displays_same` is a LevityDash-side follow-up; it was not done here.
 **Base:** `dev`. Step one: `git checkout -B fix/same-dimension dev`.
 **Model:** a bounded fix with decided semantics. Sonnet is fine.
 

@@ -351,12 +351,6 @@ class ScalingMeasurement(Measurement):
 	def toBaseUnit(self) -> Measurement:
 		return self._baseUnit(self.changeScale(self._Scale.Base))
 
-	@cached_property
-	def _comparableValue(self) -> float:
-		# Cached since ScalingMeasurement instances are immutable (float
-		# subclass) - the conversion result never changes after construction.
-		return float(self.changeScale(self._Scale.Base))
-
 	@classproperty
 	def scale(cls) -> Scale:
 		return cls._Scale[cls.__name__]
