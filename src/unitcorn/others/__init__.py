@@ -8,8 +8,10 @@ from ..utils import getFrom
 from . import light
 
 Light = light.Light
+PPFD = light.PPFD
+DLI = light.DLI
 
-__all__ = ['Light', 'Angle', 'Direction', 'Humidity', 'Voltage', 'LightningStrike', 'Probability', 'Coverage', 'Percentage']
+__all__ = ['Light', 'PPFD', 'DLI', 'Angle', 'Direction', 'Humidity', 'Voltage', 'LightningStrike', 'Probability', 'Coverage', 'Percentage']
 
 
 @UnitType

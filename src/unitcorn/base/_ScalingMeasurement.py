@@ -285,7 +285,9 @@ class ScalingMeasurement(Measurement):
 		while up.scale not in (self.common or self._Scale) and up.scale is not self.scale:
 			up_up = up.up
 			if up_up.scale is up.scale:
-				return up
+				# The top of the ladder. A unit off `common` (a nautical mile
+				# sorts above the kilometre) is not somewhere to autoscale to.
+				return up if up.scale in (self.common or self._Scale) else self
 			up = up_up
 		return up
 
