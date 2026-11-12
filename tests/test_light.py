@@ -1,5 +1,5 @@
 from unittest import TestCase
-from WeatherUnits import Light
+from unitcorn import Light
 
 class TestLight(TestCase):
 	def test_uvi(self):

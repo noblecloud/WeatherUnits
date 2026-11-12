@@ -1,5 +1,5 @@
 from unittest import TestCase
-from WeatherUnits.airQuality import AQI, HeathConcern
+from unitcorn.airQuality import AQI, HeathConcern
 
 class TestAirQuality(TestCase):
 	def test_aqi_categories(self):

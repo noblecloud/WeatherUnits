@@ -1,4 +1,4 @@
-# import src.WeatherUnits as wu
+# import src.unitcorn as wu
 #
 # x = wu.Precipitation(wu.Length.Inch(1), wu.Time.Day(1))
 #
@@ -12,7 +12,7 @@
 from datetime import datetime
 from unittest import TestCase
 
-import src.WeatherUnits as wu
+import src.unitcorn as wu
 
 
 h1 = wu.Humidity(0.1)
@@ -83,7 +83,7 @@ r.localize
 # print(wu.temperature.Temperature._precision)
 # # wu.config['UnitProperties']['humidity'] = 'precision=2, max=5'
 # wu.config.read('./tests/config.ini')
-# # reload(sys.modules['src.WeatherUnits'])
+# # reload(sys.modules['src.unitcorn'])
 # print(wu.derived.precipitation.Daily._precision)
 # print(wu.temperature.Fahrenheit._precision)
 # print(wu.temperature.Temperature._precision)

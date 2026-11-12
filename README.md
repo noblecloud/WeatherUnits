@@ -1,16 +1,27 @@
-# WeatherUnits️ 🌧
-Easily convert typical weather units from one unit to another with automatic localization.
+# unitcorn 🦄
+Units that convert, localize and format themselves. Born for weather dashboards,
+good for anything you can measure.
+
+> **Formerly WeatherUnits.** The library outgrew its name: lengths, masses, time,
+> bytes and the whole derived-unit algebra are general-purpose, and the weather part
+> lives in the config. `pip install WeatherUnits` still works, as a shim that installs
+> unitcorn and forwards `import WeatherUnits` to it with a `DeprecationWarning` —
+> see [compat/WeatherUnits](compat/WeatherUnits/README.md).
+
+```sh
+pip install unitcorn
+```
 
 ## Features
 🌈 Effortlessly define or extend your own units
 
-☀️ Change nearly every part of unit display from a config.ini file. No need for additional code.
+☀️ Change nearly every part of unit display from a TOML config file. No need for additional code.
 
 ❄️ Localization can is as simple as adding .localize to a units variable or setting it to automatic
 
 ## Requirements
 
-- Python 3.10
+- Python 3.12 – 3.14, no other dependencies
 
 ## How to use
 
@@ -24,7 +35,7 @@ Easily convert typical weather units from one unit to another with automatic loc
 Conversion is as easy as using the desired unit's name or aliases as either an attribute or subscript
 
 ```python
-from WeatherUnits.temperature import Fahrenheit
+from unitcorn.temperature import Fahrenheit
 >>> value = Fahrenheit(32)
 >>> value
 '32°'
@@ -40,10 +51,10 @@ from WeatherUnits.temperature import Fahrenheit
 
 #### Loading a config file
 ```python
-import WeatherUnits as wu
-wu.config.read('config.ini')
+import unitcorn as uc
+uc.config.read('units.toml')
 ```
-A template config file can be found in [src/WeatherUnits/config](src/WeatherUnits/config/template.ini).  There are three sections in a valid config file
+A template config file can be found in [src/unitcorn/config](src/unitcorn/config/template.toml). An older `.ini` config still loads, and `python -m unitcorn.config units.ini` prints it as TOML. There are three sections in a valid config file
 1) LocalUnits: This is what defines what units you want to use for localization
 2) UnitDefaults: This section holds the default values that apply to every unit
 3) UnitProperties: Defines properties for individual units or unit systems as a whole
@@ -53,8 +64,8 @@ The basic rules are:
 
 1) Properties are specified without the leading '_'
 2) Units are specified with their lowercase names or types
-3) Empty values will be read as '' and denote being set
-4) Values without an '=' will be read as None and denote being unset
+3) `""` sets a property to empty; leaving the key out leaves it unset
+4) In `[UnitProperties]`, each unit is an inline table: `mmHg = { precision = 2, digit_budget = 5 }`
 
 #### Properties
 - **precision:**  The number of digits allowed to be displayed past the decimal but will not exceed `digit_budget`. Example number:
@@ -180,7 +191,7 @@ Fahrenheit, Celsius, and Kelvin are subclasses of Temperature. Convert to other
 similar units with a single private function sharing the name of the desired unit.
 
 ```python
-from WeatherUnits.base import Measurement, UnitType
+from unitcorn.base import Measurement, UnitType
 
 @UnitType  # Unit types are defined with this decorator.
 class Temperature(Measurement):  # For static unit types, the class inherits Measurement.
@@ -251,8 +262,8 @@ have an SI basis, so this can be done fairly often.  However, it is sometimes ne
 
 ```python
 
-from WeatherUnits.base import UnitType, Synonym, ScalingMeasurement
-from WeatherUnits.base import Scale, SystemVariant, both
+from unitcorn.base import UnitType, Synonym, ScalingMeasurement
+from unitcorn.base import Scale, SystemVariant, both
 
 @UnitType
 # `baseUnit` names the unit everything reduces to; `system` assigns the class
@@ -307,8 +318,8 @@ class Millibar(Hectopascal):
 #### Split system
 
 ```python
-from WeatherUnits.base import ScalingMeasurement, Scale, Dimension
-from WeatherUnits.base import metric, imperial
+from unitcorn.base import ScalingMeasurement, Scale, Dimension
+from unitcorn.base import metric, imperial
 
 
 # The shared dimension is a plain class using the Dimension metaclass. It owns
@@ -380,16 +391,48 @@ class Meter(MetricLength):
 
 ### Derived Unit
 DerivedMeasurement is essentially a measurement with multiple units, eg, m/s [meters per second], mph [miles per hour].
-Initiation takes in two Measurements and is stored as the dividend of the two.  Both values are independently stored
-as protected variables.
+A derived value is **one number in its unit**, like every measurement. `.numerator` and `.denominator` describe it as
+"this much of the numerator unit per ONE of the denominator unit", so `MilesPerHour(20).numerator` is `20 mi` and
+`.denominator` is `1 hr`. Building one from an amount over an interval still works and gives the rate:
+`Hourly(Millimeter(6), Hour(3))` is `2 mm/hr`. A value that has to remember the window it covers (rain in the last
+24 hours) carries `period=timedelta(...)` beside its `timestamp`; conversion never touches it.
+
+Rates and accumulations share a number and differ in meaning (`mm/h` and `mm`, `kW` and `kWh`), so the class has to
+say which one it is.
+
+**Dimension algebra.** `*` and `/` between measurements of different dimensions work on exponent vectors over length,
+mass, time and temperature:
+
+```python
+from unitcorn import Length, Mass, Time
+Meter, Foot, Millimeter, Hour, Kilogram = Length.Meter, Length.Foot, Length.Millimeter, Time.Hour, Mass.Kilogram
+
+Meter(10) / Meter(2)                  # 5.0, a plain float
+Millimeter(6) / Hour(3)               # 2 mm/hr, keeps the units it was given
+Meter(5) * Meter(5)                   # 25 m², an Area
+Foot(3) * Meter(1)                    # 0.9144 m², across systems
+Kilogram(2) / (Meter(2) * Meter(2) * Meter(2))   # 0.25 kg·m⁻³
+```
+
+The result is a named type when one is registered for the dimension (length, mass, time, pressure, speed), a plain
+float when it is dimensionless, and otherwise a `Compound`, which prints its coherent SI unit and takes part in
+further algebra. Exponents run from -3 to 3. A temperature *reading* (`Celsius(5)`) does not multiply or divide, since
+`20 °C × 2` is not `40 °C`; use `Kelvin`. Unary `-`/`+`, `%`, `//`, `round` and scalar `*` and `/` keep the class.
+
+**Temperature readings and changes.** `Celsius(30) - Celsius(20)` is a `CelsiusChange(10)`, which is also an
+`18` change in `FahrenheitChange`: a change converts by a factor, never an offset. A reading plus or minus a change is a
+reading (`Fahrenheit(68) + CelsiusChange(10)` is `86 °F`). Two readings do not add, because `20 °C + 10 °C` and
+`68 °F + 50 °F` are not the same temperature; inside `with summingReadings():` they add in the left operand's unit
+(for a mean). A bare number next to a reading still means the same unit.
+
+**Energy, power and area** are units in their own right: `Energy` (J, kJ, MJ, GJ, Wh, kWh, MWh, cal, BTU),
+`Power` (W, kW, MW, GW, hp) and `Area` (m², cm², km², ha, in², ft², mi², ac). `Power.Kilowatt(2) * Time.Hour(3)` is
+`Energy` (6 kWh), `Energy.KilowattHour(6) / Time.Hour(3)` is `Power`, and `Meter(2) * Meter(3)` is an `Area`. `Light.Irradiance` (W/m²) is power per area: `Irradiance(500) * Area.SquareMeter(20)` is
+`Power` (10 kW), and `Power / Area` is an `Irradiance`. Illuminance (lux) has no dimension and does not multiply.
 
 **Note:**
-This type still needs quite a lot of work.  Currently, it only has fractional support, and only a single unit can be used for
-both the numerator and denominator.  Eventually this will be expanded allowing for more complex unit derivatives.
-Support for the following has not been added:
- - Multiplying two units together, for example a pascal second [Pa·s]
- - Negative exponent units like Hertz [s⁻¹]
- - Multiple units in either the numerator or denominator
+Still to do: several different units in the numerator or denominator at once, and compound units beyond what the
+exponent vector names (`Compound` prints them in SI).
 
 Roughly what `DerivedMeasurement` does, for orientation (illustrative, not
 the real source):
@@ -409,8 +452,8 @@ class DerivedMeasurement(Measurement):
 And defining your own:
 
 ```python
-from WeatherUnits import Length, Time
-from WeatherUnits.base import DerivedMeasurement, UnitType
+from unitcorn import Length, Time
+from unitcorn.base import DerivedMeasurement, UnitType
 
 
 @UnitType

@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from WeatherUnits import Length, Temperature, Time
-from WeatherUnits import errors
+from unitcorn import Length, Temperature, Time
+from unitcorn import errors
 
 
 class TestDimensionality(TestCase):
@@ -19,6 +19,8 @@ class TestDimensionality(TestCase):
 	def test_scalar_addition_still_works(self):
 		self.assertEqual(float(Length.Meter(1) + 2), 3)
 
-	def test_incompatible_comparison_returns_false(self):
+	def test_incompatible_comparison(self):
+		# Not equal, and not orderable: Python's contract for unorderable types, so `sorted()` can't silently lie.
 		self.assertFalse(Length.Meter(1) == Temperature.Celsius(1))
-		self.assertFalse(Length.Meter(1) < Temperature.Celsius(5))
+		with self.assertRaises(TypeError):
+			Length.Meter(1) < Temperature.Celsius(5)

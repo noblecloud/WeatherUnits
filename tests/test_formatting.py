@@ -12,12 +12,13 @@ total number of *displayed digits* - a width budget that, together with
 adding a k/m suffix). `precision` fills whatever room `max` leaves, derived
 per value from that value's own decimal content.
 
-Assertions here reflect the **US config** (config/us.ini); `shorten` in
-particular differs under si.ini.
+Assertions here reflect the **US config** (config/us.toml); `shorten` in
+particular differs under si.toml.
 """
 from unittest import TestCase
 
-from WeatherUnits import Length, Light, Mass, Pressure, Temperature, Wind
+from unitcorn import Length, Light, Mass, Pressure, Temperature, Wind
+from unitcorn.base._SmartFloat import FormatSpec, SmartFloat
 
 
 class TestZeroValues(TestCase):
@@ -205,7 +206,7 @@ class TestDegreeSign(TestCase):
 		self.assertNotIn(self.ORDINAL, rendered)
 
 	def test_angle_and_direction_use_the_degree_sign(self):
-		from WeatherUnits.others import Angle, Direction
+		from unitcorn.others import Angle, Direction
 		for cls in (Angle, Direction):
 			with self.subTest(cls=cls.__name__):
 				self.assertEqual(self.DEGREE, cls(0).unit_symbol)
@@ -213,10 +214,10 @@ class TestDegreeSign(TestCase):
 	def test_no_ordinal_indicator_survives_anywhere_in_the_package(self):
 		# Cheap guard against it creeping back in via a copy-paste.
 		import pathlib
-		import WeatherUnits
-		root = pathlib.Path(WeatherUnits.__file__).parent
+		import unitcorn
+		root = pathlib.Path(unitcorn.__file__).parent
 		offenders = []
-		for path in list(root.rglob('*.py')) + list(root.rglob('*.ini')):
+		for path in list(root.rglob('*.py')) + list(root.rglob('*.toml')):
 			if '__pycache__' in str(path):
 				continue
 			try:
@@ -245,8 +246,8 @@ class TestDecoratorAndSpacer(TestCase):
 	def test_unit_spacer_is_a_string_not_a_flag(self):
 		# `unit_spacer=True` renders the literal word - documented gotcha.
 		k = Temperature.Kelvin(273.15)
-		self.assertEqual('273_k', format(k, 'unit_spacer=_'))
-		self.assertEqual('273Truek', format(k, 'unit_spacer=True'))
+		self.assertEqual('273_K', format(k, 'unit_spacer=_'))
+		self.assertEqual('273TrueK', format(k, 'unit_spacer=True'))
 
 
 class TestShowUnit(TestCase):
@@ -313,8 +314,8 @@ class TestDimensionlessSpacing(TestCase):
 	"""
 
 	def test_dimensionless_values_have_no_trailing_space(self):
-		from WeatherUnits import Light
-		from WeatherUnits.others import Angle, Direction
+		from unitcorn import Light
+		from unitcorn.others import Angle, Direction
 		for measurement, expected in (
 			(Direction(180), 'S'),
 			(Angle(45), '45°'),
@@ -342,14 +343,14 @@ class TestDirectionCardinal(TestCase):
 	"""
 
 	def test_cardinal_false_renders_degrees(self):
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		d = Direction(180)
 		self.assertEqual('S', format(d, 'cardinal=True'))
 		self.assertEqual('180°', format(d, 'cardinal=False'))
 		self.assertEqual('180°', format(d, 'cardinal: False'))
 
 	def test_shorten_selects_letters_vs_words(self):
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		self.assertEqual('S', format(Direction(180), 'shorten=True'))
 		self.assertEqual('South', format(Direction(180), 'shorten=False'))
 
@@ -360,7 +361,7 @@ class TestDirectionCardinal(TestCase):
 		ends of the ladder and leaving every rung between them unreachable -
 		budgets 5 through 8 could never produce the word forms.
 		"""
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		expected = {
 			1: ['N', 'N',   'N',  'E', 'S',  'S', 'S',  'W',   'N'],
 			2: ['N', 'N',   'NE', 'E', 'SE', 'S', 'SW', 'W',   'NW'],
@@ -380,7 +381,7 @@ class TestDirectionCardinal(TestCase):
 		Below a 3-char budget everything fell to the 8-point `twoLetter`
 		set, so a 1-character budget still returned 'NE'.
 		"""
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		for deg in (0, 45, 90, 135, 180, 225, 270, 315):
 			with self.subTest(degrees=deg):
 				d = Direction(deg)
@@ -396,7 +397,7 @@ class TestDirectionCardinal(TestCase):
 		'NE' as the single word 'Northeast' and the 3-component 'SSW' as
 		the 2-word 'South Southwest'.
 		"""
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		# 238 deg is the useful probe: it resolves to a different heading at
 		# every rung, so all three budgets are genuinely exercised.
 		expected = {
@@ -419,7 +420,7 @@ class TestDirectionCardinal(TestCase):
 		heading is plain 'S' - one letter against a budget of two. Nothing
 		should stretch it to two.
 		"""
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		d = Direction(202.5)
 		d._digit_budget = 2
 		self.assertEqual('S', format(d, 'shorten=True'))
@@ -435,7 +436,7 @@ class TestDirectionCardinal(TestCase):
 
 	def test_both_forms_name_the_same_heading(self):
 		"""Letters and words must never disagree about which way the wind blows."""
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		initial = {'N': 'North', 'E': 'East', 'S': 'South', 'W': 'West'}
 		for deg in range(0, 360, 15):
 			for budget in (1, 2, 3):
@@ -450,7 +451,7 @@ class TestDirectionCardinal(TestCase):
 					)
 
 	def test_default_is_abbreviated_cardinal(self):
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		self.assertEqual('S', str(Direction(180)))
 
 
@@ -535,14 +536,14 @@ class TestUnitPropertiesBinding(TestCase):
 	"""
 
 	def test_a_symbol_keyed_unit_gets_its_config(self):
-		# si.ini: mmHg = precision=2, digit_budget=5, trailing_zeros=precision
+		# si.toml: mmHg = precision=2, digit_budget=5, trailing_zeros=precision
 		m = Pressure.MillimeterOfMercury(760.0)
 		self.assertEqual(2, m._precision)
 		self.assertEqual(5, m._digit_budget)
 		self.assertEqual('760.00 mmHg', str(m))
 
 	def test_lookup_is_exact_not_fuzzy(self):
-		from WeatherUnits.config import config
+		from unitcorn.config import config
 		self.assertEqual('mmHg', config.unitPropertiesKeyFor('MillimeterOfMercury', 'mmHg'))
 		self.assertEqual('mmHg', config.unitPropertiesKeyFor('mmhg'))          # case-insensitive
 		self.assertIsNone(config.unitPropertiesKeyFor('MillimeterOfMercury'))  # class name alone: no key
@@ -552,7 +553,7 @@ class TestUnitPropertiesBinding(TestCase):
 	def test_class_name_keys_still_bind(self):
 		# `direction` and `temperature` matched by class name before and must
 		# keep matching - this is the half that always worked.
-		from WeatherUnits.others import Direction
+		from unitcorn.others import Direction
 		self.assertEqual(3, Direction(180)._digit_budget)
 
 
@@ -617,3 +618,283 @@ class TestTrueZero(TestCase):
 		z = Pressure.MillimeterOfMercury(0.0)
 		z.true_zero = False
 		self.assertEqual('0.00 mmHg', str(z))
+
+	def test_a_given_precision_does_not_pad_exact_zero_while_padding_is_on(self):
+		# The sub-1 branch spends the precision on zero before trailing_zeros
+		# is looked at, so rain read '0.0' even though true_zero was on.
+		for spec in ('precision=1, trailing_zeros=precision', 'precision=2, trailing_zeros=precision, digit_budget=3'):
+			self.assertEqual('0 in', format(Length.Inch(0), f'{spec}'), spec)
+
+	def test_trace_keeps_its_decimal_next_to_a_bare_zero(self):
+		spec = 'precision=1, trailing_zeros=precision'
+		self.assertEqual('0.0 in', format(Length.Inch(0.004), spec))
+		self.assertEqual('0.1 in', format(Length.Inch(0.1), spec))
+
+	def test_true_zero_false_still_pads_zero_to_the_given_precision(self):
+		self.assertEqual('0.0 in', format(Length.Inch(0), 'precision=1, trailing_zeros=precision, true_zero=False'))
+
+	def test_an_explicit_precision_without_padding_is_the_callers_format(self):
+		self.assertEqual('0.0 in', format(Length.Inch(0), 'precision=1'))
+
+
+class TestKeywordPrecisionMatchesStringPrecision(TestCase):
+	"""`v.__format__('', precision=N)` must mean what `format(v, 'precision=N')` means.
+
+	These are supposed to be two spellings of one request. They were not.
+	The `trailing_zeros` branch read the caller's precision from
+	`params.specParams`, but the keyword spelling never lands there - it
+	goes into `extras`, the first map of the ChainMap - so by the time
+	trailing_zeros asked, the asked-for value had been overwritten by the
+	clamping above it and only the configured precision was left.
+
+	So a caller asking for no decimals got the configured precision's
+	padding instead: `InchOfMercury(30.0).__format__('', precision=0)`
+	rendered '30.00 inHg'. The string form was unaffected, which is what
+	hid it - the two spellings disagreed only under `trailing_zeros`, and
+	only for a unit whose config sets it.
+
+	Fixed by capturing the caller's precision as `params.explicitPrecision`
+	before anything can overwrite `extras`. Pinned here in both spellings,
+	plus the configured-precision path the option exists to override.
+
+	Which unit carries the padding depends on the loaded config: us.toml
+	pads inHg, si.toml pads mmHg (si.toml, us.toml). Both are asserted,
+	so this test bites under either config rather than quietly going
+	inert on whichever one happens to be loaded.
+	"""
+
+	# The units whose config sets trailing_zeros, one per config.
+	PADDED_UNITS = (Pressure.InchOfMercury, Pressure.MillimeterOfMercury)
+
+	def test_keyword_form_is_not_padded_to_the_configured_precision(self):
+		for unit in self.PADDED_UNITS:
+			for value, expected in ((28.0, '28'), (30.0, '30')):
+				with self.subTest(unit=unit.__name__, value=value):
+					rendered = unit(value).__format__('', precision=0)
+					self.assertNotIn(
+						'.',
+						rendered.split()[0],
+						f'{rendered!r} should carry no decimals',
+					)
+
+	def test_it_agrees_with_the_string_form(self):
+		for unit in self.PADDED_UNITS:
+			for value in (28.0, 30.0, 29.92):
+				with self.subTest(unit=unit.__name__, value=value):
+					self.assertEqual(
+						format(unit(value), 'precision=0'),
+						unit(value).__format__('', precision=0),
+					)
+
+	def test_the_string_form_is_unaffected(self):
+		# The half that always worked; pinned so the fix cannot break it.
+		self.assertEqual('30 mmHg', format(Pressure.MillimeterOfMercury(30.0), 'precision=0'))
+
+	def test_a_keyword_precision_still_outranks_the_class_default(self):
+		# The option's whole purpose: an explicit precision overrides the
+		# configured one for the padding decision.
+		self.assertEqual('30.5 mmHg', Pressure.MillimeterOfMercury(30.5).__format__('', precision=1))
+
+	def test_without_a_caller_precision_the_configured_one_still_governs(self):
+		# The fallback branch is unchanged: no explicit precision means the
+		# config decides, as it did before. Which unit it applies to depends
+		# on the config - us.toml pads inHg to 2 places, si.toml pads mmHg.
+		# Asserted through whichever unit this config actually pads, so the
+		# guard holds under both.
+		for unit in self.PADDED_UNITS:
+			with self.subTest(unit=unit.__name__):
+				self.assertEqual(
+					format(unit(30.0), 'precision=0'),
+					format(unit(30.0), 'precision=0, trailing_zeros=precision'),
+				)
+
+
+class TestCompactFormat(TestCase):
+	"""`compact=True` asks for the unit's *label* convention, not a reading.
+
+	A pressure dial labelled at 28, 29, 30 inHg shows whole inches, while the
+	reading itself wants `29.92`. Those are two renderings of one unit, so the
+	difference belongs to the unit rather than to any caller, and no consumer
+	should be hand-formatting around it. `compact=True` expands to the unit's
+	`_compact_format`, which by default drops the padding zeros a reading
+	needs.
+
+	Ranked below every explicit key on purpose: `compact, precision=2` still
+	gets 2 decimals, because asking to be compact is not asking to override the
+	caller. It sits above the config, which is the only reason it can work at
+	all - `[UnitProperties]` writes onto `defaultFormatParams`, so anything
+	ranked below that map would lose to `trailing_zeros=precision` and `compact`
+	would be a silent no-op.
+	"""
+
+	def paddedUnit(self):
+		"""The unit whose config sets trailing_zeros=precision.
+
+		Which one that is depends on the loaded config - us.toml pads inHg,
+		si.toml pads mmHg (us.toml, si.toml) - so these tests ask the config
+		rather than naming a unit. Naming one made half of them inert.
+		"""
+		for unit in (Pressure.InchOfMercury, Pressure.MillimeterOfMercury):
+			if unit(30.0).defaultFormatParams.get('trailing_zeros') == 'precision':
+				return unit
+		self.fail('no configured unit carries trailing_zeros=precision')
+
+	def test_a_padded_reading_loses_its_zeros(self):
+		unit = self.paddedUnit()
+		self.assertEqual('28', format(unit(28.0), 'compact=True, show_unit=False'))
+		self.assertEqual('30', format(unit(30.0), 'compact=True, show_unit=False'))
+
+	def test_the_same_reading_pads_without_the_flag(self):
+		# The whole point: one unit, one config, two renderings.
+		unit = self.paddedUnit()
+		self.assertEqual('30.00', format(unit(30.0), 'show_unit=False'))
+		self.assertEqual('30', format(unit(30.0), 'compact=True, show_unit=False'))
+
+	def test_a_reading_without_padding_is_unchanged(self):
+		# 29.5 is not padding - it is the value. Compact must not truncate it,
+		# on a padded unit or any other.
+		for unit in (Pressure.InchOfMercury, Pressure.MillimeterOfMercury):
+			with self.subTest(unit=unit.__name__):
+				self.assertEqual('29.5', format(unit(29.5), 'compact=True, show_unit=False'))
+
+	def test_an_explicit_precision_is_still_a_cap(self):
+		# Compact removes *padding*; it does not override the precision the
+		# caller named. `precision=2` still allows a second decimal, so 30.0
+		# keeps the one it has - it just does not grow to '30.00'. Naming a
+		# precision under compact must not be silently widened or ignored.
+		unit = self.paddedUnit()
+		self.assertEqual('30.0', format(unit(30.0), 'compact=True, precision=2, show_unit=False'))
+		# 30.5 keeps exactly the one decimal it needs - and no second one
+		# invented to fill the precision, which is the whole point of compact.
+		self.assertEqual('30.5', format(unit(30.5), 'compact=True, precision=2, show_unit=False'))
+
+	def test_it_composes_with_other_parameters(self):
+		unit = self.paddedUnit()
+		self.assertEqual('28', format(unit(28.0), 'compact=True, show_unit=False'))
+		self.assertEqual(f'28 {unit._unit}', format(unit(28.0), 'compact=True'))
+
+	def test_the_keyword_spelling_works_too(self):
+		unit = self.paddedUnit()
+		self.assertEqual(
+			format(unit(30.0), 'compact=True, show_unit=False'),
+			unit(30.0).__format__('', compact=True, show_unit=False),
+		)
+
+	def mBar(self, spec):
+		"""Render a Hectopascal as mBar, which is stable across configs.
+
+		`pressure` in the config decides what a pressure value is localised to
+		- us.toml says inHg, si.toml says mmHg - so a plain Hectopascal renders
+		as `759.96 mmHg` under one and `1013.2 inHg` under the other, and
+		never reaches its own convention. Asking for `convert=millibar` pins
+		the display unit; mBar renders the same under both configs, and
+		Millibar is a @Synonym of Hectopascal so it is the same convention.
+
+		Asymmetric on purpose: `convert=hectopascal` does NOT pin it - the
+		localisation still wins - so the class name is not usable here even
+		though the unit symbol is.
+		"""
+		return format(Pressure.Hectopascal(1013.2), f'convert=millibar, {spec}')
+
+	def test_a_unit_can_declare_a_different_convention(self):
+		"""hPa is shown as whole numbers, so it declares that on the class.
+
+		The default - drop padding zeros - is right for inches and wrong here:
+		1013.2 is a reading, but a dial face reads 1000, 1010, 1020. This is
+		the override path the default cannot cover, and the reason the
+		convention lives on the unit rather than in one global setting.
+		"""
+		self.assertEqual('1013', self.mBar('compact=True, show_unit=False'))
+		# Millibar directly: a @Synonym of Hectopascal, so it shares the
+		# convention by inheritance rather than by a second declaration.
+		self.assertEqual(
+			'1013',
+			format(Pressure.Millibar(1013.2), 'compact=True, show_unit=False'),
+		)
+
+	def test_a_declared_convention_differs_from_the_default(self):
+		# Guards that the override is actually load-bearing: if the default
+		# ever grows to drop decimals on its own, this stops testing anything.
+		self.assertNotEqual(dict(SmartFloat._compact_format), dict(Pressure.Hectopascal._compact_format))
+		self.assertNotEqual(self.mBar('show_unit=False'), self.mBar('compact=True, show_unit=False'))
+
+	def test_the_declared_convention_is_scoped_to_compact(self):
+		# Declaring _compact_format must not change how the unit reads. This
+		# is the ranking that keeps config governing readings.
+		self.assertEqual('1013.2', self.mBar('show_unit=False'))
+		self.assertEqual('1013', self.mBar('compact=True, show_unit=False'))
+
+	def test_a_unit_can_keep_its_zeros(self):
+		"""The rain case: `0.25 0.50` - here the zeros ARE the convention.
+
+		Defaulting to as little information as possible is right for pressure
+		and wrong for precipitation, which is why this is a per-unit
+		declaration rather than a global setting.
+		"""
+		from unitcorn.derived.precipitation import PrecipitationRate
+
+		rate = PrecipitationRate.Hourly(Length.Inch(0.25))
+		self.assertIn('.25', format(rate, 'compact=True'))
+
+	def test_the_default_compact_format_is_just_no_padding(self):
+		self.assertEqual({'trailing_zeros': 'off'}, dict(SmartFloat._compact_format))
+
+
+class TestParameterSeparatorSpacing(TestCase):
+	"""A bare comma separates parameters as well as a comma and a space.
+
+	`FormatSpec.params` required `,\s`, so `precision=0,show_unit=False`
+	parsed as ONE parameter: the trailing `(?=,|$)` lookahead stopped at the
+	comma, the value swallowed the rest, and `show_unit` was dropped with no
+	error. The spec silently did less than it said - the worst failure mode
+	here is, because the caller sees a plausible string and no complaint.
+
+	Predates the compact format; found through it, because `compact=True` is
+	the first flag in this library written without an `=value`, so it is the
+	first spec where a caller naturally writes the tight form.
+	"""
+
+	def test_a_bare_comma_separates(self):
+		for spec in ('precision=0,show_unit=False', 'precision=0, show_unit=False'):
+			with self.subTest(spec=spec):
+				parsed = {i['key']: i['value'] for i in FormatSpec.params.finditer(spec)}
+				self.assertEqual({'precision': '0', 'show_unit': 'False'}, parsed)
+
+	def test_it_holds_for_more_than_two(self):
+		parsed = {i['key']: i['value'] for i in FormatSpec.params.finditer('precision=0,show_unit=False,leading_zero=False')}
+		self.assertEqual({'precision': '0', 'show_unit': 'False', 'leading_zero': 'False'}, parsed)
+
+	def test_order_does_not_matter(self):
+		parsed = {i['key']: i['value'] for i in FormatSpec.params.finditer('show_unit=False,precision=0')}
+		self.assertEqual({'show_unit': 'False', 'precision': '0'}, parsed)
+
+	def test_the_rendering_agrees_either_way(self):
+		# The behaviour, not just the parse: both spellings must render the
+		# same string. `compact=True` is what exposed this.
+		for unit in (Pressure.InchOfMercury, Pressure.MillimeterOfMercury):
+			with self.subTest(unit=unit.__name__):
+				self.assertEqual(
+					format(unit(29.92), 'compact=True, precision=0, show_unit=False'),
+					format(unit(29.92), 'compact=True,precision=0,show_unit=False'),
+				)
+
+
+class TestNegativeZero(TestCase):
+	"""A value that rounds to zero at the display precision has no sign."""
+
+	def test_a_small_negative_temperature_shows_no_sign(self):
+		from unitcorn import Temperature
+		self.assertEqual('0°', str(Temperature.Celsius(-0.04)))
+
+	def test_negative_zero_itself_shows_no_sign(self):
+		from unitcorn import Temperature
+		self.assertEqual('0°', str(Temperature.Celsius(-0.0)))
+
+	def test_a_value_that_survives_rounding_keeps_its_sign(self):
+		from unitcorn import Temperature
+		self.assertEqual('-1°', str(Temperature.Celsius(-0.6)))
+		self.assertEqual('-0.4 mm', str(Length.Millimeter(-0.4)))
+
+	def test_it_follows_the_precision_asked_for(self):
+		from unitcorn import Temperature
+		self.assertEqual('0.0', f'{Temperature.Celsius(-0.04):precision=1, show_unit=False, unit_symbol=}')

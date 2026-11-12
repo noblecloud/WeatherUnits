@@ -1,5 +1,5 @@
 from unittest import TestCase
-from WeatherUnits import Mass
+from unitcorn import Mass
 
 class TestMass(TestCase):
 	def test_metric_conversions(self):

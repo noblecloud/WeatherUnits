@@ -1,5 +1,5 @@
 from unittest import TestCase
-from WeatherUnits.digital import RSSI
+from unitcorn.digital import RSSI
 
 class TestDigital(TestCase):
 	def test_rssi(self):

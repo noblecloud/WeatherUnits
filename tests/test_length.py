@@ -1,5 +1,5 @@
 from unittest import TestCase
-from WeatherUnits import Length
+from unitcorn import Length
 
 
 class TestLength(TestCase):

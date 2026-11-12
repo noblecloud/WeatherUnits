@@ -11,7 +11,7 @@ was fixed).
 """
 from unittest import TestCase
 
-from WeatherUnits import Length, Temperature, Wind
+from unitcorn import Length, Temperature, Wind
 
 
 class TestFormatSpecSeparators(TestCase):

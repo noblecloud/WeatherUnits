@@ -125,8 +125,9 @@ parameters above teach: uncalled is not the same as unwanted.
 
 ## 4. The library name
 
-Still open. Not a recommendation — the decision is the author's. Just the
-facts that bear on it.
+> **Resolved 2026-10-22: renamed to `unitcorn`** in 0.9.0. `WeatherUnits`
+> remains as a forwarding shim (`compat/WeatherUnits`). The facts below are
+> what the decision was made on.
 
 What the package actually contains:
 

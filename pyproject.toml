@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "WeatherUnits"
-version = "0.8.0"
-description = "Easy conversion for common units"
+name = "unitcorn"
+version = "0.9.0"
+description = "Units that convert, localize and format themselves, with weather-flavoured defaults"
 authors = ["noblecloud <git@noblecloud.io>"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/noblecloud/WeatherUnits"
-keywords = ["weather", "units", "temperature", "conversion", "converter"]
+repository = "https://github.com/noblecloud/unitcorn"
+keywords = ["units", "conversion", "converter", "localization", "formatting", "weather", "temperature"]
 classifiers = [
 	"Programming Language :: Python :: 3.12",
 	"Programming Language :: Python :: 3.13",
@@ -24,16 +24,16 @@ classifiers = [
 	"Intended Audience :: Science/Research",
 	"Intended Audience :: Education",
 ]
-include = ["*.ini"]
+include = ["*.toml", "py.typed"]
 packages = [
-	{ include = "WeatherUnits", from = "src" }
+	{ include = "unitcorn", from = "src" }
 ]
 
 [tool.poetry.urls]
-"Bug Tracker" = "https://github.com/noblecloud/WeatherUnits/issues"
+"Bug Tracker" = "https://github.com/noblecloud/unitcorn/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.15"
+python = ">=3.12,<3.15"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"

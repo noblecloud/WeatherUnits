@@ -1,5 +1,5 @@
 from unittest import TestCase
-from WeatherUnits import Light
+from unitcorn import Light
 
 Lux = Light.Lux
 

@@ -22,9 +22,9 @@ each one alone was enough to break it:
 """
 from unittest import TestCase
 
-from WeatherUnits import Length, Time, Wind
-import WeatherUnits.derived.rate as rate
-import WeatherUnits.derived.wind as wind
+from unitcorn import Length, Time, Wind
+import unitcorn.derived.rate as rate
+import unitcorn.derived.wind as wind
 
 
 class TestWindUnitResolution(TestCase):
@@ -61,7 +61,7 @@ class TestConcreteOverGenericInheritance(TestCase):
 class TestLocalizeConverts(TestCase):
 	"""The conversion `localize` performs, tested without depending on config.
 
-	The suite runs under si.ini, where `wind = m/s`, so localizing a m/s
+	The suite runs under si.toml, where `wind = m/s`, so localizing a m/s
 	reading correctly returns it unchanged and proves nothing. These build the
 	target the same way `localize` does - `unit(self.numerator,
 	self.denominator)` - which is where the relabel happened.
@@ -92,8 +92,48 @@ class TestLocalizeConverts(TestCase):
 	def test_localize_preserves_the_physical_quantity(self):
 		"""Whatever unit the config picks, the speed itself must not change.
 
-		Trivially true under si.ini (which localizes wind to m/s); the
+		Trivially true under si.toml (which localizes wind to m/s); the
 		assertion earns its keep under any config that converts.
 		"""
 		w = self._mps(0.5)
 		self.assertAlmostEqual(0.5, float(w.localize.ms), places=6)
+
+
+def test_reading_a_new_config_drops_the_cached_unit(tmp_path):
+	"""A class's localised unit follows the file read last, not whichever was current when it was first asked."""
+	import unitcorn as uc
+	from unitcorn.config import config
+	miles, kilometres = tmp_path / 'miles.ini', tmp_path / 'km.ini'
+	miles.write_text('[Units]\nlength = mi\n')
+	kilometres.write_text('[Units]\nlength = km\n')
+	original = config.path
+	try:
+		config.read(str(miles))
+		assert uc.Length.localizedUnit is uc.Length.Mile
+		config.read(str(kilometres))
+		assert uc.Length.localizedUnit is uc.Length.Kilometer
+	finally:
+		config.read(str(original))
+
+class TestLengthLocalizationIsStable(TestCase):
+	"""`[Units] length = ...` found Kilometer's config entry on about half the runs.
+
+	Kilometer has three generic ancestors (Metric Length, Measurement, Length) and
+	`Generic` took whichever a set of classes yielded first, which changes with
+	object ids. Only Length matches the `length` key.
+	"""
+
+	def test_kilometer_finds_the_length_entry(self):
+		from unitcorn.length import Kilometer
+		from unitcorn.utils import loadUnitLocalization
+
+		class Config:
+			localUnits = {'wind': 'mi/hr', 'length': 'mi'}
+
+		config = Config()
+		self.assertEqual(loadUnitLocalization(Kilometer, config), 'mi')
+
+	def test_generic_is_the_nearest_generic_ancestor(self):
+		from unitcorn.length import Kilometer, MetricLength
+
+		self.assertIs(Kilometer.Generic, MetricLength)
