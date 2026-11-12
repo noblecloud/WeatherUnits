@@ -1,6 +1,6 @@
 # Strict unit parsing
 
-**Status:** design. The strict-lookup half can start now. The compound-unit half waits on [derived-units-and-algebra.md](derived-units-and-algebra.md).
+**Status:** phase 1 done on `feat/strict-parse` (2026-11-12); phases 2 and 3 open. The strict-lookup half is built. The compound-unit half waits on [derived-units-and-algebra.md](derived-units-and-algebra.md).
 **Base:** `dev`. Step one: `git checkout -B feat/unit-parsing dev`.
 **Model:** Sonnet for the lookup half. The compound half is design work.
 
@@ -64,3 +64,17 @@ A fixture list that every string above runs through, plus Home Assistant's unit 
 ## Report
 
 The fixture table with the outcome per row, and the list of collisions the class-creation check found.
+
+## Phase 1 done: what was built and decided
+
+`uc.lookup(unit, dimension=None) -> class`, `uc.parse(text | value, unit, dimension=None) -> instance`, `uc.suggest(text, dimension=None, n=5) -> list of unit classes`, and `uc.UnknownUnit` / `uc.AmbiguousUnit` (`ValueError` and `LookupError`; `.unit`, `.candidates`). Code in `src/unitcorn/strict.py`, errors in `errors/Lookup.py`, tests in `tests/test_parse.py`, Home Assistant strings in `tests/fixtures/home_assistant_units.txt` (fetched 2026-10-23).
+
+- Order: normalise, exact symbol or alias, name, then case-insensitive only if one dimension matches. The fold is refused for one character (`k` is not Kelvin) and for `m` against `M` unless the whole text is capitals (`KM` is the kilometer, `mW` and `Mm` raise).
+- Spellings are declared on classes: `_parse_aliases` and `_parse_scoped` (spellings valid only with a `dimension`: `C`, `F`, `%` for PartsPer). Own `__dict__` only, never inherited. `%` is Percentage; `degC`, `°C` and `deg C` are one spelling.
+- `m` is Meter or Minute: unscoped it is `AmbiguousUnit`. Note that Home Assistant's `UnitOfTime.MONTHS` is `m`, so a caller must not scope HA time units to `Time`.
+- Generated plural symbols (`ms` for Meter, `ts`, `cs`) are not accepted. Plural names are.
+- Same-dimension duplicates (Wind and Rate `mph`) are not ambiguous: a unit whose own type is the requested dimension, else the most derived class, else sort order.
+- Compounds: direct symbol first (`m/s`, `W/m²`, `BTU/h`), else one `/` splits and the sides divide through the algebra. A float, a catch-all `Compound` or identical sides (`m/m`) is refused, so `g/m`, `m³`-based units and `µg/m³` raise `UnknownUnit`. With a derived `dimension` (`uc.Wind`) the dimension builds the class.
+- `parse` of a percentage passes `isPercentage=True`.
+- Not done: `__findUnitClass__`, `auto()` and `__getitem__` are untouched (their fuzzy fallback is still there, and `wind['km/h']` is still wrong), so the doc's "remove the fuzzy fallback" and "`w['km/h']` uses the same parser" are for a later step. `UnknownUnit` moved to `errors/Lookup.py` and now subclasses `ValueError`; its old `(measurement, unit)` call still works.
+- Home Assistant: 182 strings, 72 parse, 108 raise `UnknownUnit`, 2 raise `AmbiguousUnit` (`m`, once for length and once for time).
