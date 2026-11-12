@@ -9,6 +9,8 @@ __all__ = ['Celsius']
 class Celsius(Temperature, system=metric):
 	_limits = (-273.15, inf)
 	_unit = 'c'
+	_parse_aliases = ('degC',)
+	_parse_scoped = ('c', 'C')
 
 	def _celsius(self, delta: bool = False):
 		return self

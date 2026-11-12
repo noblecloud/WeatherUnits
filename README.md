@@ -51,6 +51,42 @@ from unitcorn.temperature import Fahrenheit
 '0°'
 ```
 
+### Parsing unit strings
+
+Reading a unit you did not choose (an API's `"degC"`, a sensor's `"%"`) should never
+guess: a value in the wrong unit looks fine. `parse`, `lookup` and `suggest` either
+return exactly the unit the text names or raise `UnknownUnit` / `AmbiguousUnit`
+(both are `ValueError`s carrying `.unit` and `.candidates`).
+
+```python
+import unitcorn as uc
+
+wind = uc.parse('10 m/s')              # a number, then the unit
+assert str(wind) == '10 m/s'
+assert uc.parse(21.5, '°C').__class__ is uc.Temperature.Celsius
+assert uc.parse('1 %') == 0.01         # percent, not a guessed fraction
+
+# `m` is Meter, Minute or Month: a dimension narrows it, and inside Time it stays ambiguous
+try:
+	uc.lookup('m')
+except uc.AmbiguousUnit as error:
+	assert len(error.candidates) == 3
+assert uc.lookup('m', uc.Length) is uc.Length.Meter
+assert uc.lookup('min', uc.Time) is uc.Time.Minute
+
+# Near misses are an explicit question, never an automatic answer
+try:
+	uc.lookup('Celcius')
+except uc.UnknownUnit as error:
+	assert uc.Temperature.Celsius in error.candidates
+assert uc.suggest('Celcius')[0] is uc.Temperature.Celsius
+
+speed = uc.parse('10 km/h')            # compounds divide the two units
+```
+
+The matching rules (case, `µ`/`u`, `²`/`^2`, `°`/`deg`, compounds, how a dimension
+narrows the search) are in the docstring of `unitcorn.strict`.
+
 ## Using a Config file
 
 #### Loading a config file

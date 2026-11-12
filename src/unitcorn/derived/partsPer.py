@@ -57,6 +57,8 @@ class Hundred(PartsPer):
 	_precision = 2
 	_digit_budget = 3
 	_unit = '%'
+	# '%' alone means Percentage; it means this only when asked for as PartsPer
+	_parse_scoped = ('%',)
 
 
 Percent = Hundred

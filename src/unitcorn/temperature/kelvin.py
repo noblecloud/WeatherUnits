@@ -11,6 +11,7 @@ class Kelvin(Temperature, system=metric):
 	_unit_symbol = ''
 	_limits = (0, inf)
 	_unit = 'K'
+	_parse_aliases = ('degK',)
 
 	def _kelvin(self):
 		return self

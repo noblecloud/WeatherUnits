@@ -98,6 +98,7 @@ class DLI(_OwnQuantity, Light, alias=('DLI', 'mol/m2/d', 'mol/m²/day'), fullNam
 
 class Illuminance(Light):
 	_unit = 'lux'
+	_parse_aliases = ('lx',)
 
 	@property
 	def wpm2(self) -> Irradiance:

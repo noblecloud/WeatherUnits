@@ -9,6 +9,8 @@ __all__ = ['Fahrenheit']
 class Fahrenheit(Temperature, system=imperial):
 	_limits = (-459.6699, inf)
 	_unit = 'f'
+	_parse_aliases = ('degF',)
+	_parse_scoped = ('f', 'F')
 
 	def _celsius(self, delta: bool = False):
 		if delta:
