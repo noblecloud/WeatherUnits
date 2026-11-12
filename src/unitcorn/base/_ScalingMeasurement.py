@@ -241,7 +241,10 @@ class ScalingMeasurement(Measurement):
 			return Measurement.__new__(cls, float(value), *args, **kwargs)
 
 		if sameSystem and sameDimension:
-			if isinstance(value, ScalingMeasurement) and not isinstance(value, value._baseUnit):
+			# A float-variant unit (Bar, Atmosphere, ...) is declared as a subclass of the
+			# base unit class, so `isinstance(value, _baseUnit)` is true for it while its
+			# number is not in base units. Ask the scale, not the class.
+			if isinstance(value, ScalingMeasurement) and value.scale is not value._Scale.Base:
 				value = value.changeScale(value._Scale.Base)
 			if cls is cls._baseUnit:
 				return Measurement.__new__(cls, float(value), *args, **kwargs)
