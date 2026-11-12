@@ -9,5 +9,8 @@
 __pycache__/
 *.py[cod]
 
+# The formatting playground installs this wheel; build it with scripts/build_playground.sh
+/docs/playground/*.whl
+
 # macOS
 .DS_Store

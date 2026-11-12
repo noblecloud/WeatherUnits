@@ -25,6 +25,10 @@ pip install unitcorn
 
 ## How to use
 
+> 🎛️ **[Formatting playground →](docs/playground/)** — drive every formatting
+> parameter with controls and watch the real library render it in your browser
+> (build it with `scripts/build_playground.sh`).
+>
 > 📐 **[Formatting reference →](docs/formatting.md)** — the format-spec
 > mini-language, every parameter, how `precision`/`digit_budget` interact, and the
 > known gotchas. Verified against the library; start there for anything

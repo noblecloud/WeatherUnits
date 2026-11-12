@@ -41,7 +41,8 @@ These are blocked on a judgment call, not on effort.
 > and the config actually binds. What remains below is either a decision or
 > a new feature, not tidying.
 
-- **[format-playground.md](format-playground.md)** — interactive demo page
+- ~~**[format-playground.md](format-playground.md)**~~ **Done** (GitHub Pages
+  publishing left to the maintainer) — interactive demo page
   with sliders for every formatting parameter. Runs the real library in the
   browser via Pyodide (the package has zero runtime dependencies), so it
   can't drift from actual behaviour the way hand-written examples did.
