@@ -241,7 +241,10 @@ class ScalingMeasurement(Measurement):
 			return Measurement.__new__(cls, float(value), *args, **kwargs)
 
 		if sameSystem and sameDimension:
-			if isinstance(value, ScalingMeasurement) and not isinstance(value, value._baseUnit):
+			# A float-variant unit (Bar, Atmosphere, ...) is declared as a subclass of the
+			# base unit class, so `isinstance(value, _baseUnit)` is true for it while its
+			# number is not in base units. Ask the scale, not the class.
+			if isinstance(value, ScalingMeasurement) and value.scale is not value._Scale.Base:
 				value = value.changeScale(value._Scale.Base)
 			if cls is cls._baseUnit:
 				return Measurement.__new__(cls, float(value), *args, **kwargs)
@@ -285,7 +288,9 @@ class ScalingMeasurement(Measurement):
 		while up.scale not in (self.common or self._Scale) and up.scale is not self.scale:
 			up_up = up.up
 			if up_up.scale is up.scale:
-				return up
+				# The top of the ladder. A unit off `common` (a nautical mile
+				# sorts above the kilometre) is not somewhere to autoscale to.
+				return up if up.scale in (self.common or self._Scale) else self
 			up = up_up
 		return up
 

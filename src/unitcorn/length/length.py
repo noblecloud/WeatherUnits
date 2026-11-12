@@ -9,6 +9,7 @@ class Length(metaclass=Dimension, symbol='L'):
 	Decameter: type
 	Hectometer: type
 	Kilometer: type
+	NauticalMile: type
 
 	Line: type
 	Inch: type
@@ -39,6 +40,12 @@ class Length(metaclass=Dimension, symbol='L'):
 		from . import Kilometer
 		return Kilometer(self)
 	km = kilometer
+
+	@property
+	def nauticalMile(self):
+		from . import NauticalMile
+		return NauticalMile(self)
+	nmi = nauticalMile
 
 	@property
 	def line(self):

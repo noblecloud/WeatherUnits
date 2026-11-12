@@ -8,8 +8,8 @@ The purpose, for judging what belongs: easy, automatic conversion for normalisin
 
 ## Speed
 
-- Knots (`kn` / `kt`).
-- Beaufort. Non-linear, so it exercises the escape hatch in [conversion-core.md](conversion-core.md) (overridden `to_reference` / `from_reference`).
+- ~~Knots (`kn` / `kt`).~~ **Done** (`feat/grow-units`): `Wind.Knot`, with `Length.NauticalMile` (`nmi`) as its numerator. Spelled with a nautical mile per hour, not the `factor = 1852 / 3600` stopgap in [conversion-core.md](conversion-core.md).
+- ~~Beaufort.~~ **Done**, as an `Index` (`Beaufort.from_speed()` / `.speed`, shown `4 Bft`) because the `to_reference` / `from_reference` escape hatch in [conversion-core.md](conversion-core.md) has not landed. When it does, `Beaufort` could move onto it; `.speed` is the midpoint of the band, so it is not a true inverse.
 
 ## Light and energy
 
@@ -20,8 +20,8 @@ The purpose, for judging what belongs: easy, automatic conversion for normalisin
 
 The maintainer grows carnivorous plants and does tissue culture.
 
-- PPFD (µmol/m²/s) and DLI (mol/m²/day). DLI = PPFD × photoperiod, so a rate/accumulation pair.
-- VPD in kPa, computed from temperature and RH like dew point and heat index.
+- ~~PPFD (µmol/m²/s) and DLI (mol/m²/day).~~ **Done**: `PPFD.dli(photoperiod)` and `DLI.ppfd(photoperiod)`, and `Illuminance.ppfd(factor)` with the factor explicit. They are `Light` quantities outside the dimension algebra (a mole of photons is not one of the four base dimensions), and add only with themselves.
+- ~~VPD in kPa, computed from temperature and RH like dew point and heat index.~~ **Done**: `unitcorn.vpd(temperature, humidity, leafOffset=0)` and `Temperature.vpd(rh)`, Tetens, returning a `Pressure.Kilopascal`.
 - EC in mS/cm or µS/cm, and TDS in ppm. TDS uses a 0.5 / 0.64 / 0.7 conversion factor, so it is an assumption-carrying value, not a pure unit conversion. The factor must be explicit.
 
 ## Home Assistant normalisation

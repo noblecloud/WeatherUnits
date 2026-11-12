@@ -88,14 +88,17 @@ class Gigajoule(Energy):
 
 class WattHour(Energy):
 	_unit = 'Wh'
+	_parse_aliases = ('W·h',)
 
 
 class KilowattHour(Energy):
 	_unit = 'kWh'
+	_parse_aliases = ('kW·h',)
 
 
 class MegawattHour(Energy):
 	_unit = 'MWh'
+	_parse_aliases = ('MW·h',)
 
 
 class Calorie(Energy):

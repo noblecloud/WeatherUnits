@@ -25,6 +25,10 @@ pip install unitcorn
 
 ## How to use
 
+> 🎛️ **[Formatting playground →](docs/playground/)** — drive every formatting
+> parameter with controls and watch the real library render it in your browser
+> (build it with `scripts/build_playground.sh`).
+>
 > 📐 **[Formatting reference →](docs/formatting.md)** — the format-spec
 > mini-language, every parameter, how `precision`/`digit_budget` interact, and the
 > known gotchas. Verified against the library; start there for anything
@@ -46,6 +50,42 @@ from unitcorn.temperature import Fahrenheit
 >>> value.celsius
 '0°'
 ```
+
+### Parsing unit strings
+
+Reading a unit you did not choose (an API's `"degC"`, a sensor's `"%"`) should never
+guess: a value in the wrong unit looks fine. `parse`, `lookup` and `suggest` either
+return exactly the unit the text names or raise `UnknownUnit` / `AmbiguousUnit`
+(both are `ValueError`s carrying `.unit` and `.candidates`).
+
+```python
+import unitcorn as uc
+
+wind = uc.parse('10 m/s')              # a number, then the unit
+assert str(wind) == '10 m/s'
+assert uc.parse(21.5, '°C').__class__ is uc.Temperature.Celsius
+assert uc.parse('1 %') == 0.01         # percent, not a guessed fraction
+
+# `m` is Meter, Minute or Month: a dimension narrows it, and inside Time it stays ambiguous
+try:
+	uc.lookup('m')
+except uc.AmbiguousUnit as error:
+	assert len(error.candidates) == 3
+assert uc.lookup('m', uc.Length) is uc.Length.Meter
+assert uc.lookup('min', uc.Time) is uc.Time.Minute
+
+# Near misses are an explicit question, never an automatic answer
+try:
+	uc.lookup('Celcius')
+except uc.UnknownUnit as error:
+	assert uc.Temperature.Celsius in error.candidates
+assert uc.suggest('Celcius')[0] is uc.Temperature.Celsius
+
+speed = uc.parse('10 km/h')            # compounds divide the two units
+```
+
+The matching rules (case, `µ`/`u`, `²`/`^2`, `°`/`deg`, compounds, how a dimension
+narrows the search) are in the docstring of `unitcorn.strict`.
 
 ## Using a Config file
 
@@ -176,6 +216,50 @@ The basic rules are:
 - **key:** Key to be used for other programs
 - **size_hint:** Override generated size hint string. Useful for when you know the expected max string length.
 
+
+## Plants and wind
+
+Speeds in **knots** (`kn`, also `kt`, `knot`, `knots`) are exactly 1852 m per 3600 s, and convert both ways with the other
+speeds. The **Beaufort** scale is not linear, so it is an index, not a speed unit: `Beaufort.from_speed()` reads a speed
+(in any unit; a plain number is m/s) against the WMO table, and `.speed` gives the **midpoint** of the force's band back.
+It reads `4 Bft`.
+
+```python
+import math
+import unitcorn as uc
+from unitcorn import Wind, Beaufort, PPFD, DLI, Temperature, Humidity
+
+wind = Wind.Knot(20)
+assert str(wind) == '20 kn'
+assert str(wind.kmh) == '37.0 km/hr' and math.isclose(float(wind.ms), 20 * 1852 / 3600)
+
+force = Beaufort.from_speed(wind)                 # a speed in any unit
+assert str(force) == '5 Bft' and str(force.speed) == '9.3 m/s'   # the middle of 7.9 to 10.7 m/s
+assert int(Wind.MetersPerSecond(0.5).beaufort) == 0               # the upper bound of a band belongs to it
+```
+
+For growing, **PPFD** (µmol/m²/s, a rate) and **DLI** (mol/m²/d, the day's total) are separate classes that add only
+with themselves. `DLI = PPFD × 3600 × hours / 1e6`, with the photoperiod in hours, a `Time` or a `timedelta`.
+**VPD** (`unitcorn.vpd`) is in kPa from air temperature and humidity by the Tetens equation: a `Temperature` in any scale
+or a plain number in °C, and a `Humidity` or a plain number in percent. `leafOffset` is how far the leaf sits below the
+air, which gives the leaf VPD.
+
+```python
+import unitcorn as uc
+from unitcorn import PPFD, DLI, Temperature, Humidity
+
+light = PPFD(500)
+assert str(light) == '500 µmol/m²/s'
+dli = light.dli(16)                                # 16 hours of light
+assert str(dli) == '28.8 mol/m²/d' and float(dli.ppfd(16)) == 500
+
+vpd = uc.vpd(Temperature.Fahrenheit(77), Humidity.fromPercent(60))
+assert str(vpd) == '1.27 kPa'                      # the same as uc.vpd(25, 60)
+assert str(uc.vpd(25, 60, leafOffset=2)) == '0.91 kPa'
+
+# Lux is not a photon count: the spectrum factor (µmol/m²/s per klux) is yours to give. Daylight is about 18.5.
+assert str(uc.Light.Illuminance(50000).ppfd(18.5)) == '925 µmol/m²/s'
+```
 
 > Every code example below is executed against the library as part of
 > verifying this README — they define real, working unit classes.

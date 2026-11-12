@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ctext y='13' font-size='13'%3E%F0%9F%A6%84%3C/text%3E%3C/svg%3E">
+<title>unitcorn formatting playground</title>
+<meta name="description" content="Drive every unitcorn formatting parameter and watch the real library render the string.">
+<style>
+	:root {
+		--bg: #f6f7f9; --panel: #ffffff; --ink: #1b1f27; --muted: #5d6675; --rule: #dde1e8;
+		--accent: #5b3fd0; --accent-ink: #ffffff; --soft: #ece8fb; --warn: #8a5a00; --warn-bg: #fff4d6;
+		--code: #f0f2f6; --bad: #b3261e;
+	}
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--bg: #12141a; --panel: #1b1e27; --ink: #e8eaf0; --muted: #9aa3b4; --rule: #2c3140;
+			--accent: #a794ff; --accent-ink: #14111f; --soft: #2a2548; --warn: #f0c36b; --warn-bg: #3a2f14;
+			--code: #14161d; --bad: #ff8a80;
+		}
+	}
+	* { box-sizing: border-box; }
+	html { -webkit-text-size-adjust: 100%; }
+	body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+	main { max-width: 1080px; margin: 0 auto; padding: 24px 16px 48px; }
+	h1 { font-size: 1.5rem; margin: 0 0 4px; }
+	h2 { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+	.lede { color: var(--muted); margin: 0 0 20px; max-width: 60ch; }
+	.grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+	@media (min-width: 860px) { .grid { grid-template-columns: 5fr 6fr; align-items: start; } .sticky { position: sticky; top: 16px; } }
+	section { background: var(--panel); border: 1px solid var(--rule); border-radius: 12px; padding: 16px; margin-bottom: 16px; min-width: 0; }
+	label, .label { display: block; font-weight: 600; font-size: .9rem; }
+	select, input[type=text] { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; min-height: 40px; }
+	input[type=range] { width: 100%; accent-color: var(--accent); }
+	.row { display: grid; gap: 4px; padding: 10px 0; border-top: 1px solid var(--rule); }
+	.row:first-of-type { border-top: 0; }
+	.row .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+	.hint { color: var(--muted); font-size: .8rem; }
+	.hint.err { color: var(--bad); }
+	.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+	.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+	.seg button, .chip, .copy, .reset {
+		font: inherit; font-size: .85rem; color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 8px;
+		padding: 6px 10px; min-height: 36px; cursor: pointer;
+	}
+	.seg button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+	.reset { padding: 2px 8px; min-height: 28px; color: var(--muted); }
+	.reset[hidden] { display: none; }
+	.out { font: 600 clamp(1.8rem, 7vw, 2.8rem)/1.2 ui-monospace, "SF Mono", Menlo, Consolas, monospace; word-break: break-word; padding: 12px 0 16px; min-height: 1.2em; }
+	.out.bad { color: var(--bad); font-size: 1rem; font-weight: 500; }
+	pre { margin: 0; padding: 10px 12px; background: var(--code); border-radius: 8px; overflow-x: auto; font: .85rem/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
+	.block { margin-top: 12px; }
+	.block .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+	.note { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: .85rem; }
+	.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+	.chip[aria-pressed=true] { background: var(--soft); border-color: var(--accent); }
+	.case-note { margin-top: 12px; color: var(--muted); font-size: .9rem; }
+	#loading { padding: 40px 16px; text-align: center; color: var(--muted); }
+	#loading .bar { height: 4px; width: 200px; max-width: 80%; margin: 12px auto 0; background: var(--rule); border-radius: 2px; overflow: hidden; }
+	#loading .bar::after { content: ""; display: block; height: 100%; width: 40%; background: var(--accent); animation: slide 1.1s ease-in-out infinite; }
+	@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+	@media (prefers-reduced-motion: reduce) { #loading .bar::after { animation: none; width: 100%; } }
+	footer { color: var(--muted); font-size: .8rem; margin-top: 8px; }
+	a { color: var(--accent); }
+	[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+	<h1>unitcorn formatting playground</h1>
+	<p class="lede">Pick a measurement and drive every formatting parameter. The string is rendered by the real library, running in your browser; nothing here re-implements a rule.</p>
+
+	<div id="loading" role="status"><div id="loading-text">Loading Python…</div><div class="bar"></div></div>
+	<div id="fatal" class="note" hidden></div>
+
+	<div id="app" class="grid" hidden>
+		<div>
+			<section>
+				<h2>Value</h2>
+				<div class="two">
+					<div><label for="measurement">Measurement</label><select id="measurement"></select></div>
+					<div><label for="unit">Unit</label><select id="unit"></select></div>
+				</div>
+				<label for="value">Value</label>
+				<input id="value" type="text" inputmode="decimal" autocomplete="off" spellcheck="false">
+				<input id="slider" type="range" aria-label="Value slider">
+				<div class="hint">Type an exact value, awkward ones included: 0.01, 30.0, 22.5, nan.</div>
+			</section>
+			<section>
+				<h2>Parameters</h2>
+				<div id="params"></div>
+				<div class="hint" style="margin-top:8px">Untouched parameters are left out of the spec and inherit the class default.</div>
+			</section>
+		</div>
+		<div class="sticky">
+			<section>
+				<h2>Rendered</h2>
+				<div id="out" class="out" aria-live="polite"></div>
+				<div id="notes"></div>
+				<div class="block"><div class="head"><span class="label">Format spec</span><button class="copy" data-copy="call">Copy</button></div><pre id="call"></pre></div>
+				<div class="block"><div class="head"><span class="label">Config line</span><button class="copy" data-copy="config">Copy</button></div><pre id="config"></pre>
+					<div class="hint" id="confighint"></div></div>
+			</section>
+			<section>
+				<h2>Surprising cases</h2>
+				<div id="cases" class="chips"></div>
+				<div id="casenote" class="case-note"></div>
+			</section>
+		</div>
+	</div>
+	<footer id="footer"></footer>
+</main>
+
+<script>
+(() => {
+	const query = new URLSearchParams(location.search);
+	const pyodideBase = (query.get('pyodide') || 'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/').replace(/\/?$/, '/');
+	const wheelUrl = query.get('wheel') || './unitcorn-0.9.0-py3-none-any.whl';
+	const $ = id => document.getElementById(id);
+	const state = { measurement: null, unit: null, value: '', params: {}, caseId: null };
+	let catalogue, py, playground, controls = {};
+
+	const say = text => { $('loading-text').textContent = text; };
+	const fail = error => {
+		$('loading').hidden = true;
+		$('fatal').hidden = false;
+		$('fatal').textContent = 'The playground could not start: ' + (error && error.message || error);
+		console.error(error);
+	};
+
+	function loadScript(src) {
+		return new Promise((resolve, reject) => {
+			const tag = document.createElement('script');
+			tag.src = src; tag.onload = resolve; tag.onerror = () => reject(new Error('could not load ' + src));
+			document.head.appendChild(tag);
+		});
+	}
+
+	async function boot() {
+		say('Loading Python…');
+		await loadScript(pyodideBase + 'pyodide.js');
+		py = await loadPyodide({ indexURL: pyodideBase });
+		say('Installing unitcorn…');
+		// A pure-Python wheel with no dependencies is a zip: unpack it into site-packages. No micropip, so this
+		// works the same from the CDN and from a local copy of Pyodide.
+		const wheel = await fetch(wheelUrl);
+		if (!wheel.ok) throw new Error(`could not fetch the wheel at ${wheelUrl} (${wheel.status}). Run scripts/build_playground.sh.`);
+		py.unpackArchive(await wheel.arrayBuffer(), 'wheel');
+		const source = await fetch('./playground.py');
+		if (!source.ok) throw new Error('could not fetch playground.py');
+		py.FS.writeFile('/home/pyodide/playground.py', await source.text());
+		say('Starting…');
+		playground = py.pyimport('playground');
+		catalogue = JSON.parse(playground.describe());
+	}
+
+	const measurement = () => catalogue.measurements.find(m => m.id === state.measurement);
+	const unit = () => measurement().units.find(u => u.id === state.unit);
+	const applicable = p => state.measurement === 'time' ? p.name === 'style' : (!p.only || p.only.includes(state.measurement));
+	const isSet = v => v !== undefined && v !== null && v !== '';
+
+	function option(select, items) {
+		select.replaceChildren(...items.map(([value, label]) => Object.assign(document.createElement('option'), { value, textContent: label })));
+	}
+
+	function buildParams() {
+		const root = $('params'); root.replaceChildren(); controls = {};
+		for (const p of catalogue.params.filter(applicable)) {
+			const row = document.createElement('div'); row.className = 'row';
+			const top = document.createElement('div'); top.className = 'top';
+			const name = document.createElement('span'); name.className = 'label'; name.textContent = p.name;
+			const side = document.createElement('span'); side.className = 'hint';
+			const reset = Object.assign(document.createElement('button'), { className: 'reset', textContent: 'reset', type: 'button', hidden: true });
+			reset.onclick = () => { delete state.params[p.name]; syncParams(); update(); };
+			const right = document.createElement('span'); right.append(side, ' ', reset);
+			top.append(name, right); row.append(top);
+			const doc = document.createElement('div'); doc.className = 'hint'; doc.textContent = p.doc;
+			const ctl = { p, side, reset, row };
+			if (p.kind === 'int') {
+				const input = Object.assign(document.createElement('input'), { type: 'range', min: p.lo, max: p.hi, step: 1 });
+				input.setAttribute('aria-label', p.name);
+				input.oninput = () => { state.params[p.name] = Number(input.value); syncParams(); update(); };
+				ctl.input = input; row.append(input);
+			} else if (p.kind === 'bool' || p.kind === 'choice') {
+				const options = p.kind === 'bool' ? [['True', 'on'], ['False', 'off']] : p.options.map(o => [o, o]);
+				const seg = document.createElement('div'); seg.className = 'seg'; ctl.buttons = [];
+				for (const [value, label] of [[null, 'default'], ...options]) {
+					const b = Object.assign(document.createElement('button'), { type: 'button', textContent: label });
+					b.onclick = () => { if (value === null) delete state.params[p.name]; else state.params[p.name] = value; syncParams(); update(); };
+					b.dataset.value = value === null ? '' : value; ctl.buttons.push(b); seg.append(b);
+				}
+				row.append(seg);
+			} else {
+				const input = Object.assign(document.createElement('input'), { type: 'text', autocomplete: 'off', spellcheck: false, placeholder: 'default' });
+				input.setAttribute('aria-label', p.name);
+				input.oninput = () => { if (input.value.trim() === '') delete state.params[p.name]; else state.params[p.name] = input.value; syncParams(false); update(); };
+				ctl.input = input; row.append(input);
+			}
+			row.append(doc); root.append(row); controls[p.name] = ctl;
+		}
+		syncParams();
+	}
+
+	function defaultLabel(name, value) {
+		if (name === 'unit_spacer') return value === true ? 'a space' : value === false ? 'none' : String(value);
+		if (value === true) return 'on';
+		if (value === false) return 'off';
+		return value === undefined || value === null ? '' : String(value);
+	}
+
+	function syncParams(rewriteText = true) {
+		const defaults = unit().defaults;
+		for (const [name, ctl] of Object.entries(controls)) {
+			const v = state.params[name]; const set = isSet(v);
+			ctl.reset.hidden = !set;
+			const d = defaultLabel(name, defaults[name]);
+			ctl.side.textContent = set ? '' : (d ? 'default: ' + d : '');
+			if (ctl.p.kind === 'int') ctl.input.value = set ? v : (defaults[name] ?? ctl.p.lo);
+			if (ctl.p.kind === 'int') ctl.input.style.opacity = set ? 1 : .5;
+			if (ctl.buttons) ctl.buttons.forEach(b => b.setAttribute('aria-pressed', String(set ? String(v) === b.dataset.value : b.dataset.value === '')));
+			if (ctl.p.kind === 'text' && rewriteText) ctl.input.value = set ? v : '';
+			if (ctl.p.kind === 'int' && set) ctl.side.textContent = String(v);
+		}
+	}
+
+	function syncValue() {
+		const u = unit(), slider = $('slider');
+		slider.min = u.lo; slider.max = u.hi; slider.step = u.step;
+		const n = parseFloat(state.value);
+		slider.value = Number.isFinite(n) ? n : u.value;
+		$('value').value = state.value;
+	}
+
+	function copyHandlers() {
+		document.querySelectorAll('.copy').forEach(b => b.onclick = async () => {
+			const text = $(b.dataset.copy).textContent;
+			try { await navigator.clipboard.writeText(text); b.textContent = 'Copied'; } catch { b.textContent = 'Select it'; }
+			setTimeout(() => { b.textContent = 'Copy'; }, 1200);
+		});
+	}
+
+	function update() {
+		const request = { measurement: state.measurement, unit: state.unit, value: state.value, params: state.params };
+		const r = JSON.parse(playground.render(JSON.stringify(request)));
+		const out = $('out');
+		out.classList.toggle('bad', !r.ok);
+		out.textContent = r.ok ? r.text : (r.error || 'error');
+		$('call').textContent = r.spec !== undefined ? r.construct + '\n' + r.call : '';
+		$('config').textContent = r.ok ? (r.config || '') : '';
+		$('confighint').textContent = !r.ok ? '' : r.config
+			? 'Add it to the [UnitProperties] section of your config and load the file with UNITCORN_CONFIG_PATH. Merged with the line template.toml already has for that key, if it has one.'
+			: (state.measurement === 'time' ? '' : 'Nothing set, so there is nothing to write: these are the class defaults.');
+		const notes = $('notes'); notes.replaceChildren();
+		const messages = [...(r.notes || []), ...Object.entries(r.problems || {}).map(([k, v]) => `${k}: ${v}`)];
+		for (const m of messages) notes.append(Object.assign(document.createElement('div'), { className: 'note', textContent: m }));
+		document.querySelectorAll('#cases .chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.id === state.caseId)));
+		$('casenote').textContent = (catalogue.cases.find(c => c.id === state.caseId) || {}).note || '';
+		document.body.dataset.ready = '1';
+	}
+
+	function choose(measurementId, unitId, value) {
+		state.measurement = measurementId;
+		$('measurement').value = measurementId;
+		option($('unit'), measurement().units.map(u => [u.id, u.label]));
+		state.unit = unitId || measurement().units[0].id;
+		$('unit').value = state.unit;
+		state.value = value !== undefined ? String(value) : String(unit().value);
+		state.params = {};
+		buildParams(); syncValue();
+	}
+
+	function wire() {
+		option($('measurement'), catalogue.measurements.map(m => [m.id, m.label]));
+		$('measurement').onchange = e => { state.caseId = null; choose(e.target.value); update(); };
+		$('unit').onchange = e => { state.caseId = null; state.unit = e.target.value; state.value = String(unit().value); state.params = {}; buildParams(); syncValue(); update(); };
+		$('value').oninput = e => { state.value = e.target.value; const n = parseFloat(state.value); if (Number.isFinite(n)) $('slider').value = n; update(); };
+		$('slider').oninput = e => { state.value = e.target.value; $('value').value = state.value; update(); };
+		const cases = $('cases');
+		for (const c of catalogue.cases) {
+			const b = Object.assign(document.createElement('button'), { type: 'button', className: 'chip', textContent: c.title });
+			b.dataset.id = c.id;
+			b.onclick = () => {
+				choose(c.measurement, c.unit, c.value);
+				state.params = { ...c.params }; state.caseId = c.id;
+				syncParams(); update();
+			};
+			cases.append(b);
+		}
+		copyHandlers();
+		$('footer').textContent = `Python ${catalogue.python} in Pyodide, unitcorn ${catalogue.library || ''}, baseline: the library's template.toml. `;
+	}
+
+	boot().then(() => {
+		wire();
+		choose('pressure', 'inhg', 30.0);
+		$('loading').hidden = true; $('app').hidden = false;
+		update();
+	}).catch(fail);
+})();
+</script>
+</body>
+</html>

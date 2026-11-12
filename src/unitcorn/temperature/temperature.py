@@ -89,6 +89,11 @@ class Temperature(Measurement, metaclass=Dimension, symbol='Θ'):
 		value.calculated = True
 		return value
 
+	def vpd(self, rh: Union[int, float, 'Humidity'], leafOffset=0.0):
+		"""Vapour pressure deficit at this temperature; see `unitcorn.vpd`. A plain ``rh`` is a percent."""
+		from ..pressure.vapour import vpd
+		return vpd(self, rh, leafOffset)
+
 	def windChill(self, wind: 'Wind'):
 		if wind.mph < 3:
 			return type(self)(self)

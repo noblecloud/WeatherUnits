@@ -1,6 +1,23 @@
 # Interactive formatting playground
 
-**Status:** ready to build. Previously parked behind the naming decision,
+**Status: done** (`docs/playground/`; build the wheel with
+`scripts/build_playground.sh`). Publishing it on GitHub Pages is left to the
+maintainer: serve `docs/playground/` with the built wheel beside `index.html`.
+Notes from building it:
+
+- The page installs the wheel with `pyodide.unpackArchive(..., 'wheel')`, not
+  micropip, so it works from the CDN and from a local Pyodide copy.
+- Rendering is always `format(value, spec)` in Python. Spec and config-line
+  generation live in `playground.py`, tested in `tests/test_playground.py`.
+- Findings while building: `uc.config.read()` after import does not bind
+  `[UnitProperties]` (only `UNITCORN_CONFIG_PATH` at import does); `length = {}`
+  binds nothing (use unit symbols); a spec's `precision` on a whole number
+  (`30.0`) differs from the same value as a config default; Direction ignores
+  `digit_budget` in a spec. The page flags the last two when they apply.
+- The "Direction 1 -> 2 -> 3" case from this brief no longer works through a
+  spec, so it became "Direction: the spec ignores digit_budget".
+
+Original brief follows. Previously parked behind the naming decision,
 which is now weeks out — and the dependency ran the wrong way anyway: the
 name appears only in the title, while the page itself is the most useful
 thing to put in front of someone who is being asked about the name.

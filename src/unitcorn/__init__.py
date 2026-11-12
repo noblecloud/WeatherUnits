@@ -29,6 +29,11 @@ from .energy import Energy, Power
 from . import airQuality as AirQuality
 from . import digital as Digital
 from . import derived
+from .errors import UnknownUnit, AmbiguousUnit
+from .strict import lookup, parse, suggest
+from .pressure.vapour import vpd, saturationVapourPressure
+from .others import PPFD, DLI
+from .derived.wind import Beaufort
 
 Rate = derived.DistanceOverTime
 Wind = derived.Wind
@@ -85,9 +90,10 @@ def auto(*args, dimension: Type[Dimension | Dimensionless] = None) -> Measuremen
 			raise ValueError
 
 
-__all__ = ['auto', 'Measurement', 'Temperature', 'Length', 'Mass', 'Time', 'Pressure', 'Area', 'Energy', 'Power', 'Other', 'Light', 'PartsPer',
+__all__ = ['auto', 'lookup', 'parse', 'suggest', 'UnknownUnit', 'AmbiguousUnit', 'Measurement', 'Temperature', 'Length', 'Mass', 'Time', 'Pressure', 'Area', 'Energy', 'Power', 'Other', 'Light', 'PartsPer',
 	'Volume', 'Density', 'PartsPer', 'Rate', 'Wind', 'Precipitation', 'AirQuality', 'Voltage', 'Digital', 'config',
-	'Precipitation', 'LightningStrike', 'Angle', 'Percentage', 'Humidity', 'Direction', 'Coverage', 'Probability']
+	'Precipitation', 'LightningStrike', 'Angle', 'Percentage', 'Humidity', 'Direction', 'Coverage', 'Probability',
+	'PPFD', 'DLI', 'Beaufort', 'vpd', 'saturationVapourPressure']
 
 
 def _registerDimensions():
