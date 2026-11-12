@@ -322,15 +322,18 @@ class Millisecond(Time):
 
 class Second(Time, alias='sec'):
 	_unit = 's'
+	_parse_aliases = ('secs',)
 
 
 class Minute(Time):
 	_precision = 1
 	_unit = 'min'
+	_parse_aliases = ('m', 'mins')
 
 
 class Hour(Time):
 	_unit = 'hr'
+	_parse_aliases = ('h', 'hrs')
 
 
 class Day(Time, plural_name='Days', plural_unit='days'):
@@ -340,6 +343,7 @@ class Day(Time, plural_name='Days', plural_unit='days'):
 
 class Week(Time):
 	_unit = 'wk'
+	_parse_aliases = ('w', 'wks')
 
 
 class Month(Time):
@@ -348,6 +352,7 @@ class Month(Time):
 
 class Year(Time):
 	_unit = 'yr'
+	_parse_aliases = ('y', 'yrs')
 
 
 class Decade(Time):

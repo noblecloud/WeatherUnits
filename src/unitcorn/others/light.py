@@ -31,6 +31,7 @@ class Irradiance(Light):
 
 class Illuminance(Light):
 	_unit = 'lux'
+	_parse_aliases = ('lx',)
 
 	@property
 	def wpm2(self) -> Irradiance:

@@ -34,6 +34,7 @@ class Ounce(Imperial):
 @Small
 class Pound(Imperial):
 	_unit = 'lbs'
+	_parse_aliases = ('lb',)
 
 
 @Large

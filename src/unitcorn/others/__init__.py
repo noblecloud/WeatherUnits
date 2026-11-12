@@ -15,6 +15,7 @@ __all__ = ['Light', 'Angle', 'Direction', 'Humidity', 'Voltage', 'LightningStrik
 @UnitType
 class Percentage(Dimensionless, NonPlural):
 	_unit_symbol = '%'
+	_parse_aliases = ('%', 'percent')
 	_digit_budget = 3
 	_precision = 2
 
@@ -121,6 +122,7 @@ class BatteryPercentage(Percentage, limits=(0.0, 1.0)):
 
 @UnitType
 class Angle(Dimensionless):
+	_parse_aliases = ('°', 'deg', 'degree', 'degrees')
 	_precision = 0
 	_unit_symbol = '°'
 	_shorten = True
@@ -302,6 +304,7 @@ class Voltage(Measurement):
 	_digit_budget = 3
 	_precision = 2
 	_unit = 'v'
+	_parse_aliases = ('V', 'volt', 'volts')
 
 
 class LightningStrike(Quantity, altName='Strike'):
