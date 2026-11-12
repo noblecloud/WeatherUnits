@@ -51,7 +51,10 @@ LOOKUPS = [
 	('ms', uc.Time, uc.Time.Millisecond),
 	('ms', uc.Length, UNKNOWN),
 	('m', None, AMBIGUOUS),
-	('m', uc.Time, uc.Time.Minute),
+	('m', uc.Time, AMBIGUOUS),        # Minute or Month: Home Assistant writes months as m
+	('mo', uc.Time, uc.Time.Month),
+	('mth', None, uc.Time.Month),
+	('mins', None, uc.Time.Minute),
 	('m', uc.Length, uc.Length.Meter),
 	('min', None, uc.Time.Minute),
 	('h', None, uc.Time.Hour),
@@ -295,8 +298,8 @@ class TestErrors(TestCase):
 		with self.assertRaises(AmbiguousUnit) as raised:
 			uc.lookup('m')
 		self.assertEqual('m', raised.exception.unit)
-		self.assertEqual({uc.Length.Meter, uc.Time.Minute}, set(raised.exception.candidates))
-		self.assertEqual(2, len(raised.exception.candidates))
+		self.assertEqual({uc.Length.Meter, uc.Time.Minute, uc.Time.Month}, set(raised.exception.candidates))
+		self.assertEqual(3, len(raised.exception.candidates))
 		self.assertIn('Meter', str(raised.exception))
 		self.assertIn('Minute', str(raised.exception))
 
@@ -344,13 +347,16 @@ class TestParse(TestCase):
 		self.assertIs(Celsius, type(uc.parse(21.5, 'degC')))
 
 	def test_dimension_forms(self):
-		self.assertIs(uc.Time.Minute, type(uc.parse('5 m', uc.Time)))
-		self.assertIs(uc.Time.Minute, type(uc.parse('5 m', dimension=uc.Time)))
-		self.assertIs(uc.Time.Minute, type(uc.parse(5, 'm', uc.Time)))
-		self.assertIs(uc.Time.Minute, type(uc.parse(5, 'm', dimension=uc.Time)))
+		self.assertIs(uc.Time.Minute, type(uc.parse('5 min', uc.Time)))
+		self.assertIs(uc.Time.Minute, type(uc.parse('5 min', dimension=uc.Time)))
+		self.assertIs(uc.Time.Minute, type(uc.parse(5, 'mins', uc.Time)))
+		self.assertIs(uc.Time.Minute, type(uc.parse(5, 'min', dimension=uc.Time)))
 		self.assertIs(uc.Length.Meter, type(uc.parse('5 m', uc.Length)))
 		with self.assertRaises(AmbiguousUnit):
 			uc.parse('5 m')
+		with self.assertRaises(AmbiguousUnit) as raised:
+			uc.parse('5 m', uc.Time)
+		self.assertEqual({uc.Time.Minute, uc.Time.Month}, set(raised.exception.candidates))
 		with self.assertRaises(TypeError):
 			uc.parse('5 m', uc.Time, dimension=uc.Time)
 
@@ -422,7 +428,7 @@ class TestSuggest(TestCase):
 	def test_dimension_scopes_suggestions(self):
 		for suggestion in uc.suggest('m', uc.Time):
 			self.assertTrue(issubclass(suggestion, uc.Time), suggestion)
-		self.assertIn(uc.Time.Minute, uc.suggest('m', uc.Time))
+		self.assertIn(uc.Time.Minute, uc.suggest('min', uc.Time))
 		self.assertNotIn(uc.Length.Meter, uc.suggest('m', uc.Time))
 
 	def test_scoped_only_spellings_are_not_suggested_without_a_scope(self):
@@ -446,9 +452,9 @@ class TestIndexStaysCurrent(TestCase):
 		self.assertIs(Furlong, uc.lookup('furlong', Length))
 
 	def test_building_a_compound_does_not_change_answers(self):
-		before = uc.lookup('m', uc.Time)
+		before = uc.lookup('min', uc.Time)
 		uc.parse('1 furlong/fortnight') if False else uc.parse('3 cm/min')
-		self.assertIs(before, uc.lookup('m', uc.Time))
+		self.assertIs(before, uc.lookup('min', uc.Time))
 		self.assertIs(uc.Length.Meter, uc.lookup('m', uc.Length))
 
 
@@ -563,13 +569,10 @@ class TestHomeAssistantUnits(TestCase):
 				self.assertIn(text, values)
 				self.assertIsInstance(self.outcome(text), (UnknownUnit, AmbiguousUnit))
 
-	def test_home_assistant_m_in_time_is_months_but_scoped_m_is_minute(self):
-		"""Documents a mismatch. HA's `UnitOfTime.MONTHS` is `m`; `lookup('m', Time)` is Minute.
-
-		Both are decided (the brief says `m` scoped by Time is Minute). A caller that
-		reads HA time units must not scope `m` to Time and expect a month.
-		"""
+	def test_home_assistant_m_in_time_is_months_so_it_is_ambiguous_even_in_time(self):
+		"""HA's `UnitOfTime.MONTHS` is `m`. Scoped to Time it must not become minutes."""
 		self.assertIn(('UnitOfTime', 'MONTHS', 'm'), self.rows())
-		self.assertIs(uc.Time.Minute, uc.lookup('m', uc.Time))
 		self.assertIsInstance(self.outcome('m'), AmbiguousUnit)
+		self.assertIsInstance(self.outcome('m', uc.Time), AmbiguousUnit)
+		self.assertIs(uc.Time.Minute, uc.lookup('min', uc.Time))
 		self.assertIs(uc.Time.Month, uc.lookup('month', uc.Time))

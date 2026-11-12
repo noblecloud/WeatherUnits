@@ -29,7 +29,8 @@ group is an `AmbiguousUnit`. Inside one group, duplicates are not the caller's
 problem and the choice is deterministic: when a `dimension` is given, a unit
 whose own type *is* that dimension wins; otherwise the most derived class wins
 (`Wind.MilesPerHour` over `DistanceOverTime.MilesPerHour`, both of which are
-`mph`); with neither, the class that sorts first by module and qualified name.
+`mph`); with neither, they are different units that share a spelling, and it is ambiguous
+(`m` within Time is Minute and Month).
 
 A class declares extra spellings with `_parse_aliases = ('degC',)`, and spellings
 that are only valid when a dimension is given (`C` for Celsius, `%` for
@@ -171,20 +172,21 @@ def _dimensionOf(unit: type) -> type:
 	return generic
 
 
-def _pick(group: List[type], dimension: Optional[type]) -> type:
-	"""One unit out of several of the same dimension. The rule is in the module docstring."""
+def _pick(group: List[type], dimension: Optional[type]) -> List[type]:
+	"""The units left out of several of one dimension: one if they are duplicates, more if they are different units."""
 	if len(group) == 1:
-		return group[0]
+		return group
 	if dimension is not None:
 		exact = [unit for unit in group if unit.type is dimension]
 		if len(exact) == 1:
-			return exact[0]
+			return exact
 		if exact:
 			group = exact
 	derived = [unit for unit in group if all(other is unit or issubclass(unit, other) for other in group)]
 	if len(derived) == 1:
-		return derived[0]
-	return sorted(derived or group, key=lambda c: (c.__module__, c.__qualname__))[0]
+		return derived
+	# Unrelated classes of one dimension sharing a spelling are different units (`m` is Minute and Month)
+	return sorted(group, key=lambda c: (c.__module__, c.__qualname__))
 
 
 def _choose(text: str, entries: Iterable[_Entry], dimension: Optional[type]) -> type:
@@ -193,10 +195,10 @@ def _choose(text: str, entries: Iterable[_Entry], dimension: Optional[type]) -> 
 		group = groups.setdefault(_dimensionOf(entry.unit), [])
 		if entry.unit not in group:
 			group.append(entry.unit)
-	if len(groups) > 1:
-		picked = [_pick(group, dimension) for _, group in sorted(groups.items(), key=lambda item: item[0].__name__)]
+	picked = [unit for _, group in sorted(groups.items(), key=lambda item: item[0].__name__) for unit in _pick(group, dimension)]
+	if len(picked) > 1:
 		raise AmbiguousUnit(text, picked, dimension=dimension)
-	return _pick(next(iter(groups.values())), dimension)
+	return picked[0]
 
 
 def _caseMayFold(key: str, spelling: str) -> bool:
@@ -226,9 +228,10 @@ def _resolve(text: str, dimension: Optional[type]) -> type:
 			if found := usable(table.get(lookupKey, ())):
 				return _choose(text, found, dimension)
 		if found := [entry for entry in usable(index.folded.get(key.casefold(), ())) if _caseMayFold(key, entry.spelling)]:
-			groups = {_dimensionOf(entry.unit) for entry in found}
-			if len(groups) == 1:
+			try:
 				return _choose(text, found, dimension)
+			except AmbiguousUnit:
+				pass  # more than one unit differs only in case: not "exactly one match"
 	raise UnknownUnit(text, suggest(text, dimension), dimension=dimension)
 
 

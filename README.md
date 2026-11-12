@@ -62,13 +62,13 @@ assert str(wind) == '10 m/s'
 assert uc.parse(21.5, '°C').__class__ is uc.Temperature.Celsius
 assert uc.parse('1 %') == 0.01         # percent, not a guessed fraction
 
-# `m` is Meter or Minute, so say which dimension you mean
+# `m` is Meter, Minute or Month: a dimension narrows it, and inside Time it stays ambiguous
 try:
 	uc.lookup('m')
 except uc.AmbiguousUnit as error:
-	assert len(error.candidates) == 2
-assert uc.lookup('m', uc.Time) is uc.Time.Minute
+	assert len(error.candidates) == 3
 assert uc.lookup('m', uc.Length) is uc.Length.Meter
+assert uc.lookup('min', uc.Time) is uc.Time.Minute
 
 # Near misses are an explicit question, never an automatic answer
 try:

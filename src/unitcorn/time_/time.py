@@ -348,6 +348,8 @@ class Week(Time):
 
 class Month(Time):
 	_unit = 'mth'
+	# Home Assistant writes months as 'm', which is also Minute's: ambiguous even within Time
+	_parse_aliases = ('m', 'mo')
 
 
 class Year(Time):
