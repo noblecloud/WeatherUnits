@@ -3,7 +3,7 @@ name: Release
 # Publishes unitcorn, then the WeatherUnits forwarding shim, to PyPI when a
 # version tag is pushed (git tag v0.9.0 && git push origin v0.9.0).
 # Uses PyPI trusted publishing: no token is stored in this repo. Each project
-# needs a trusted publisher configured on PyPI (owner noblecloud, repo this one,
+# needs a trusted publisher configured on PyPI (owner noblecloud, repo noblecloud/unitcorn,
 # workflow release.yml, environment pypi). See docs/releasing.md.
 
 on:

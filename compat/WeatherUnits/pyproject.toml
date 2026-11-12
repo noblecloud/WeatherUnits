@@ -17,7 +17,7 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/noblecloud/WeatherUnits"
+Homepage = "https://github.com/noblecloud/unitcorn"
 
 [build-system]
 requires = ["setuptools>=77"]
