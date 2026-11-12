@@ -80,9 +80,16 @@ LOOKUPS = [
 	('deg', None, uc.Angle),
 	('degrees', None, uc.Angle),
 	# Speed units that are not in the library yet
-	('kn', None, UNKNOWN),            # flips to Knot once feat/grow-units merges
-	('kt', None, UNKNOWN),            # flips to Knot once feat/grow-units merges
-	('knots', None, UNKNOWN),         # flips to Knot once feat/grow-units merges
+	('kn', None, uc.Wind.Knot),
+	('kt', None, uc.Wind.Knot),
+	('knot', None, uc.Wind.Knot),
+	('knots', None, uc.Wind.Knot),
+	('nmi', None, uc.Length.NauticalMile),
+	('Beaufort', None, uc.Beaufort),
+	('Bft', None, uc.Beaufort),
+	('PPFD', None, uc.PPFD),
+	('DLI', None, uc.DLI),
+	('knotz', None, UNKNOWN),
 	# Case: exact first, then case-insensitive only if one unit matches
 	('km', None, uc.Length.Kilometer),
 	('KM', None, uc.Length.Kilometer),
@@ -166,7 +173,7 @@ class TestLookupTable(TestCase):
 					with self.assertRaises(outcome):
 						uc.parse(1, text, dimension)
 				else:
-					self.assertIs(outcome, type(uc.parse(1, text, dimension)))
+					self.assertIsInstance(uc.parse(1, text, dimension), outcome)
 
 	def test_table_is_not_trivially_one_sided(self):
 		outcomes = [outcome for _, _, outcome in LOOKUPS]
@@ -529,7 +536,10 @@ class TestHomeAssistantUnits(TestCase):
 				with self.subTest(enum=enum, value=value, scope=getattr(scope, '__name__', None)):
 					result = self.outcome(value, scope)
 					if isinstance(result, uc.Measurement):
-						if enum == 'UnitOfRatio':
+						if value == 'Beaufort':
+							# a wind-force scale, not a speed: the right thing, as an Index
+							self.assertIsInstance(result, uc.Beaufort)
+						elif enum == 'UnitOfRatio':
 							self.assertIsInstance(result, (uc.Percentage, uc.derived.PartsPer))
 						else:
 							self.assertIsInstance(result, expected)
@@ -552,6 +562,7 @@ class TestHomeAssistantUnits(TestCase):
 			'W/m²': uc.Light.Irradiance, '%': uc.Percentage,
 			'ppm': uc.derived.partsPer.Million, 'ppb': uc.derived.partsPer.Billion,
 			'V': uc.Voltage,
+			'kn': uc.Wind.Knot, 'nmi': uc.Length.NauticalMile, 'Beaufort': uc.Beaufort,
 		}
 		values = {value for _, _, value in self.rows()}
 		for text, unit in expected.items():
@@ -561,8 +572,7 @@ class TestHomeAssistantUnits(TestCase):
 
 	def test_the_ones_that_must_raise(self):
 		# not in the library, or too ambiguous to answer unscoped
-		# 'kn' flips to Knot once feat/grow-units merges
-		must = ['kn', 'm', 'mW', 'kcal', 'L', 'm³', 'μs', 'B', 'dB', 'Beaufort', 'cbar', 'BTU/(h⋅ft²)', 'μg/m³', 'kWh/100km']
+		must = ['m', 'mW', 'kcal', 'L', 'm³', 'μs', 'B', 'dB', 'cbar', 'BTU/(h⋅ft²)', 'μg/m³', 'kWh/100km']
 		values = {value for _, _, value in self.rows()}
 		for text in must:
 			with self.subTest(text=text):

@@ -16,6 +16,9 @@ class MetricLength(ScalingMeasurement, Length, system=metric, baseUnit='Meter'):
 		Decameter = 10
 		Hectometer = 10
 		Kilometer = 10
+		# A nautical mile is exactly 1852 m. A float is a variant: its size in
+		# the smallest unit (mm), not a step up from the unit before it.
+		NauticalMile = 1852000.
 		Base = 'Meter'
 
 	def _foot(self):
@@ -54,3 +57,9 @@ class Hectometer(MetricLength):
 @Large
 class Kilometer(MetricLength):
 	_unit = 'km'
+
+
+@Large
+class NauticalMile(MetricLength):
+	_unit = 'nmi'
+	_precision = 1

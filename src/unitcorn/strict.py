@@ -109,7 +109,9 @@ class _Index:
 		spellings: Dict[str, bool] = {}  # normalised spelling -> scoped only
 		if symbol:
 			spellings[normalise(symbol)] = False
-		for alias in (*own.get('_aliases', ()), *own.get('_parse_aliases', ())):
+		# A unit that inherits its symbol (Wind.Knot from Rate.Knot) inherits that class's aliases too
+		declared = getattr(unit, '_aliases', None) or () if symbol else own.get('_aliases', ())
+		for alias in (*declared, *own.get('_parse_aliases', ())):
 			spellings[normalise(alias)] = False
 		for spelling in own.get('_parse_scoped', ()):
 			spellings[normalise(spelling)] = True

@@ -48,8 +48,18 @@ class DistanceOverTime(DerivedMeasurement, numerator=Length, denominator=Time):
 	def mmh(self):
 		return DistanceOverTime(self._numerator.mm, self._denominator.hr)
 
+	@property
+	def kn(self):
+		return Knot(self._numerator.nmi, self._denominator.hr)
+
+	@property
+	def beaufort(self):
+		from .wind import Beaufort
+		return Beaufort.from_speed(self)
+
 	mph = mih
 	fps = fts
+	knots = knot = kt = kn
 
 
 class PerSecond(DistanceOverTime, numerator=Length, denominator=Time.Second):
@@ -72,9 +82,14 @@ class MetersPerSecond(PerSecond, numerator=Length.Meter):
 	...
 
 
+class Knot(PerHour, numerator=Length.NauticalMile, unit='kn', aliases=('kt', 'knots'), pluralUnit='kn'):
+	"""A nautical mile per hour: exactly 1852 m / 3600 s."""
+
+
 DistanceOverTime.PerSecond = PerSecond
 DistanceOverTime.PerMinute = PerMinute
 DistanceOverTime.PerHour = PerHour
 DistanceOverTime.MilesPerHour = MilesPerHour
+DistanceOverTime.Knot = Knot
 DistanceOverTime.MetersPerSecond = MetersPerSecond
 DistanceOverTime.MetersPerHour = MetersPerSecond
