@@ -34,12 +34,13 @@ class Pressure(ScalingMeasurement, baseUnit='Pascal', system=both):
 		Megapascal = 1000
 		Gigapascal = 1000
 		Base = 'Pascal'
-		Bar = 1000.
+		# Float variants: the size of the unit in Pascal, the smallest unit above.
+		Bar = 100000.
 		Atmosphere = 101325.
 		TechnicalAtmosphere = 98066.5
 		PoundsPerSquareInch = 6894.757293168
-		MillimeterOfMercury = 1 / 0.00750062
-		InchOfMercury = 1 / 0.00029530
+		MillimeterOfMercury = 133.322387415
+		InchOfMercury = 3386.389
 
 	@property
 	def pascal(self):
