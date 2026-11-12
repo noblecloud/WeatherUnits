@@ -40,6 +40,9 @@ PARAMS = (
 	{'name': 'show_unit', 'kind': 'bool', 'doc': 'Show the unit at all.'},
 	{'name': 'unit_spacer', 'kind': 'text',
 		'doc': 'A string, not a flag: the text between the value and the unit. False means none; True is the literal word.'},
+	{'name': 'style', 'kind': 'choice', 'only': ['time'],
+		'options': ['simple', 'simple+', 'human', 'human+', 'ago', 'ago+', 'timestamp'],
+		'doc': 'Time reads its own spec word, not parameters. human and ago pick the unit by magnitude; timestamp is a clock.'},
 	{'name': 'cardinal', 'kind': 'bool', 'only': ['direction'],
 		'doc': 'Show a compass heading (NNE) instead of degrees. shorten picks letters or words.'},
 )
@@ -83,6 +86,13 @@ MEASUREMENTS = (
 	{'id': 'direction', 'label': 'Direction', 'key': 'direction', 'units': (
 		{'id': 'deg', 'label': 'Degrees', 'ctor': 'Direction({v})', 'lo': 0, 'hi': 360, 'step': 0.5, 'value': 22.5},
 	)},
+	{'id': 'time', 'label': 'Time', 'key': 'time', 'units': (
+		{'id': 's', 'label': 'Seconds', 'ctor': 'Time.Second({v})', 'lo': -100, 'hi': 600, 'step': 1, 'value': 90},
+		{'id': 'min', 'label': 'Minutes', 'ctor': 'Time.Minute({v})', 'lo': -100, 'hi': 600, 'step': 1, 'value': 61},
+		{'id': 'hr', 'label': 'Hours', 'ctor': 'Time.Hour({v})', 'lo': -100, 'hi': 600, 'step': 1, 'value': 33},
+		{'id': 'day', 'label': 'Days', 'ctor': 'Time.Day({v})', 'lo': -30, 'hi': 400, 'step': 1, 'value': 14},
+		{'id': 'mth', 'label': 'Months', 'ctor': 'Time.Month({v})', 'lo': 0, 'hi': 60, 'step': 1, 'value': 18},
+	)},
 	{'id': 'rain', 'label': 'Precipitation rate', 'key': 'precipitationRate', 'units': (
 		{'id': 'inhr', 'label': 'Inches per hour', 'ctor': 'Precipitation.Hourly(Length.Inch({v}), Time.Hour(1))', 'lo': 0, 'hi': 4, 'step': 0.01, 'value': 0.01},
 		{'id': 'mmhr', 'label': 'Millimeters per hour', 'ctor': 'Precipitation.Hourly(Length.Millimeter({v}), Time.Hour(1))', 'lo': 0, 'hi': 100, 'step': 0.25, 'value': 2.5},
@@ -111,8 +121,8 @@ CASES = (
 		'measurement': 'pressure', 'unit': 'inhg', 'value': '30.0',
 		'params': {}, 'expect': '30 inHg',
 		'note': 'Precision follows the value\'s own decimals, so a pressure that crosses a whole number changes width '
-			'(29.9, 30, 30.1). Raising precision does not help: try precision 2, digit_budget 5 for 30.0 and then '
-			'trailing_zeros = precision for 30.00.'},
+			'(29.9, 30, 30.1). A spec with precision 2 and digit_budget 5 gives 30.0, but as a config default the '
+			'precision still follows the value, so only trailing_zeros fixes it for good.'},
 	{'id': 'thirty-padded', 'title': '...until trailing_zeros pads it',
 		'measurement': 'pressure', 'unit': 'inhg', 'value': '30.0',
 		'params': {'precision': 2, 'digit_budget': 5, 'trailing_zeros': 'precision'}, 'expect': '30.00 inHg',
@@ -145,6 +155,11 @@ CASES = (
 		'params': {'digit_budget': 1}, 'expect': 'NNE',
 		'note': 'A one-digit budget should give N. It does from a config line (the page\'s config output shows what '
 			'to write), but a format spec does not reach the compass ladder today, so this stays NNE.'},
+	{'id': 'time-human', 'title': 'Time: human picks the unit',
+		'measurement': 'time', 'unit': 'hr', 'value': '33',
+		'params': {'style': 'human'}, 'expect': '1.4 days',
+		'note': '33 hrs is compact and not a useful reading. human picks the unit from the magnitude, so it steps up '
+			'to days. Try ago and timestamp.'},
 	{'id': 'missing', 'title': 'No reading',
 		'measurement': 'wind', 'unit': 'mph', 'value': 'nan',
 		'params': {}, 'expect': '⋯',
@@ -254,6 +269,8 @@ def clean(params, measurement):
 			continue
 		if 'only' in param and measurement not in param['only']:
 			continue
+		if measurement == 'time' and name != 'style':
+			continue
 		try:
 			out[name] = spec_value(name, params[name])
 		except (ValueError, TypeError) as error:
@@ -262,6 +279,8 @@ def clean(params, measurement):
 
 
 def spec_string(values):
+	if 'style' in values:  # a spec word, not a parameter: `human`, not `style=human`
+		return values['style']
 	return ', '.join(f'{name}={text}' for name, text in values.items())
 
 
@@ -401,6 +420,10 @@ def render_request(request):
 	try:
 		instance = build(measurement, unit, value, str(request['value']))
 		result['text'] = format(instance, spec)
+		if measurement == 'time':  # a spec word is not a config property, so there is no line to write
+			result.update(key='', config='', configLine='', asConfig=result['text'], ok=True)
+			result['notes'] = ['Time styles are spec words, not properties, so there is no config line for them.']
+			return result
 		key = config_key(measurement, unit, instance)
 		line = config_line(key, values, baseline_line(key))
 		result['key'] = key

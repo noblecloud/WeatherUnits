@@ -92,6 +92,9 @@ COMBOS = [
 	req('rain', 'inhr', 0, precision=2, digit_budget=4, trailing_zeros='precision', true_zero=False),
 	req('rain', 'inhr', 0, precision=2, digit_budget=4, trailing_zeros='precision', true_zero=True),
 	req('wind', 'mph', 4.1),
+	req('time', 'hr', 33, style='human'),
+	req('time', 'hr', -3, style='ago'),
+	req('time', 'mth', 18, style='timestamp'),
 ]
 
 
@@ -143,7 +146,18 @@ def test_the_config_line_reproduces_the_rendering(page, tmp_path, index):
 	assert answer['ok'], answer.get('error')
 	if not answer['configLine']:
 		pytest.skip('nothing set, so there is no line')
-	assert through_config(tmp_path, answer, request) == answer['text'], answer['configLine']
+	loaded = through_config(tmp_path, answer, request)
+	assert loaded == answer['asConfig'], answer['configLine']  # the page's emulation of a loaded line is faithful
+	if loaded != answer['text']:
+		assert answer['notes'], 'the page must say when a config line renders differently from the spec'
+	else:
+		assert not answer['notes']
+
+
+def test_known_spec_and_config_differences_are_flagged(page):
+	flagged = {(c['measurement'], c['value']): a['notes'] for c, a in zip(COMBOS, page['combos'])}
+	assert flagged[('pressure', '30.0')]  # precision=2 on a whole number
+	assert flagged[('direction', '183')]
 
 
 def test_the_generated_line_is_valid_toml(page):
@@ -158,7 +172,7 @@ def test_a_case_the_config_can_not_say_is_flagged(page, tmp_path):
 	"""unit_spacer=True is the word True in a spec and a boolean in a config; the page has to say so."""
 	index = next(i for i, c in enumerate(pg.CASES) if c['id'] == 'spacer-word')
 	answer, case = page['cases'][index], pg.CASES[index]
-	assert any('will not reproduce' in note for note in answer['notes'])
+	assert any('read as a number or a boolean' in note for note in answer['notes'])
 	request = req(case['measurement'], case['unit'], case['value'])
 	assert through_config(tmp_path, answer, request) != answer['text']
 
